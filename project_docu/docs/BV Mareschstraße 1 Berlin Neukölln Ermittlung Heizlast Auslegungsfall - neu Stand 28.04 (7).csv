@@ -1,0 +1,55 @@
+﻿Etegae;WE;"Fläche
+m²";"Heizlast
+Q / kW";"Volumen-
+strom
+V̇ m³/h";;
+Wohn- und Geschäftshaus Baujahr ca. 1900;;EG;Wohnung 1;78,44;10,50;00,60 m³/h;;
+Ermittlung der Heizlast zum Anschluss an vorhandene Fernwärme-Station nach DIN EN 12381;;EG;Wohnung 2;89,52;7,94;00,46 m³/h;;
+Ermittlung der Heizlast im Auslegungsfall;;1;Wohnung 3;67,14;6,46;00,37 m³/h;;
+Parameter zur Ermittlung;;1;Wohnung 4;69,51;5,58;00,32 m³/h;;
+Volumenstrom Wohnraum 30m³/h pro Person oder n =0,5 1/h;;1;Wohnung 5;99,35;7,91;00,45 m³/h;;
+Volumenstrom Flur und Abstellraum n= 0,2 1/h;;2;Wohnung 6;67,14;6,22;00,36 m³/h;;
+Mindest - Volumenstrom Bad 40m³/h: n = 40m³/h / Vm³ n = …1/h;;2;Wohnung 7;69,51;5,42;00,31 m³/h;;
+Korekturfaktor für Wärmeübergang fx;(RT - Tx) / (RT - AT);2;Wohnung 8;99,35;7,48;00,43 m³/h;;
+Korrekturfaktor für Raumhöhe < 4m fh 15%;1,15;3;Wohnung 9;67,14;6,02;00,35 m³/h;;
+Transmissionswärmeverlust W;(U + Z) * A * fx * ΔT;3;Wohnung 10;69,51;5,26;00,30 m³/h;;
+Lüftungswärmeverlust W;cp * (V * LW) * (RT - AT);3;Wohnung 11;99,35;7,37;00,42 m³/h;;
+Temperaturdifferenz K ;;4;Wohnung 12;67,14;7,81;00,45 m³/h;;
+"spezifische Wärmekapazität Luft  WH/(/m³ * K"") 0,34";;4;Wohnung 13;69,51;6,83;00,39 m³/h;;
+Normaußentemperatur °C -12;;4;Wohnung 14;99,35;9,62;00,55 m³/h;;
+Raumtemperatur WR °C 20;;;;;;;;
+Raumtemperatur Bad °C 24;;;gesamt;1111,96 m²;100,42 kW;05,76 m³/h;;
+Raumtemperatur Flur °C 15;;;;;;;;
+Raumtemperatur Treppenhaus °C 10;;;;;;;;
+Raumtemperatur Keller °C 10;;;;;;;;
+Raumtemperatur Nebengebäude °C 15 (unbekannte Nutzung);;;;;;;;
+Raumtemperatur Abstellraum °C 15;;;Rohrtabelle;Viega Temponox Edelstahl ;;;;
+Raumtemperatur ungedämmter Dachboden °C 5;;;;;Vorlauf;Rücklauf;;Summe
+Raumvolumen m³ V;;;DN12;15 * 1,0;197,10 m;137,10 m;;334,20 m
+Raumfläche m² A;;;DN15;18 * 1,0;068,50 m;068,50 m;;137,00 m
+Zuschlag Wärmebrücken (W/m²*K) 0,1 Z;;;DN20;22 * 1,2;024,00 m;024,00 m;;048,00 m
+Deckenhöhe 0,35 m;;;DN25;28 * 1,2;033,00 m;033,00 m;;066,00 m
+Keller Deckenhöhe 0,30m;;;DN32;35 * 1,5;026,00 m;026,00 m;;052,00 m
+spezifische Wärmekapazität Wasser WH / (kg*K) 1,163;;;DN40;42 * 1,5;002,00 m;002,00 m;;004,00 m
+;;;DN50;54 * 1,5;037,00 m;037,00 m;;074,00 m
+Bauteile: U Werte nach Baualtersklassen;W/m²*K;;;;;;;
+;;;;;gesamten Rohrlänge ca.;;;715,20 m
+Fenster Holzrahmen Einachverglasung;5;;;;;;;
+Fenster Holzrahmen Zweifachverglasung;2,7;;;;;;;
+Kastenfenster;2,2;;;;;;;
+Fenster Kunststoff Zweifach Isolierverglasung;1,2;;;;;;;
+Fenster Holz Zweifach Isolierverglasung;1,2;;;;;;;
+Türen Holzwerkstoff;2,9;;;;;;;
+Wand massive Konstruktion Vollziegel verputzt bis 20 cm;2,8;;;;;;;
+Wand massive Konstruktion Vollziegel verputzt 20 bis 30 cm;1,8;;;;;;;
+Wand massive Konstruktion Vollziegel verputzt größer 30 cm;1,5;;;;;;;
+Rapitzwand;2,5;;;;;;;
+Trockenbauwand;0,35;;;;;;;
+Kellerdecke Stahlbeton massiv;1,6;;;;;;;
+Kellerdecke Holzbalkendecke;1;;;;;;;
+Kellerdecke Ziegel oder Holsteinkonstruktion;1,2;;;;;;;
+Decke Abstellraum;2,1;;;;;;;
+Geschossdecke Holzbalkenbauweise;1;;;;;;;
+Decke ungedämmt zu Dachboden;1,5;;;;;;;
+;;;;;;;;
+;;;;;;;;

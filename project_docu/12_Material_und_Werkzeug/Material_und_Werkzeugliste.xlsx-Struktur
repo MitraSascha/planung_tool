@@ -1,0 +1,16 @@
+Kategorie;Artikel/Werkzeug;Dimension/Typ;Menge geplant;Menge geliefert;Menge fehlt;Benoetigt ab;Einsatzort;Verantwortlich;Status;Bemerkung
+Kellerleitung;Heizungsrohr Haupttrasse;nach Dimensionierung;__;__;__;Abschnitt 1;Kellerleitung;Buero;Offen;
+Kellerleitung;Fittings/Bögen/T-Stuecke;nach Dimensionierung;__;__;__;Abschnitt 1;Kellerleitung;Buero;Offen;
+Kellerleitung;Absperrungen/Entleerungen;nach Plan;__;__;__;Abschnitt 1;Keller;Buero;Offen;
+Straenge;Steigleitungsrohr;nach Strangschema;__;__;__;Abschnitt 2;Straenge;Buero;Offen;
+Straenge;Strangregulierventile/Entluefter;nach Plan;__;__;__;Abschnitt 2;Strangbereiche;Buero;Offen;
+Straenge;Brandschutzmaterial;zugelassenes System;__;__;__;Abschnitt 2;Durchdringungen;Bauleitung;Offen;
+Heizzentrale;Armaturen/Pumpen/Regelzubehoer;nach Schema;__;__;__;Abschnitt 3;Heizzentrale;Buero;Offen;
+Heizzentrale;Fuell-/Spuelarmaturen;nach Plan;__;__;__;Abschnitt 3;Heizzentrale;Obermonteur;Offen;
+Wohnungen;Heizkoerper/Konsolen;nach Heizlastliste;__;__;__;Abschnitt 4;Wohnungen;Buero;Offen;
+Wohnungen;Thermostatventile/Ruecklaufverschraubungen;nach Plan;__;__;__;Abschnitt 4;Wohnungen;Buero;Offen;
+Wohnungen;Anschlussmaterial/Fittings;nach Wohnungspaket;__;__;__;Abschnitt 4;Wohnungen;Buero;Offen;
+Schutz;Abdeckvlies/Staubschutz;Rollen/Platten;__;__;__;Abschnitt 4;Wohnungen/Laufwege;Obermonteur;Offen;
+Pruefung;Druckpruefpumpe/Manometer;geprueft;__;__;__;Pruefung;alle Abschnitte;Obermonteur;Offen;
+Werkzeug;Pressmaschine/Pressbacken;passend Rohrsystem;__;__;__;Abschnitt 1-4;alle Bereiche;Obermonteur;Offen;
+Dokumentation;Beschriftungsgeraet/Etiketten;__;__;__;__;Abschnitt 1-4;Keller/Strang/Zentrale/Wohnung;Bauleitung;Offen;

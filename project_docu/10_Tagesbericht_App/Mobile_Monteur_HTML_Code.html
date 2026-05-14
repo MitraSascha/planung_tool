@@ -1,0 +1,658 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Mobiler Tagesbericht SHK</title>
+  <style>
+    :root {
+      --bg: #f6f7f4;
+      --panel: #ffffff;
+      --text: #1d2521;
+      --muted: #5d6862;
+      --line: #d7ddd6;
+      --green: #18864b;
+      --yellow: #b87700;
+      --red: #b3261e;
+      --blue: #1769aa;
+      --shadow: 0 8px 24px rgba(29, 37, 33, 0.08);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 17px;
+      line-height: 1.45;
+    }
+
+    header {
+      background: #234236;
+      color: #ffffff;
+      padding: 18px 16px;
+    }
+
+    header .wrap,
+    main {
+      max-width: 860px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      margin: 0 0 6px;
+      font-size: 26px;
+      line-height: 1.15;
+      letter-spacing: 0;
+    }
+
+    h2 {
+      margin: 0 0 14px;
+      font-size: 21px;
+      letter-spacing: 0;
+    }
+
+    p {
+      margin: 0;
+    }
+
+    .subline {
+      color: #d9e8df;
+      font-size: 15px;
+    }
+
+    main {
+      padding: 14px;
+    }
+
+    section {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      margin: 0 0 14px;
+      padding: 16px;
+    }
+
+    label {
+      display: block;
+      font-weight: 700;
+      margin: 0 0 7px;
+    }
+
+    select,
+    input,
+    textarea {
+      width: 100%;
+      min-height: 48px;
+      border: 1px solid #aeb9b2;
+      border-radius: 7px;
+      padding: 11px 12px;
+      color: var(--text);
+      background: #ffffff;
+      font: inherit;
+    }
+
+    textarea {
+      min-height: 110px;
+      resize: vertical;
+    }
+
+    .grid {
+      display: grid;
+      gap: 14px;
+    }
+
+    @media (min-width: 720px) {
+      .grid.two {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    .field {
+      min-width: 0;
+    }
+
+    .task-list,
+    .photo-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .check-row {
+      display: grid;
+      grid-template-columns: 34px 1fr;
+      align-items: start;
+      gap: 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 12px;
+      background: #fbfcfa;
+    }
+
+    .check-row input {
+      width: 26px;
+      height: 26px;
+      min-height: 26px;
+      margin: 1px 0 0;
+      accent-color: var(--green);
+    }
+
+    .check-row span {
+      font-weight: 700;
+    }
+
+    .hint {
+      grid-column: 2;
+      color: var(--muted);
+      font-size: 14px;
+      margin-top: 3px;
+    }
+
+    .status-options {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+
+    @media (min-width: 560px) {
+      .status-options {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+
+    .status-option input {
+      position: absolute;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .status-option span {
+      display: block;
+      min-height: 54px;
+      border: 2px solid var(--line);
+      border-radius: 8px;
+      padding: 13px 10px;
+      text-align: center;
+      font-weight: 800;
+      background: #ffffff;
+    }
+
+    .status-option input:checked + span {
+      color: #ffffff;
+    }
+
+    .status-option.green input:checked + span {
+      border-color: var(--green);
+      background: var(--green);
+    }
+
+    .status-option.yellow input:checked + span {
+      border-color: var(--yellow);
+      background: var(--yellow);
+    }
+
+    .status-option.red input:checked + span {
+      border-color: var(--red);
+      background: var(--red);
+    }
+
+    .summary-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      min-height: 34px;
+      border-radius: 999px;
+      padding: 6px 12px;
+      color: #ffffff;
+      font-weight: 800;
+      background: var(--green);
+    }
+
+    .pill.yellow {
+      background: var(--yellow);
+    }
+
+    .pill.red {
+      background: var(--red);
+    }
+
+    .progress {
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    pre {
+      white-space: pre-wrap;
+      word-break: break-word;
+      background: #eef2ee;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 12px;
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 15px;
+    }
+
+    .actions {
+      position: sticky;
+      bottom: 0;
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+      background: rgba(246, 247, 244, 0.96);
+      border-top: 1px solid var(--line);
+      padding: 12px 14px 14px;
+      margin: 0 -14px -14px;
+    }
+
+    @media (min-width: 620px) {
+      .actions {
+        grid-template-columns: 2fr 1fr;
+      }
+    }
+
+    button,
+    .mail-button {
+      min-height: 56px;
+      border: 0;
+      border-radius: 8px;
+      padding: 14px 16px;
+      font: inherit;
+      font-weight: 800;
+      text-align: center;
+      cursor: pointer;
+      text-decoration: none;
+    }
+
+    .mail-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: #ffffff;
+      background: var(--blue);
+    }
+
+    .secondary {
+      color: var(--text);
+      background: #dde5df;
+    }
+
+    .small-note {
+      color: var(--muted);
+      font-size: 14px;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap">
+      <h1>Mobiler Tagesbericht SHK</h1>
+      <p class="subline">Offline nutzbar, keine Anmeldung, Versand per E-Mail-App</p>
+    </div>
+  </header>
+
+  <main>
+    <section aria-labelledby="basisdaten">
+      <h2 id="basisdaten">Basisdaten</h2>
+      <div class="grid two">
+        <div class="field">
+          <label for="projekt">Projekt</label>
+          <input id="projekt" type="text" value="Mareschstrasse 1, Berlin Neukoelln" readonly>
+        </div>
+        <div class="field">
+          <label for="abschnitt">Abschnitt</label>
+          <select id="abschnitt">
+            <option>Abschnitt 1 - Kellerleitung</option>
+            <option>Abschnitt 2 - Straenge</option>
+            <option>Abschnitt 3 - Heizzentrale</option>
+            <option>Abschnitt 4 - Wohnungen</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="datum">Tagesdatum</label>
+          <input id="datum" type="date">
+        </div>
+        <div class="field">
+          <label for="team">Monteur / Team</label>
+          <input id="team" type="text" placeholder="z. B. Team Keller / Strang A">
+        </div>
+      </div>
+    </section>
+
+    <section aria-labelledby="aufgaben">
+      <div class="summary-bar">
+        <h2 id="aufgaben">Aufgabenliste</h2>
+        <span class="progress" id="progressText">0 von 10 erledigt</span>
+      </div>
+      <div class="task-list" id="taskList">
+      </div>
+    </section>
+
+    <section aria-labelledby="rueckmeldung">
+      <h2 id="rueckmeldung">Rueckmeldung</h2>
+      <div class="grid">
+        <div class="field">
+          <label for="material">Material fehlt</label>
+          <textarea id="material" placeholder="z. B. Pressfittings 22 mm, Rohrschellen, Ventile, Daemmung"></textarea>
+        </div>
+        <div class="field">
+          <label for="probleme">Probleme / Behinderungen</label>
+          <textarea id="probleme" placeholder="z. B. Wohnung nicht zugaenglich, Absperrung defekt, Bestand weicht vom Plan ab"></textarea>
+        </div>
+        <div class="field">
+          <label for="arbeiten">Ausgefuehrte Arbeiten</label>
+          <textarea id="arbeiten" placeholder="Was wurde heute konkret ausgefuehrt?"></textarea>
+        </div>
+        <div class="field">
+          <label for="offen">Offene Arbeiten</label>
+          <textarea id="offen" placeholder="Was bleibt offen, was muss morgen oder durch die Bauleitung geklaert werden?"></textarea>
+        </div>
+      </div>
+    </section>
+
+    <section aria-labelledby="fotos">
+      <h2 id="fotos">Foto-Hinweise</h2>
+      <div class="photo-list" id="photoList">
+        <label class="check-row"><input type="checkbox" value="Bestand vor Demontage dokumentiert"><span>Bestand vor Demontage dokumentiert</span><span class="hint">Schacht, Leitungswege, Heizkoerper, Altanschluesse</span></label>
+        <label class="check-row"><input type="checkbox" value="Rohmontage / Leitungsfuehrung fotografiert"><span>Rohmontage / Leitungsfuehrung fotografiert</span><span class="hint">Vor dem Schliessen, Daemmen oder Verkleiden</span></label>
+        <label class="check-row"><input type="checkbox" value="Brandschutz / Deckendurchfuehrung fotografiert"><span>Brandschutz / Deckendurchfuehrung fotografiert</span><span class="hint">Kennzeichnung und Ausfuehrung sichtbar</span></label>
+        <label class="check-row"><input type="checkbox" value="Problemstelle oder Abweichung fotografiert"><span>Problemstelle oder Abweichung fotografiert</span><span class="hint">Fuer Rueckfrage an Bauleitung / Buero</span></label>
+        <label class="check-row"><input type="checkbox" value="Tagesabschluss / sauberer Arbeitsbereich fotografiert"><span>Tagesabschluss / sauberer Arbeitsbereich fotografiert</span><span class="hint">Besonders in bewohnten Bereichen</span></label>
+      </div>
+      <p class="small-note">Fotos bitte nach dem Oeffnen der E-Mail-App manuell anhaengen.</p>
+    </section>
+
+    <section aria-labelledby="status">
+      <h2 id="status">Tagesstatus</h2>
+      <div class="status-options">
+        <label class="status-option green">
+          <input type="radio" name="status" value="Gruen - Tagesziel erreicht, keine Blocker" checked>
+          <span>Gruen<br>Tagesziel erreicht</span>
+        </label>
+        <label class="status-option yellow">
+          <input type="radio" name="status" value="Gelb - Teilziel erreicht, Rueckfrage oder Nacharbeit offen">
+          <span>Gelb<br>Rueckfrage offen</span>
+        </label>
+        <label class="status-option red">
+          <input type="radio" name="status" value="Rot - Arbeit blockiert, Entscheidung oder Material notwendig">
+          <span>Rot<br>Blockiert</span>
+        </label>
+      </div>
+    </section>
+
+    <section aria-labelledby="vorschau">
+      <div class="summary-bar">
+        <h2 id="vorschau">Automatische Zusammenfassung</h2>
+        <span class="pill" id="statusPill">Gruen</span>
+      </div>
+      <pre id="summary"></pre>
+      <div class="actions">
+        <a class="mail-button" id="mailLink" href="#">Tagesbericht per E-Mail senden</a>
+        <button class="secondary" type="button" id="resetButton">Formular zuruecksetzen</button>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    (function () {
+      var officeMail = "buero@example.de";
+      var fields = ["projekt", "abschnitt", "datum", "team", "material", "probleme", "arbeiten", "offen"];
+      var formElements = document.querySelectorAll("input, textarea, select");
+      var taskList = document.getElementById("taskList");
+      var taskChecks = document.querySelectorAll("#taskList input[type='checkbox']");
+      var photoChecks = document.querySelectorAll("#photoList input[type='checkbox']");
+      var statusInputs = document.querySelectorAll("input[name='status']");
+      var summary = document.getElementById("summary");
+      var mailLink = document.getElementById("mailLink");
+      var progressText = document.getElementById("progressText");
+      var statusPill = document.getElementById("statusPill");
+      var resetButton = document.getElementById("resetButton");
+      var taskSets = {
+        "Abschnitt 1 - Kellerleitung": [
+          "Kellerarbeitsbereich frei, sicher und beleuchtet",
+          "Kellerleitungsplan und Material geprueft",
+          "Bestand abgesperrt / entleert / gesichert",
+          "Haupttrasse angezeichnet und Befestigungen gesetzt",
+          "Kellerleitung Vorlauf/Ruecklauf montiert",
+          "Absperrungen, Entleerungen und Stranganschluesse gesetzt",
+          "Kellerleitung beschriftet und fotografiert",
+          "Offene Punkte an Bauleitung gemeldet"
+        ],
+        "Abschnitt 2 - Straenge": [
+          "Kelleranschluss fuer Strang freigegeben",
+          "Strangverlauf und Durchdringungen geprueft",
+          "Steigleitung / Strangabschnitt montiert",
+          "Befestigung und Schallschutz kontrolliert",
+          "Entlueftung / Entleerung / Absperrung gesetzt",
+          "Brandschutzstellen offen fotografiert",
+          "Strang beschriftet und fuer Wohnungen freigemeldet",
+          "Materialmangel / Planabweichung gemeldet"
+        ],
+        "Abschnitt 3 - Heizzentrale": [
+          "Bestandsstation mit Schema abgeglichen",
+          "Anbindung an Kellerleitung hergestellt",
+          "Pumpen / Armaturen / Regelung geprueft",
+          "Fuell- und Spuelpunkte vorbereitet",
+          "Zentrale beschriftet und fotografiert",
+          "Offene Hersteller- oder Regelungsfragen gemeldet",
+          "Freigabe fuer Inbetriebnahme vorbereitet"
+        ],
+        "Abschnitt 4 - Wohnungen": [
+          "Wohnungszugang / Schluessel geklaert",
+          "Schutzmassnahmen in Wohnung hergestellt",
+          "Bestand vor Arbeitsbeginn fotografiert",
+          "Altanschluesse / alte Heizkoerper demontiert oder stillgelegt",
+          "Wohnungsanschluss vom Strang hergestellt",
+          "Heizkoerper, Konsolen und Armaturen montiert",
+          "Wohnung gereinigt und sicher verlassen",
+          "Wohnungsfertigmeldung, Fotos und offene Punkte gesendet"
+        ]
+      };
+
+      function todayIso() {
+        var now = new Date();
+        var month = String(now.getMonth() + 1).padStart(2, "0");
+        var day = String(now.getDate()).padStart(2, "0");
+        return now.getFullYear() + "-" + month + "-" + day;
+      }
+
+      function formatDate(value) {
+        if (!value) return "";
+        var parts = value.split("-");
+        if (parts.length !== 3) return value;
+        return parts[2] + "." + parts[1] + "." + parts[0];
+      }
+
+      function value(id) {
+        return document.getElementById(id).value.trim();
+      }
+
+      function checkedValues(list) {
+        return Array.prototype.slice.call(list)
+          .filter(function (item) { return item.checked; })
+          .map(function (item) { return item.value; });
+      }
+
+      function selectedStatus() {
+        return Array.prototype.slice.call(statusInputs).find(function (item) {
+          return item.checked;
+        }).value;
+      }
+
+      function bulletList(items, emptyText) {
+        if (!items.length) return emptyText;
+        return items.map(function (item) { return "- " + item; }).join("\n");
+      }
+
+      function createTaskRow(task, checkedTasks) {
+        var label = document.createElement("label");
+        var input = document.createElement("input");
+        var span = document.createElement("span");
+        label.className = "check-row";
+        input.type = "checkbox";
+        input.value = task;
+        input.checked = checkedTasks.indexOf(task) !== -1;
+        input.addEventListener("input", updateAll);
+        input.addEventListener("change", updateAll);
+        span.textContent = task;
+        label.appendChild(input);
+        label.appendChild(span);
+        return label;
+      }
+
+      function renderTasks(checkedTasks) {
+        var abschnitt = value("abschnitt");
+        var tasks = taskSets[abschnitt] || taskSets[Object.keys(taskSets)[0]];
+        taskList.textContent = "";
+        tasks.forEach(function (task) {
+          taskList.appendChild(createTaskRow(task, checkedTasks || []));
+        });
+        taskChecks = document.querySelectorAll("#taskList input[type='checkbox']");
+      }
+
+      function updateProgress() {
+        var done = checkedValues(taskChecks).length;
+        progressText.textContent = done + " von " + taskChecks.length + " erledigt";
+      }
+
+      function updateStatusPill(status) {
+        statusPill.className = "pill";
+        if (status.indexOf("Gelb") === 0) statusPill.classList.add("yellow");
+        if (status.indexOf("Rot") === 0) statusPill.classList.add("red");
+        statusPill.textContent = status.split(" - ")[0];
+      }
+
+      function buildReport() {
+        var projekt = value("projekt");
+        var abschnitt = value("abschnitt");
+        var datum = value("datum");
+        var team = value("team") || "Nicht angegeben";
+        var status = selectedStatus();
+        var erledigteAufgaben = checkedValues(taskChecks);
+        var fotoHinweise = checkedValues(photoChecks);
+
+        return [
+          "Tagesbericht SHK-Heizungsmodernisierung",
+          "",
+          "Projekt: " + projekt,
+          "Abschnitt: " + abschnitt,
+          "Datum: " + formatDate(datum),
+          "Monteur / Team: " + team,
+          "Status: " + status,
+          "",
+          "Erledigte Aufgaben:",
+          bulletList(erledigteAufgaben, "Keine Aufgaben abgehakt."),
+          "",
+          "Material fehlt:",
+          value("material") || "Kein fehlendes Material gemeldet.",
+          "",
+          "Probleme / Behinderungen:",
+          value("probleme") || "Keine Probleme oder Behinderungen gemeldet.",
+          "",
+          "Ausgefuehrte Arbeiten:",
+          value("arbeiten") || "Keine Freitextangabe.",
+          "",
+          "Offene Arbeiten:",
+          value("offen") || "Keine offenen Arbeiten gemeldet.",
+          "",
+          "Foto-Hinweise:",
+          bulletList(fotoHinweise, "Keine Foto-Hinweise abgehakt."),
+          "",
+          "Hinweis: Fotos werden bei Bedarf manuell an diese E-Mail angehaengt."
+        ].join("\n");
+      }
+
+      function updateMailLink(report) {
+        var subject = "Tagesbericht SHK - " + value("projekt") + " - " + formatDate(value("datum"));
+        mailLink.href = "mailto:" + officeMail +
+          "?subject=" + encodeURIComponent(subject) +
+          "&body=" + encodeURIComponent(report);
+      }
+
+      function saveDraft() {
+        var draft = {};
+        fields.forEach(function (id) { draft[id] = value(id); });
+        draft.tasks = checkedValues(taskChecks);
+        draft.photos = checkedValues(photoChecks);
+        draft.status = selectedStatus();
+        localStorage.setItem("shkTagesberichtDraft", JSON.stringify(draft));
+      }
+
+      function loadDraft() {
+        var raw = localStorage.getItem("shkTagesberichtDraft");
+        if (!raw) return false;
+        try {
+          var draft = JSON.parse(raw);
+          fields.forEach(function (id) {
+            if (draft[id]) document.getElementById(id).value = draft[id];
+          });
+          document.getElementById("projekt").value = "Mareschstrasse 1, Berlin Neukoelln";
+          renderTasks(draft.tasks || []);
+          Array.prototype.forEach.call(photoChecks, function (item) {
+            item.checked = draft.photos && draft.photos.indexOf(item.value) !== -1;
+          });
+          Array.prototype.forEach.call(statusInputs, function (item) {
+            item.checked = draft.status ? item.value === draft.status : item === statusInputs[0];
+          });
+          return true;
+        } catch (error) {
+          return false;
+        }
+      }
+
+      function updateAll() {
+        var report = buildReport();
+        var status = selectedStatus();
+        summary.textContent = report;
+        updateProgress();
+        updateStatusPill(status);
+        updateMailLink(report);
+        saveDraft();
+      }
+
+      resetButton.addEventListener("click", function () {
+        if (!window.confirm("Formular wirklich zuruecksetzen?")) return;
+        localStorage.removeItem("shkTagesberichtDraft");
+        fields.forEach(function (id) { document.getElementById(id).value = ""; });
+        document.getElementById("projekt").value = "Mareschstrasse 1, Berlin Neukoelln";
+        document.getElementById("abschnitt").selectedIndex = 0;
+        document.getElementById("datum").value = todayIso();
+        renderTasks([]);
+        Array.prototype.forEach.call(photoChecks, function (item) { item.checked = false; });
+        statusInputs[0].checked = true;
+        updateAll();
+      });
+
+      Array.prototype.forEach.call(formElements, function (element) {
+        element.addEventListener("input", updateAll);
+        element.addEventListener("change", updateAll);
+      });
+
+      document.getElementById("abschnitt").addEventListener("change", function () {
+        renderTasks([]);
+        updateAll();
+      });
+
+      if (!loadDraft()) {
+        renderTasks([]);
+        document.getElementById("datum").value = todayIso();
+      }
+      updateAll();
+    })();
+  </script>
+</body>
+</html>

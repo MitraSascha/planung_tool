@@ -1,0 +1,226 @@
+﻿;;;;U;Z;;;A;;;;;Watt
+;;Bauteil;Typ;"U-Wert
+W/m²*K";"Wärme
+brücken
+Zuschlag
+W/m²*K";"Länge 
+m";"Höhe / Breite
+m
+";"Fläche
+ m²";"Temp.
+Raum
+°C
+";"Temp.
+angr.
+°C
+";"fx
+";"ΔT
+K";"Heizlast
+((U + Z) * A * fx *  ΔT)* fh"
+Wohnung 1;10496 W;78,44 m²;;;;;;;;;;;
+Zimmer 1 (zwei Heizkörper);;;;;;;;;;;;;
+Transmissionswärmeverlust W;;;;;;;;;;;;;
+Fläche ;27,72 m²;Außenwand;Wand massive Konstruktion Vollziegel verputzt größer 30 cm;1,5;0,1;5,40;4,75;21,11;20;-12;1;32;1081 W
+Raumhöhe;4,40 m;Fenster 1;Fenster Holzrahmen Zweifachverglasung;2,7;0,1;0,95;2,25;2,14;20;-12;1;32;0192 W
+Raumtemperatur;RT 20 °C;Fenster 2;Fenster Holzrahmen Zweifachverglasung;2,7;0,1;1,60;1,50;2,40;20;-12;1;32;0215 W
+Temperaturdiffernz;ΔT 32 K;Wand Flur;Wand massive Konstruktion Vollziegel verputzt 20 bis 30 cm;1,8;0;5,40;4,75;23,72;20;15;0,16;32;0213 W
+Luftwechsel;LW 0,50;Tür Zimmer 1;Türen Holzwerkstoff;2,9;0;0,90;2,15;1,94;20;15;0,16;32;0028 W
+Deckenhöhe;0,35m;Wand Zimmer 2;Wand massive Konstruktion Vollziegel verputzt 20 bis 30 cm;1,8;0;5,70;4,75;27,08;20;20;0,00;32;0000 W
+;;Wand Treppenhaus;Wand massive Konstruktion Vollziegel verputzt bis 20 cm;2,8;0,1;5,70;4,75;27,08;20;10;0,31;32;0785 W
+;;Fußboden;Kellerdecke Ziegel oder Holsteinkonstruktion;1,2;0;;;27,72;20;10;0,31;32;0333 W
+;;Decke;Geschossdecke Holzbalkenbauweise;1;0;;;27,72;20;20;0,00;32;0000 W
+;;;;;;;;;;;;;3274 W
+;;;;;;;;;;;;;
+;;;;;;;;;V m³;cp;;;cp * (V * LW) * (RT - AT)
+Lüftungswärmeverlust W;;;;;;0,5;4,40;27,72; 121,97   ;0,34;;;0664 W
+;;;;;;;;;;;;;
+Summe Heizlast Zimmer 1;;;;;;;;;;;;;3937 W
+;;;;;;;;;;;;;
+Zimmer 2 (zwei Heizkörper);;;;;;;;;;;;;
+Transmissionswärmeverlust W;;Außenwand;Wand massive Konstruktion Vollziegel verputzt größer 30 cm;1,5;0,1;4,15;4,75;15,44;20;-12;1,00;32;0790 W
+Fläche ;20,72 m²;Fenster 1;Fenster Holzrahmen Zweifachverglasung;2,7;0,1;0,95;2,25;2,14;20;-12;1,00;32;0192 W
+Raumhöhe;4,40 m;Fenster 2;Fenster Holzrahmen Zweifachverglasung;2,7;0,1;0,95;2,25;2,14;20;-12;1,00;32;0192 W
+Raumtemperatur;RT 20 °C;Wand Flur;Wand massive Konstruktion Vollziegel verputzt 20 bis 30 cm;1,8;0;4,15;4,75;17,78;20;15;0,16;32;0160 W
+Temperaturdiffernz;ΔT 32 K;Tür Zimmer 2;Türen Holzwerkstoff;2,9;0;0,90;2,15;1,94;20;15;0,16;32;0028 W
+Luftwechsel;LW 0,50;Wand Nebengebäude;Wand massive Konstruktion Vollziegel verputzt bis 20 cm;2,8;0,1;5,70;4,75;27,08;20;15;0,16;32;0393 W
+Deckenhöhe;0,35m;Wand Zimmer 1;Wand massive Konstruktion Vollziegel verputzt 20 bis 30 cm;1,8;0;5,70;4,75;27,08;20;20;0,00;32;0000 W
+;;Fußboden;Kellerdecke Ziegel oder Holsteinkonstruktion;1,2;0;;;20,72;20;10;0,31;32;0249 W
+;;Decke;Geschossdecke Holzbalkenbauweise;1;0;;;20,72;20;20;0,00;32;0000 W
+;;;;;;;;;;;;;2303 W
+;;;;;;;;;;;;;
+;;;;;;;;;V m³;cp;;;cp * (V * LW) * (RT - AT)
+Lüftungswärmeverlust W;;;;;;0,5;4,40;20,72;91,17;0,34;;;0496 W
+;;;;;;;;;;;;;
+Summe Heizlast Zimmer 2;;;;;;;;;;;;;2799 W
+;;;;;;;;;;;;;
+Küche;;;;;;;;;;;;;
+Transmissionswärmeverlust W;;;;;;;;;;;;;
+Fläche ;08,59 m²;Außenwand;Wand massive Konstruktion Vollziegel verputzt größer 30 cm;1,5;0,1;2,50;4,75;9,98;20;-12;1,00;32;0511 W
+Raumhöhe;4,40 m;Fenster;Fenster Kunststoff Zweifach Isolierverglasung;1,2;0,1;0,95;2,00;1,90;20;-12;1,00;32;0079 W
+Raumtemperatur;RT 20 °C;Wand Treppenhaus;Wand massive Konstruktion Vollziegel verputzt 20 bis 30 cm;1,8;0,1;4,00;4,75;19,00;20;10;0,31;32;0361 W
+Temperaturdiffernz;ΔT 32 K;Wand Flur;Rapitzwand;2,5;0;2,50;4,75;9,94;20;15;0,16;32;0124 W
+Luftwechsel;LW 0,50;Tür Küche;Türen Holzwerkstoff;2,9;0;0,90;2,15;1,94;20;15;0,16;32;0028 W
+Deckenhöhe;0,35m;Wand Bad;Rapitzwand;2,5;0;2,50;4,75;11,88;20;24;-0,13;32;-0119 W
+;;Wand Abstellraum;Rapitzwand;2,5;0;1,00;2,00;0,74;20;15;0,16;32;0009 W
+;;Tür Abstellraum;Türen Holzwerkstoff;2,9;0;0,70;1,80;1,26;20;15;0,16;32;0018 W
+;;Fußboden;Kellerdecke Ziegel oder Holsteinkonstruktion;1,2;0;;;8,59;20;10;0,31;32;0103 W
+;;Decke;Geschossdecke Holzbalkenbauweise;1;0;;;8,59;20;20;0,00;32;0000 W
+;;;;;;;;;;;;;1282 W
+;;;;;;;;;;;;;
+;;;;;;;;;V m³;cp;;;cp * (V * LW) * (RT - AT)
+Lüftungswärmeverlust W;;;;;;0,5;4,40;8,59;37,80;0,34;;;0206 W
+;;;;;;;;;;;;;
+Summe Heizlast Küche;;;;;;;;;;;;;1488 W
+;;;;;;;;;;;;;
+Bad ;;;;;;;;;;;;;
+Transmissionswärmeverlust W;;;;;;;;;;;;;
+Fläche ;07,23 m²;Außenwand;Wand massive Konstruktion Vollziegel verputzt größer 30 cm;1,5;0,1;1,30;4,75;4,98;24;-12;1,00;36;0287 W
+Raumhöhe;4,40 m;Fenster;Fenster Kunststoff Zweifach Isolierverglasung;1,2;0,1;0,60;2,00;1,20;24;-12;1,00;36;0056 W
+Raumtemperatur;RT 24 °C;Außenwand über AR;Wand massive Konstruktion Vollziegel verputzt größer 30 cm;1,5;0,1;1,50;2,65;3,49;24;-12;1,00;36;0201 W
+Temperaturdiffernz;ΔT 36 K;Fenster über AR;Fenster Kunststoff Zweifach Isolierverglasung;1,2;0,1;0,37;1,30;0,48;24;-12;1,00;36;0023 W
+Luftwechsel;LW 1,26;Wand Abstellraum;Rapitzwand;2,5;0;2,50;2,10;5,25;24;15;0,25;36;0118 W
+Deckenhöhe;0,35m;Wand Küche;Rapitzwand;2,5;0;2,50;4,75;11,88;24;20;0,11;36;0119 W
+;;Wand Flur;Rapitzwand;2,5;0;2,70;4,75;10,89;24;15;0,25;36;0245 W
+;;Tür Flur;Türen Holzwerkstoff;2,9;0;0,90;2,15;1,94;24;15;0,25;36;0051 W
+;;Wand Nebengebäude;Rapitzwand;2,5;0,1;3,20;4,75;15,20;24;15;0,25;36;0356 W
+;;Fußboden;Kellerdecke Ziegel oder Holsteinkonstruktion;1,2;0;;;7,23;24;10;0,39;36;0121 W
+;;Decke;Geschossdecke Holzbalkenbauweise;1;0;;;7,23;24;24;0,00;36;0000 W
+;;Decke über AR;Geschossdecke Holzbalkenbauweise;1;0;;;1,29;24;15;0,25;36;0012 W
+;;;;;;;;;;;;;1826 W
+;;;;;;;;;;;;;
+;;;;;;;;;V m³;cp;;;cp * (V * LW) * (RT - AT)
+Lüftungswärmeverlust W;;;;;;1,26;4,40;7,23;31,81;0,34;;;0490 W
+;;;;;;1,26;2,20;1,29;2,84;0,34;;;0044 W
+;;;;;;;;;;;;;
+Summe Heizlast Bad;;;;;;;;;;;;;2359 W
+;;;;;;;;;;;;;
+Abstellraum (unbeheizt);;;;;;;;;;;;;
+Transmissionswärmeverlust W;;Außenwand;Wand massive Konstruktion Vollziegel verputzt größer 30 cm;1,5;0,1;1,50;2,00;2,56;15;-12;1,00;27;0110 W
+Fläche ;01,29 m²;Fenster;Fenster Kunststoff Zweifach Isolierverglasung;1,2;0,1;0,37;1,20;0,44;15;-12;1,00;27;0016 W
+Raumhöhe;4,40 m;Wand Küche;Rapitzwand;2,5;0;1,00;2,00;0,74;15;20;-0,19;27;-0009 W
+Raumtemperatur;RT 15 °C;Tür Abstellraum;Türen Holzwerkstoff;2,9;0;0,70;1,80;1,26;15;20;-0,19;27;-0018 W
+Temperaturdifferenz;ΔT 27 K;Wand Bad;Rapitzwand;2,5;0;2,50;2,00;5,00;15;24;-0,33;27;-0113 W
+Luftwechsel;LW 0,20;Fußboden;Kellerdecke Ziegel oder Holsteinkonstruktion;1,2;0;;;1,29;15;10;0,19;27;0008 W
+Deckenhöhe;0,35m;Decke;Decke Abstellraum;2,1;0;;;1,29;15;24;-0,33;27;-0024 W
+;;;;;;;;;;;;;-0035 W
+;;;;;;;;;;;;;
+;;;;;;;;;V m³;cp;;;cp * (V * LW) * (RT - AT)
+;;;;;;0,2;2,20;01,29 m²;2,84;0,34;;;0006 W
+;;;;;;;;;;;;;
+Summe Heizlast Abstellraum (unbeheizt);;;;;;;;;;;;;-0029 W
+;;;;;;;;;;;;;
+Flur;;;;;;;;;;;;;0877 W
+Transmissionswärmeverlust W;;;;;;;;;;;;;
+Fläche ;12,89 m²;Wand Treppenhaus;Wand massive Konstruktion Vollziegel verputzt größer 30 cm;1,5;0,1;1,80;4,75;6,37;15;10;;5;0010 W
+Raumhöhe;4,40 m;Wohnungstür;Türen Holzwerkstoff;2,9;0,1;0,95;2,30;2,19;15;10;;5;0005 W
+Raumtemperatur;RT 15 °C;Wand Nebengebäude;Wand massive Konstruktion Vollziegel verputzt größer 30 cm;1,5;0,1;1,80;4,75;8,55;15;15;;0;0000 W
+Temperaturdiffernz;;Fußboden;Kellerdecke Ziegel oder Holsteinkonstruktion;1,2;0;;;12,89;15;10;;5;0000 W
+Luftwechsel;LW 0,20;Decke;Geschossdecke Holzbalkenbauweise;1;0;;;12,89;15;15;;0;0000 W
+Deckenhöhe;0,35m;;;;;;;;;;;;0017 W
+;;;;;;;;;;;;;
+;;;;;;;;;V m³;cp;;;cp * (V * LW) * (RT - RT TH)
+Lüftungswärmeverlust W;;;;;;0,2;4,40;12,89;56,72;0,34;;;0019 W
+;;;;;;;;;;;;;
+Summe Heizlast Flur;;;;;;;;;;;;;-0841 W
+;;;;;;;;;;;;;
+Wohnung 2;7944 W;89,52 m²;;;;;;;;;;;
+Zimmer 1 (zwei Heizkörper);;;;;;;;;;;;;
+Transmissionswärmeverlust W;;;;;;;;;;;;;((U + Z) * A * fx *  ΔT)* fh
+Fläche ;18,97 m²;Außenwand;Wand massive Konstruktion Vollziegel verputzt größer 30 cm;1,5;0,1;4,70;3,65;13,28;20;-12;1;32;0680 W
+Raumhöhe;3,30 m;Fenster 1;Fenster Kunststoff Zweifach Isolierverglasung;1,2;0,1;0,77;2,00;1,54;20;-12;1;32;0064 W
+;;Fenster 2;Fenster Kunststoff Zweifach Isolierverglasung;1,2;0,1;1,17;2,00;2,34;20;-12;1;32;0097 W
+Raumtemperatur;RT 20 °C;Wand Nebengebäude;Wand massive Konstruktion Vollziegel verputzt größer 30 cm;1,5;0,1;5,95;3,65;21,72;20;15;0,16;32;0174 W
+Temperaturdiffernz;ΔT 32 K;Wand Zimmer 2;Wand massive Konstruktion Vollziegel verputzt 20 bis 30 cm;1,8;0;2,80;3,65;10,22;20;20;0,00;32;0000 W
+Luftwechsel;LW 0,50;Wand Bad;Trockenbauwand;0,35;0;3,00;3,65;10,95;20;24;-0,13;32;-0015 W
+Deckenhöhe;0,35m;Wand Flur;Trockenbauwand;0,35;0;1,30;3,65;4,75;20;15;0,16;32;0008 W
+;;Tür Zimmer 1;Türen Holzwerkstoff;2,9;0;0,90;2,15;1,94;20;15;0,16;32;0028 W
+;;Fußboden;Kellerdecke Ziegel oder Holsteinkonstruktion;1,2;0;;;18,97;20;10;0,31;32;0228 W
+;;Decke;Geschossdecke Holzbalkenbauweise;1;0;;;18,97;20;20;0,00;32;0000 W
+;;;;;;;;;;;;;1453 W
+;;;;;;;;;;;;;
+;;;;;;;;;V m³;cp;;;cp * (V * LW) * (RT - AT)
+Lüftungswärmeverlust W;;;;;;0,5;3,30;18,97; 62,60   ;0,34;;;0341 W
+;;;;;;;;;;;;;
+Summe Heizlast Zimmer 1;;;;;;;;;;;;;1794 W
+;;;;;;;;;;;;;
+Zimmer 2 ;;;;;;;;;;;;;
+Transmissionswärmeverlust W;;Außenwand;Wand massive Konstruktion Vollziegel verputzt größer 30 cm;1,5;0,1;4,20;3,65;10,16;20;-12;1,00;32;0520 W
+Fläche ;26,21 m²;Fenster 1;Fenster Kunststoff Zweifach Isolierverglasung;1,2;0,1;2,30;2,25;5,18;20;-12;1,00;32;0215 W
+Raumhöhe;3,30 m;Wand Nebengebäude;Wand massive Konstruktion Vollziegel verputzt größer 30 cm;1,5;0,1;7,40;3,65;27,01;20;15;0,16;32;0216 W
+Raumtemperatur;RT 20 °C;Wand Zimmer 3;Wand massive Konstruktion Vollziegel verputzt größer 30 cm;1,5;0;5,70;3,65;20,81;20;20;0,00;32;0000 W
+Temperaturdiffernz;ΔT 32 K;Wand Flur;Wand massive Konstruktion Vollziegel verputzt größer 30 cm;1,5;0;3,00;3,65;9,02;20;15;0,16;32;0068 W
+Luftwechsel;LW 0,50;Tür Zimmer 2;Türen Holzwerkstoff;2,9;0;0,90;2,15;1,94;20;15;0,16;32;0028 W
+Deckenhöhe;0,35m;Fußboden;Kellerdecke Ziegel oder Holsteinkonstruktion;1,2;0;;;26,21;20;10;0,31;32;0315 W
+;;Decke;Geschossdecke Holzbalkenbauweise;1;0;;;26,21;20;20;0,00;32;0000 W
+;;;;;;;;;;;;;1566 W
+;;;;;;;;;;;;;
+;;;;;;;;;V m³;cp;;;cp * (V * LW) * (RT - AT)
+Lüftungswärmeverlust W;;;;;;0,5;3,30;26,21;86,49;0,34;;;0471 W
+;;;;;;;;;;;;;
+Summe Heizlast Zimmer 2;;;;;;;;;;;;;2036 W
+;;;;;;;;;;;;;
+Zimmer 3 (zwei Heizkörper);;;;;;;;;;;;;
+Transmissionswärmeverlust W;;;;;;;;;;;;;
+Fläche ;19,70 m²;Außenwand;Wand massive Konstruktion Vollziegel verputzt größer 30 cm;1,5;0,1;3,95;3,65;10,14;20;-12;1,00;32;0519 W
+Raumhöhe;3,30 m;Fenster 1;Fenster Kunststoff Zweifach Isolierverglasung;1,2;0,1;0,95;2,25;2,14;20;-12;1,00;32;0089 W
+Raumtemperatur;RT 20 °C;Fenster 2;Fenster Kunststoff Zweifach Isolierverglasung;1,2;0,1;0,95;2,25;2,14;20;-12;1,00;32;0089 W
+Temperaturdiffernz;ΔT 32 K;Wand Zimmer 2;Wand massive Konstruktion Vollziegel verputzt bis 20 cm;2,8;0;5,70;3,65;20,81;20;20;0,00;32;0000 W
+Luftwechsel;LW 0,50;Wand Flur;Rapitzwand;2,5;0;3,95;3,65;12,48;20;15;0,16;32;0156 W
+Deckenhöhe;0,35m;Tür Zimmer 3;Türen Holzwerkstoff;2,9;0;0,90;2,15;1,94;20;15;0,16;32;0028 W
+;;Wand Treppenhaus;Rapitzwand;2,5;0,1;5,70;4,75;27,08;20;15;0,16;32;0352 W
+;;Fußboden;Kellerdecke Ziegel oder Holsteinkonstruktion;1,2;0;;;19,70;20;10;0,31;32;0236 W
+;;Decke;Geschossdecke Holzbalkenbauweise;1;0;;;19,70;20;20;0,00;32;0000 W
+;;;;;;;;;;;;;1690 W
+;;;;;;;;;;;;;
+;;;;;;;;;V m³;cp;;;cp * (V * LW) * (RT - AT)
+;;;;;;0,5;3,30;19,70 m²;65,01;0,34;;;0354 W
+;;;;;;;;;;;;;
+Summe Heizlast Zimmer 3;;;;;;;;;;;;;2044 W
+;;;;;;;;;;;;;
+Küche;;;;;;;;;;;;;
+Transmissionswärmeverlust W;;;;;;;;;;;;;
+Fläche ;09,06 m²;Außenwand;Wand massive Konstruktion Vollziegel verputzt größer 30 cm;1,5;0,1;2,60;3,65;7,59;20;-12;1,00;32;0389 W
+Raumhöhe;3,30 m;Fenster;Fenster Holzrahmen Zweifachverglasung;2,7;0,1;0,95;2,00;1,90;20;-12;1,00;32;0170 W
+Raumtemperatur;RT 20 °C;Wand Treppenhaus;Wand massive Konstruktion Vollziegel verputzt 20 bis 30 cm;1,8;0,1;4,00;3,65;14,60;20;10;0,31;32;0277 W
+Temperaturdiffernz;ΔT 32 K;Wand Flur;Trockenbauwand;0,35;0;3,00;3,65;9,02;20;15;0,16;32;0016 W
+Luftwechsel;LW 0,50;Tür Küche;Türen Holzwerkstoff;2,9;0;0,90;2,15;1,94;20;15;0,16;32;0028 W
+Deckenhöhe;0,35m;Wand Bad;Trockenbauwand;0,35;0;2,90;3,65;10,59;20;24;-0,13;32;-0015 W
+;;Fußboden;Kellerdecke Ziegel oder Holsteinkonstruktion;1,2;0;;;9,06;20;10;0,31;32;0109 W
+;;Decke;Geschossdecke Holzbalkenbauweise;1;0;;;9,06;20;20;0,00;32;0000 W
+;;;;;;;;;;;;;1120 W
+;;;;;;;;;;;;;
+;;;;;;;;;V m³;cp;;;cp * (V * LW) * (RT - AT)
+Lüftungswärmeverlust W;;;;;;0,5;3,30;9,06;29,90;0,34;;;0163 W
+;;;;;;;;;;;;;
+Summe Heizlast Küche;;;;;;;;;;;;;1283 W
+;;;;;;;;;;;;;
+Bad ;;;;;;;;;;;;;
+Transmissionswärmeverlust W;;;;;;;;;;;;;
+Fläche ;08,00 m²;Außenwand;Wand massive Konstruktion Vollziegel verputzt größer 30 cm;1,5;0,1;0,80;3,65;2,19;24;-12;1,00;36;0126 W
+Raumhöhe;3,30 m;Fenster;Fenster Kunststoff Zweifach Isolierverglasung;1,2;0,1;0,26;2,80;0,73;24;-12;1,00;36;0034 W
+Raumtemperatur;RT 24 °C;Wand Zimmer 1;Trockenbauwand;0,35;0;3,00;3,65;10,95;24;20;0,11;36;0015 W
+Luftwechsel;LW 1,52;Wand Flur;Trockenbauwand;0,35;0;1,60;3,65;5,84;24;15;0,25;36;0018 W
+Deckenhöhe;0,35m;Tür Bad;Türen Holzwerkstoff;2,9;0;0,90;2,15;1,94;24;15;0,25;36;0051 W
+;;Wand Küche;Trockenbauwand;0,35;0;2,90;3,65;10,59;24;20;0,11;36;0015 W
+;;Fußboden;Kellerdecke Ziegel oder Holsteinkonstruktion;1,2;0;;;0,00;24;10;0,39;36;0000 W
+;;Decke;Geschossdecke Holzbalkenbauweise;1;0;;;0,00;24;24;0,00;36;0000 W
+;;;;;;;;;;;;;0298 W
+;;;;;;;;;;;;;
+;;;;;;;;;V m³;cp;;;cp * (V * LW) * (RT - AT)
+Lüftungswärmeverlust W;;;;;;1,52;3,30;8,00;26,40;0,34;;;0490 W
+;;;;;;;;;;;;;
+Summe Heizlast Bad;;;;;;;;;;;;;0788 W
+;;;;;;;;;;;;;
+Flur (unbeheizt);;;;;;;;;;;;;0429 W
+Transmissionswärmeverlust W;;;;;;;;;;;;;
+Fläche ;07,58 m²;Wand Treppenhaus;Wand massive Konstruktion Vollziegel verputzt größer 30 cm;1,5;0,1;1,53;4,75;5,07;15;10;;5;0041 W
+Raumhöhe;3,30 m;Wohnungstür;Türen Holzwerkstoff;2,9;0,1;1,00;2,20;2,20;15;10;;5;0012 W
+Raumtemperatur;RT 15 °C;Fußboden;Kellerdecke Ziegel oder Holsteinkonstruktion;1,2;0;;;7,58;15;10;;5;0000 W
+Temperaturdifferenz;;Decke;Geschossdecke Holzbalkenbauweise;1;0;;;7,58;15;15;;0;0000 W
+Luftwechsel;LW 0,20;;;;;;;;;;;;0061 W
+Deckenhöhe;0,35m;;;;;;;;;;;;
+;;;;;;;;;V m³;cp;;;cp * (V * LW) * (RT - RT TH)
+Lüftungswärmeverlust W;;;;;;0,2;3,30;7,58;25,01;0,34;;;0009 W
+;;;;;;;;;;;;;
+Summe Heizlast Flur;;;;;;;;;;;;;-0359 W
+;;;;;;;;;;;;;

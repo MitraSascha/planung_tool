@@ -1,0 +1,42 @@
+﻿;Kellerleitung;;;;;;;;;;;;;;;
+;Rohrmaterial ;Rohrmaterial ;Viega Temponox;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;
+;Strang 3;;;;;Strang 2;;;;Strang 1;;;;;;
+;;;;;;;;;;;;;;;;
+;Vorlauftemperatur;70 °C;DN 12;53,50 m;;Vorlauftemperatur;70 °C;DN 12;43,90 m;Vorlauftemperatur;70 °C;DN 12;37,80 m;;;
+;Leistung;23,10 kW;DN 15;18,50 m;;Leistung;22,56 kW;DN 15;18,50 m;Leistung;20,41 kW;DN 15;07,50 m;;;
+;Volumenstrom;01,32 m³/h;DN 20;08,00 m;;Volumenstrom;01,29 m³/h;DN 20;04,00 m;Volumenstrom;01,17 m³/h;DN 20;08,00 m;;;
+;Nennweite;DN 32;DN 25;09,00 m;;Nennweite;DN 32;DN 25;09,00 m;Nennweite;DN 25;DN 25;11,00 m;;;
+;Druckverlust;77 Pa/m;DN 32;07,00 m;;Druckverlust;74 Pa/m;DN 32;04,00 m;Druckverlust;180 Pa/m;DN 32;00,00 m;;;
+;Fließgeschwindigkeit;0,47 m/s;;;;Fließgeschwindigkeit;0,45 m/s;;;Fließgeschwindigkeit;0,54 m/s;;;;;
+;Länge;7,00 m;;;;Länge;4,00 m;;;Länge;6,00 m;;;;;
+;;;;;;;;;;;;;;;;
+;;;Kellerleitung;;;;;Kellerleitung;;;;Kellerleitung;;;;
+;;;;;;;;;;;;;;;;
+;;;Vorlauftemperatur;70 °C;;;;Vorlauftemperatur;70 °C;;;Vorlauftemperatur;70 °C;;;
+;;;Leistung;58,04 kW;;;;Leistung;80,60 kW;;;Leistung;101,00 kW;;;
+;;;Volumenstrom;03,33 m³/h;;;;Volumenstrom;04,62 m³/h;;;Volumenstrom;05,79 m³/h;;;
+;;;Nennweite;DN 40;;;;Nennweite;DN 50;;;Nennweite;DN 50;;;
+;;;Druckverlust;154 Pa/m;;;;Druckverlust;77 Pa/m;;;Druckverlust;115 Pa/m;;;
+;;;Fließgeschwindigkeit;0,79 m/s;;;;Fließgeschwindigkeit;0,64 m/s;;;Fließgeschwindigkeit;0,80 m/s;;;
+;;;Länge;2,00 m;;;;Länge;5,00 m;;;Länge;32,00 m;;;
+;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;HAST;
+;;;;;;;;;;;;;;;Anschlusswert;101,00 kW
+;;;;;;;;;;;;;;;;05,79 m³/h
+;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;Pumpe;
+;;;;;;;;;;;;;;;;
+;Strang 4;;;;;;;;;;;;;;Förderstrom ;05,79 m³/h
+;;;;;;;;;;;;;;;Förderhöhe;
+;Vorlauftemperatur;70 °C;DN 12;61,90 m;;;;;;;;;;;;
+;Leistung;34,93 kW;DN 15;24,00 m;;;;;;;;;;;;
+;Volumenstrom;02,00 m³/h;DN 20;04,00 m;;;;;;;;;;;;
+;Nennweite;DN 32;DN 25;04,00 m;;;;;;;;;;;;
+;Druckverlust;161 Pa/m;DN 32;15,00 m;;;;;;;;;;;;
+;Fließgeschwindigkeit;0,70 m/s;DN 40;00,00 m;;;;;;;;;;;;
+;Länge;6,00 m;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;

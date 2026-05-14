@@ -1,0 +1,7 @@
+[profiles.hez-generator]
+model = "gpt-5.4"
+sandbox_mode = "workspace-write"
+approval_policy = "never"
+
+[profiles.hez-generator.shell_environment_policy]
+inherit = "all"

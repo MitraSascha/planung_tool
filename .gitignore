@@ -1,0 +1,15 @@
+.env
+.venv/
+node_modules/
+dist/
+.angular/
+__pycache__/
+*.pyc
+.pytest_cache/
+storage/workspaces/*
+storage/projects/*
+storage/uploads/*
+!storage/workspaces/.gitkeep
+!storage/projects/.gitkeep
+!storage/uploads/.gitkeep
+.aider*

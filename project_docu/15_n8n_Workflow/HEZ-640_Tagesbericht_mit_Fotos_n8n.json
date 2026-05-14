@@ -1,0 +1,185 @@
+{
+  "name": "HEZ-640 Tagesbericht mit Fotos",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "hez-640-tagesbericht",
+        "responseMode": "responseNode",
+        "options": {
+          "binaryData": true
+        }
+      },
+      "id": "b8b8b0f2-0b7d-4d07-9f4e-001-webhook",
+      "name": "Webhook - Tagesbericht empfangen",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        260,
+        260
+      ],
+      "webhookId": "hez-640-tagesbericht"
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first();\nconst body = input.json.body || input.json || {};\nconst binary = input.binary || {};\n\nconst files = Object.keys(binary).map((key) => {\n  const file = binary[key];\n  return {\n    binaryKey: key,\n    fileName: file.fileName || key,\n    mimeType: file.mimeType || 'application/octet-stream',\n    fileSize: file.fileSize || null,\n  };\n});\n\nconst safe = (value, fallback = '') => {\n  if (value === undefined || value === null || value === '') return fallback;\n  return String(value).trim();\n};\n\nconst projekt = safe(body.projekt, 'Mareschstrasse 1, Berlin-Neukoelln');\nconst abschnitt = safe(body.abschnitt, 'Nicht angegeben');\nconst datum = safe(body.datum, new Date().toISOString().slice(0, 10));\nconst team = safe(body.team, 'Nicht angegeben');\nconst status = safe(body.status, 'Nicht angegeben');\nconst materialFehlt = safe(body.materialFehlt || body.material, 'Kein fehlendes Material gemeldet.');\nconst probleme = safe(body.probleme, 'Keine Probleme oder Behinderungen gemeldet.');\nconst ausgefuehrteArbeiten = safe(body.ausgefuehrteArbeiten || body.arbeiten, 'Keine Angabe.');\nconst offeneArbeiten = safe(body.offeneArbeiten || body.offen, 'Keine offenen Arbeiten gemeldet.');\nconst aufgaben = Array.isArray(body.aufgaben) ? body.aufgaben : safe(body.aufgaben).split('\\n').filter(Boolean);\nconst fotoHinweise = Array.isArray(body.fotoHinweise) ? body.fotoHinweise : safe(body.fotoHinweise).split('\\n').filter(Boolean);\n\nconst subject = `Tagesbericht SHK - ${projekt} - ${abschnitt} - ${datum}`;\n\nconst fileList = files.length\n  ? files.map((file) => `- ${file.fileName} (${file.mimeType})`).join('\\n')\n  : 'Keine Fotos/Dateien hochgeladen.';\n\nconst reportText = [\n  'Tagesbericht SHK-Heizungsmodernisierung',\n  '',\n  `Projekt: ${projekt}`,\n  `Abschnitt: ${abschnitt}`,\n  `Datum: ${datum}`,\n  `Monteur / Team: ${team}`,\n  `Status: ${status}`,\n  '',\n  'Erledigte Aufgaben:',\n  aufgaben.length ? aufgaben.map((item) => `- ${item}`).join('\\n') : 'Keine Aufgaben uebergeben.',\n  '',\n  'Material fehlt:',\n  materialFehlt,\n  '',\n  'Probleme / Behinderungen:',\n  probleme,\n  '',\n  'Ausgefuehrte Arbeiten:',\n  ausgefuehrteArbeiten,\n  '',\n  'Offene Arbeiten:',\n  offeneArbeiten,\n  '',\n  'Foto-Hinweise:',\n  fotoHinweise.length ? fotoHinweise.map((item) => `- ${item}`).join('\\n') : 'Keine Foto-Hinweise uebergeben.',\n  '',\n  'Hochgeladene Fotos / Dateien:',\n  fileList,\n].join('\\n');\n\nconst reportHtml = reportText\n  .replace(/&/g, '&amp;')\n  .replace(/</g, '&lt;')\n  .replace(/>/g, '&gt;')\n  .replace(/\\n/g, '<br>');\n\nreturn [{\n  json: {\n    projekt,\n    abschnitt,\n    datum,\n    team,\n    status,\n    materialFehlt,\n    probleme,\n    ausgefuehrteArbeiten,\n    offeneArbeiten,\n    aufgaben,\n    fotoHinweise,\n    uploadedFiles: files,\n    subject,\n    reportText,\n    reportHtml,\n    receivedAt: new Date().toISOString(),\n  },\n  binary,\n}];"
+      },
+      "id": "b8b8b0f2-0b7d-4d07-9f4e-002-code",
+      "name": "Bericht normalisieren",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        520,
+        260
+      ]
+    },
+    {
+      "parameters": {
+        "fromEmail": "baustelle@example.de",
+        "toEmail": "buero@example.de",
+        "subject": "={{$json.subject}}",
+        "emailFormat": "html",
+        "html": "={{$json.reportHtml}}",
+        "options": {
+          "attachments": "data,foto,foto1,foto2,foto3,foto4,foto5,file,file1,file2,file3,file4,file5,files"
+        }
+      },
+      "id": "b8b8b0f2-0b7d-4d07-9f4e-003-email",
+      "name": "E-Mail ans Buero senden",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        800,
+        180
+      ],
+      "credentials": {
+        "smtp": {
+          "id": "SMTP_CREDENTIAL_ID_HIER_EINTRAGEN",
+          "name": "SMTP Zugang eintragen"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": "GOOGLE_SHEET_ID_HIER_EINTRAGEN",
+        "sheetName": "Tagesberichte",
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Zeitstempel": "={{$json.receivedAt}}",
+            "Projekt": "={{$json.projekt}}",
+            "Abschnitt": "={{$json.abschnitt}}",
+            "Datum": "={{$json.datum}}",
+            "Team": "={{$json.team}}",
+            "Status": "={{$json.status}}",
+            "Material fehlt": "={{$json.materialFehlt}}",
+            "Probleme": "={{$json.probleme}}",
+            "Ausgefuehrte Arbeiten": "={{$json.ausgefuehrteArbeiten}}",
+            "Offene Arbeiten": "={{$json.offeneArbeiten}}",
+            "Dateien": "={{$json.uploadedFiles.map(f => f.fileName).join(', ')}}"
+          }
+        },
+        "options": {}
+      },
+      "id": "b8b8b0f2-0b7d-4d07-9f4e-004-sheet",
+      "name": "Optional - Google Sheet protokollieren",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        800,
+        360
+      ],
+      "disabled": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "GOOGLE_CREDENTIAL_ID_HIER_EINTRAGEN",
+          "name": "Google Sheets Zugang eintragen"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\"ok\": true, \"message\": \"Tagesbericht wurde empfangen und verarbeitet.\", \"projekt\": $json.projekt, \"abschnitt\": $json.abschnitt, \"datum\": $json.datum, \"dateien\": $json.uploadedFiles.length}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "b8b8b0f2-0b7d-4d07-9f4e-005-response",
+      "name": "Antwort an Monteur-App",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1080,
+        260
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook - Tagesbericht empfangen": {
+      "main": [
+        [
+          {
+            "node": "Bericht normalisieren",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Bericht normalisieren": {
+      "main": [
+        [
+          {
+            "node": "E-Mail ans Buero senden",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Optional - Google Sheet protokollieren",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "E-Mail ans Buero senden": {
+      "main": [
+        [
+          {
+            "node": "Antwort an Monteur-App",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Optional - Google Sheet protokollieren": {
+      "main": [
+        []
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "saveExecutionProgress": true
+  },
+  "staticData": null,
+  "tags": [
+    {
+      "name": "HEZ-640"
+    },
+    {
+      "name": "SHK"
+    },
+    {
+      "name": "Tagesbericht"
+    }
+  ],
+  "triggerCount": 1,
+  "updatedAt": "2026-05-14T00:00:00.000Z",
+  "versionId": "hez-640-tagesbericht-v1"
+}

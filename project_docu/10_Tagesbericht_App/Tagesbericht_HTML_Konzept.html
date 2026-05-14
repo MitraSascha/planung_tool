@@ -1,0 +1,206 @@
+<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Tagesbericht Konzept</title><style>
+:root{--bg:#eef2ef;--paper:#fff;--ink:#18211d;--muted:#68756e;--line:#d8e0db;--head:#173d32;--head2:#265e4e;--accent:#1769aa;--accent2:#0f8a5f;--warn:#b87700;--danger:#b3261e;--soft:#f7faf8;--fill:#fff8df;--shadow:0 14px 34px rgba(24,33,29,.10);--radius:12px}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:linear-gradient(180deg,#e8f0ec 0,#f5f7f5 260px);color:var(--ink);font-family:Inter,Arial,Helvetica,sans-serif;font-size:16px;line-height:1.52}.topbar{position:sticky;top:0;z-index:20;background:rgba(255,255,255,.92);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}.topbar-inner{max-width:1240px;margin:0 auto;display:flex;gap:10px;align-items:center;justify-content:space-between;padding:10px 18px}.brand{font-weight:800;color:var(--head);text-decoration:none}.quicklinks{display:flex;gap:8px;flex-wrap:wrap}.quicklinks a{font-size:14px;text-decoration:none;color:var(--ink);background:#edf4f1;border:1px solid var(--line);border-radius:999px;padding:6px 10px}header.hero{background:linear-gradient(135deg,var(--head),var(--head2));color:#fff;padding:34px 18px 42px}.hero .wrap,main{max-width:1240px;margin:0 auto}.eyebrow{display:inline-flex;gap:8px;align-items:center;color:#d9eee5;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.18);border-radius:999px;padding:6px 11px;font-size:14px;font-weight:700}h1{margin:14px 0 8px;font-size:36px;line-height:1.1;letter-spacing:0}.meta{color:#dcece5;max-width:860px}.layout{display:grid;grid-template-columns:260px minmax(0,1fr);gap:20px;padding:22px 18px 56px}.toc{position:sticky;top:62px;align-self:start;background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:14px;max-height:calc(100vh - 86px);overflow:auto}.toc-title{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:800;margin:0 0 8px}.toc a{display:block;text-decoration:none;color:var(--ink);padding:7px 8px;border-radius:7px;font-size:14px}.toc a:hover{background:#eef4f1;color:var(--head)}.card{background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:26px}.card>h1:first-child{font-size:30px;color:var(--head);margin-top:0}.card h2{margin:32px -26px 14px;padding:13px 26px;font-size:23px;background:#f0f6f3;border-top:1px solid var(--line);border-bottom:1px solid var(--line);color:var(--head)}.card h3{margin:22px 0 10px;font-size:19px;color:#24483d}.card p{margin:9px 0}.card ul{margin:10px 0 16px 22px;padding:0}.card li{margin:6px 0}code{background:#eef2ee;border:1px solid var(--line);border-radius:5px;padding:1px 5px}.table-shell{width:100%;overflow:auto;margin:14px 0 22px;border:1px solid var(--line);border-radius:10px;background:#fff;box-shadow:0 4px 14px rgba(24,33,29,.045)}table{width:100%;border-collapse:separate;border-spacing:0;min-width:760px}th,td{border-bottom:1px solid var(--line);border-right:1px solid var(--line);padding:9px 11px;text-align:left;vertical-align:top}th{position:sticky;top:0;z-index:1;background:#dfece6;font-weight:800;color:#183d32}tbody tr:nth-child(even) td{background:#fbfcfb}tr:hover td{background:#f4f9f6}tr:last-child td{border-bottom:0}th:last-child,td:last-child{border-right:0}td.fillable-cell{background:var(--fill)!important;cursor:text;min-width:76px}td.fillable-cell:empty::before{content:"ausfuellen";color:#9d9480;font-style:italic}td.fillable-cell:focus{outline:2px solid var(--accent);outline-offset:-2px;background:#fff!important}.check-cell{text-align:center;vertical-align:middle}.checklist-box{width:24px;height:24px;accent-color:var(--accent2);cursor:pointer}.check-list-item{list-style:none;margin-left:-22px;padding:5px 8px;border-radius:8px}.check-list-item label{display:inline-flex;gap:9px;align-items:flex-start;cursor:pointer}tr.is-done td,li.is-done{background:#edf8f0!important}.index-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}.index-link{display:block;background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px;text-decoration:none;color:var(--ink);box-shadow:0 5px 16px rgba(24,33,29,.055)}.index-link:hover{border-color:#9bc7b7;transform:translateY(-1px)}.index-link strong{display:block;color:var(--head);font-size:17px;margin-bottom:4px}.index-link span{color:var(--muted);font-size:14px}.section-grid{display:grid;grid-template-columns:repeat(4,minmax(160px,1fr));gap:12px;margin:14px 0 24px}.section-chip{background:#fff;border:1px solid var(--line);border-left:6px solid var(--accent2);border-radius:10px;padding:13px}.section-chip b{display:block;font-size:20px;color:var(--head)}.section-chip span{color:var(--muted);font-size:14px}.table-actions{display:flex;justify-content:flex-end;margin:-8px 0 20px}.add-row-button{min-height:44px;border:0;border-radius:9px;padding:10px 14px;background:var(--accent);color:#fff;font:inherit;font-weight:800;cursor:pointer;box-shadow:0 5px 14px rgba(23,105,170,.22)}.gantt-panel{margin:18px 0 26px;background:#fff;border:1px solid var(--line);border-radius:14px;padding:18px;box-shadow:var(--shadow)}.weeks{display:grid;grid-template-columns:190px repeat(12,1fr);gap:4px;align-items:center;font-size:13px}.week-head{color:var(--muted);text-align:center;font-weight:800}.gantt-name{font-weight:800;color:var(--head);padding:8px 0}.slot{height:34px;background:#edf3f0;border-radius:6px}.bar{height:34px;border-radius:7px;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px}.b1{background:#267b5f}.b2{background:#1769aa}.b3{background:#6c5ce7}.b4{background:#0f8a5f}.b5{background:#b87700}.b6{background:#7a6a58}@media(max-width:900px){.layout{display:block}.toc{position:static;margin-bottom:16px}.section-grid{grid-template-columns:1fr 1fr}h1{font-size:30px}.card{padding:18px}.card h2{margin-left:-18px;margin-right:-18px;padding-left:18px;padding-right:18px}.weeks{grid-template-columns:140px repeat(12,54px);overflow:auto}}@media print{.topbar,.toc,.table-actions{display:none}body{background:#fff}.layout{display:block;padding:0}.card{box-shadow:none;border:0;padding:0}.card h2{margin-left:0;margin-right:0}table{min-width:0;font-size:12px}td.fillable-cell:empty::before{content:""}}
+</style></head><body id="top"><div class="topbar"><div class="topbar-inner"><a class="brand" href="../99_HTML_Uebersicht/index.html">HEZ-640</a><div class="quicklinks"><a href="../14_Gantt_Uebersicht/Gantt_Uebersicht.html">Gantt</a><a href="../09_Monteur_Wochenplan/Monteur_Wochenplan.html">Wochenplan</a><a href="../10_Tagesbericht_App/Mobile_Monteur_HTML_Code.html">Monteur-App</a></div></div></div><header class="hero"><div class="wrap"><span class="eyebrow">App</span><h1>Tagesbericht Konzept</h1><div class="meta">10_Tagesbericht_App/Tagesbericht_HTML_Konzept.md · Mareschstrasse 1, Berlin-Neukoelln</div></div></header><main class="layout"><aside class="toc"><p class="toc-title">Inhalt</p><a href="#ziel-2">Ziel</a><a href="#einsatzsituation-3">Einsatzsituation</a><a href="#struktur-der-html-seite-4">Struktur der HTML-Seite</a><a href="#sinnvolle-felder-5">Sinnvolle Felder</a><a href="#beispiel-tagesbericht-6">Beispiel-Tagesbericht</a><a href="#mailto-uebergabe-7">Mailto-Uebergabe</a><a href="#spaetere-anbindung-an-n8n-datenbank-oder-google-sheet-8">Spaetere Anbindung an n8n, Datenbank oder Google Sheet</a><a href="#bedienkonzept-fuer-monteure-13">Bedienkonzept fuer Monteure</a><a href="#datenschutz-und-organisation-14">Datenschutz und Organisation</a><a href="#geaenderte-dateien-15">Geaenderte Dateien</a></aside><article class="card"><div class="section-grid"><div class="section-chip"><b>200 h</b><span>Abschnitt 1 Kellerleitung</span></div><div class="section-chip"><b>480 h</b><span>Abschnitt 2 Stränge</span></div><div class="section-chip"><b>120 h</b><span>Abschnitt 3 Heizzentrale</span></div><div class="section-chip"><b>1.040 h</b><span>Abschnitt 4 Wohnungen</span></div></div><h1 id="konzept-mobile-monteur-html-app-fuer-tagesberichte-1">Konzept: Mobile Monteur-HTML-App fuer Tagesberichte</h1>
+<h2 id="ziel-2">Ziel</h2>
+<p>Die mobile HTML-App soll Monteuren bei einer SHK-Heizungsmodernisierung in einem bewohnten Mehrfamilienhaus eine einfache Tagesdokumentation auf dem Handy ermoeglichen. Die Datei funktioniert offline, benoetigt keine Anmeldung und erzeugt am Tagesende automatisch einen Tagesbericht, der per E-Mail an das Buero gesendet werden kann.</p>
+<h2 id="einsatzsituation-3">Einsatzsituation</h2>
+<ul>
+<li>Baustelle: Heizungsmodernisierung im bewohnten Mehrfamilienhaus</li>
+<li>Nutzer: Monteure, Teamleiter, Bauleitung</li>
+<li>Bediengeraet: Smartphone oder Tablet</li>
+<li>Nutzung: taeglich vor Ort, auch ohne stabile Internetverbindung</li>
+<li>Ausgabe: strukturierter Tagesbericht per E-Mail</li>
+</ul>
+<h2 id="struktur-der-html-seite-4">Struktur der HTML-Seite</h2>
+<ul>
+<li>Kopfbereich</li>
+<li>Titel der App</li>
+<li>kurzer Hinweis &quot;offline nutzbar&quot;</li>
+<li>Tagesstatus als sichtbare Ampel</li>
+</ul>
+<ul>
+<li>Projektdaten</li>
+<li>fest hinterlegtes Projekt: Mareschstrasse 1, Berlin Neukoelln</li>
+<li>Abschnittsauswahl</li>
+<li>Tagesdatum</li>
+<li>Monteur oder Team</li>
+</ul>
+<ul>
+<li>Aufgabenliste</li>
+<li>baustellentaugliche Aufgaben passend zum ausgewaehlten Abschnitt</li>
+<li>Checkboxen zum Abhaken</li>
+<li>Erledigt-Anzeige als Fortschritt</li>
+</ul>
+<ul>
+<li>Rueckmeldungen</li>
+<li>Material fehlt</li>
+<li>Probleme / Behinderungen</li>
+<li>ausgefuehrte Arbeiten</li>
+<li>offene Arbeiten</li>
+</ul>
+<ul>
+<li>Foto-Hinweise</li>
+<li>Hinweisfelder zu notwendigen Fotos</li>
+<li>Checkboxen fuer Fotodokumentation</li>
+</ul>
+<ul>
+<li>Tagesstatus</li>
+<li>Gruen: Tagesziel erreicht, keine Blocker</li>
+<li>Gelb: Teilziel erreicht, Rueckfrage oder Nacharbeit offen</li>
+<li>Rot: Arbeit blockiert, Entscheidung oder Material notwendig</li>
+</ul>
+<ul>
+<li>Zusammenfassung und Versand</li>
+<li>automatische Zusammenfassung als Textvorschau</li>
+<li>Button &quot;Tagesbericht per E-Mail senden&quot;</li>
+<li>Button &quot;Formular zuruecksetzen&quot;</li>
+</ul>
+<h2 id="sinnvolle-felder-5">Sinnvolle Felder</h2>
+<div class="table-shell"><table><thead><tr><th>Feld</th><th>Typ</th><th>Zweck</th></tr></thead><tbody><tr><td>Projekt</td><td>festes Textfeld</td><td>Zuordnung zur Baustelle Mareschstrasse 1</td></tr>
+<tr><td>Abschnitt</td><td>Auswahlfeld</td><td>Zuordnung zum Bauabschnitt</td></tr>
+<tr><td>Tagesdatum</td><td>Datum</td><td>Berichtsdatum</td></tr>
+<tr><td>Monteur / Team</td><td>Texteingabe</td><td>Verantwortliche Personen</td></tr>
+<tr><td>Aufgaben</td><td>Checkboxliste</td><td>Tagesfortschritt dokumentieren</td></tr>
+<tr><td>Material fehlt</td><td>Textfeld</td><td>Fehlende Teile, Mengen, Dimensionen</td></tr>
+<tr><td>Probleme / Behinderungen</td><td>Textfeld</td><td>Zugang, Bestand, Absperrung, Bewohner, Planabweichung</td></tr>
+<tr><td>Ausgefuehrte Arbeiten</td><td>Textfeld</td><td>Freitext fuer Tagesleistung</td></tr>
+<tr><td>Offene Arbeiten</td><td>Textfeld</td><td>Restarbeiten und naechste Schritte</td></tr>
+<tr><td>Foto-Hinweise</td><td>Checkboxliste</td><td>Nachweise fuer Demontage, Rohmontage, Druckprobe, Brandschutz</td></tr>
+<tr><td>Tagesstatus</td><td>Gruen/Gelb/Rot</td><td>Schnelle Bewertung fuer Bauleitung und Buero</td></tr></tbody></table></div>
+<h2 id="beispiel-tagesbericht-6">Beispiel-Tagesbericht</h2>
+<p>Betreff:</p>
+<pre><code>Tagesbericht SHK - Mareschstrasse 1 - Abschnitt 2 - 14.05.2026</code></pre>
+<p>Mailtext:</p>
+<pre><code>Tagesbericht SHK-Heizungsmodernisierung
+
+Projekt: Mareschstrasse 1, Berlin Neukoelln
+Abschnitt: Abschnitt 2 - Straenge
+Datum: 14.05.2026
+Monteur / Team: Team Strang 1
+Status: Gelb - Rueckfrage oder Nacharbeit offen
+
+Erledigte Aufgaben:
+- Baustelle eingerichtet / Schutzmassnahmen geprueft
+- Alte Heizkoerper und Anschlussleitungen demontiert
+- Neue Steigleitung vorbereitet
+
+Material fehlt:
+Pressfittings 22 mm, 8 Stueck. Rohrschellen M8, ca. 20 Stueck.
+
+Probleme / Behinderungen:
+Wohnung 2. OG links war nicht zugaenglich. Bestand im Schacht weicht vom Plan ab.
+
+Ausgefuehrte Arbeiten:
+Demontage im EG und 1. OG abgeschlossen. Rohre im Strang A zugeschnitten und teilweise gepresst.
+
+Offene Arbeiten:
+Zugang 2. OG links klaeren. Brandschutzdurchfuehrung im Schacht durch Bauleitung pruefen lassen.
+
+Foto-Hinweise:
+- Bestand vor Demontage dokumentiert
+- Rohmontage / Leitungsfuehrung fotografiert
+- Problemstelle fotografiert</code></pre>
+<h2 id="mailto-uebergabe-7">Mailto-Uebergabe</h2>
+<p>Die HTML-Datei erzeugt aus allen Eingaben automatisch einen Berichtstext. Beim Klick auf &quot;Tagesbericht per E-Mail senden&quot; wird ein <code>mailto:</code>-Link erzeugt:</p>
+<pre><code>mailto:buero@example.de?subject=Tagesbericht%20SHK...&amp;body=Tagesbericht%20...</code></pre>
+<p>Vorteile:</p>
+<ul>
+<li>funktioniert ohne Server</li>
+<li>funktioniert offline bis zum Oeffnen der Mail-App</li>
+<li>nutzt die vorhandene Mail-App des Handys</li>
+<li>keine Anmeldung und keine zentrale Benutzerverwaltung notwendig</li>
+</ul>
+<p>Grenzen:</p>
+<ul>
+<li>sehr lange Berichte koennen je nach Mail-App gekuerzt werden</li>
+<li>Fotos werden nicht automatisch angehaengt</li>
+<li>der Versand ist erst erfolgt, wenn der Monteur die E-Mail in der Mail-App absendet</li>
+</ul>
+<p>Praxisempfehlung:</p>
+<ul>
+<li>Fotos separat in der Mail-App anhaengen</li>
+<li>feste Empfaengeradresse im HTML vorbelegen</li>
+<li>Betreff immer mit Projekt, Abschnitt und Datum erzeugen</li>
+</ul>
+<h2 id="spaetere-anbindung-an-n8n-datenbank-oder-google-sheet-8">Spaetere Anbindung an n8n, Datenbank oder Google Sheet</h2>
+<h3 id="variante-1-n8n-webhook-9">Variante 1: n8n Webhook</h3>
+<p>Die statische HTML-Datei kann spaeter statt <code>mailto:</code> einen <code>fetch()</code>-Aufruf an einen n8n Webhook senden. n8n kann die Daten dann weiterverarbeiten:</p>
+<ul>
+<li>E-Mail an Buero senden</li>
+<li>Eintrag in Google Sheet schreiben</li>
+<li>PDF-Tagesbericht erzeugen</li>
+<li>Teams/Slack/WhatsApp-Info an Bauleitung senden</li>
+<li>Materialmangel automatisch als Aufgabe anlegen</li>
+</ul>
+<p>Beispiel-Datenstruktur:</p>
+<pre><code>{
+  &quot;projekt&quot;: &quot;Mareschstrasse 1, Berlin Neukoelln&quot;,
+  &quot;abschnitt&quot;: &quot;Abschnitt 2 - Straenge&quot;,
+  &quot;datum&quot;: &quot;2026-05-14&quot;,
+  &quot;team&quot;: &quot;Team Strang 1&quot;,
+  &quot;status&quot;: &quot;Gelb&quot;,
+  &quot;aufgaben&quot;: [&quot;Demontage abgeschlossen&quot;, &quot;Rohmontage vorbereitet&quot;],
+  &quot;materialFehlt&quot;: &quot;Pressfittings 22 mm&quot;,
+  &quot;probleme&quot;: &quot;Wohnung 2. OG links nicht zugaenglich&quot;,
+  &quot;ausgefuehrteArbeiten&quot;: &quot;Demontage EG und 1. OG abgeschlossen&quot;,
+  &quot;offeneArbeiten&quot;: &quot;Zugang 2. OG links klaeren&quot;,
+  &quot;fotoHinweise&quot;: [&quot;Bestand&quot;, &quot;Rohmontage&quot;, &quot;Problemstelle&quot;]
+}</code></pre>
+<h3 id="variante-2-google-sheet-10">Variante 2: Google Sheet</h3>
+<p>n8n oder Google Apps Script kann jeden Tagesbericht als neue Tabellenzeile speichern. Sinnvolle Spalten:</p>
+<ul>
+<li>Zeitstempel</li>
+<li>Projekt</li>
+<li>Abschnitt</li>
+<li>Datum</li>
+<li>Team</li>
+<li>Status</li>
+<li>erledigte Aufgaben</li>
+<li>Material fehlt</li>
+<li>Probleme</li>
+<li>ausgefuehrte Arbeiten</li>
+<li>offene Arbeiten</li>
+<li>Foto-Hinweise</li>
+</ul>
+<h3 id="variante-3-datenbank-11">Variante 3: Datenbank</h3>
+<p>Bei mehreren Baustellen kann eine kleine Datenbank sinnvoll sein. Tabellen:</p>
+<ul>
+<li>Projekte</li>
+<li>Abschnitte</li>
+<li>Tagesberichte</li>
+<li>Aufgaben</li>
+<li>Materialmangel</li>
+<li>Probleme / Behinderungen</li>
+<li>Fotos / Fotolinks</li>
+</ul>
+<h3 id="variante-4-fotodokumentation-12">Variante 4: Fotodokumentation</h3>
+<p>Fotos sollten nicht direkt in der HTML-Datei gespeichert werden. Besser:</p>
+<ul>
+<li>Monteur fotografiert mit Handy</li>
+<li>Mail-App: Fotos manuell anhaengen</li>
+<li>spaeter: Upload-Link zu n8n, Nextcloud, Google Drive oder SharePoint</li>
+<li>Tagesbericht speichert nur Foto-Hinweise und optional Dateinamen</li>
+</ul>
+<h2 id="bedienkonzept-fuer-monteure-13">Bedienkonzept fuer Monteure</h2>
+<ul>
+<li>grosse Felder und Buttons fuer Handschuh-/Baustellenbedienung</li>
+<li>keine Pflicht zur Anmeldung</li>
+<li>klare Reihenfolge von oben nach unten</li>
+<li>Standardaufgaben wechseln automatisch passend zum Abschnitt</li>
+<li>Freitextfelder fuer alles, was nicht in die Checkliste passt</li>
+<li>Ampelstatus zwingt zu schneller Bewertung des Tages</li>
+<li>Berichtsvorschau zeigt vor dem Versand, was ans Buero geht</li>
+</ul>
+<h2 id="datenschutz-und-organisation-14">Datenschutz und Organisation</h2>
+<ul>
+<li>Keine personenbezogenen Bewohnerdaten in Freitext schreiben.</li>
+<li>Wohnungsbezug nur sachlich dokumentieren, zum Beispiel &quot;2. OG links nicht zugaenglich&quot;.</li>
+<li>Fotos mit Bewohnerbezug vermeiden oder vor Versand pruefen.</li>
+<li>Die Empfaengeradresse sollte eine zentrale Projekt- oder Buero-Adresse sein.</li>
+</ul>
+<h2 id="geaenderte-dateien-15">Geaenderte Dateien</h2>
+<ul>
+<li><code>Tagesbericht_HTML_Konzept.md</code></li>
+<li><code>Mobile_Monteur_HTML_Code.html</code></li>
+</ul></article></main><script>(function(){var key="shk-fillable-state-"+location.pathname;function load(){try{return JSON.parse(localStorage.getItem(key)||"{\"cells\":{},\"checks\":{}}") }catch(e){return{cells:{},checks:{}}}}function save(s){localStorage.setItem(key,JSON.stringify(s))}function mark(b){var r=b.closest("tr"),li=b.closest("li");if(r)r.classList.toggle("is-done",b.checked);if(li)li.classList.toggle("is-done",b.checked)}document.querySelectorAll("td").forEach(function(c){if(c.textContent.trim()==="[ ]"){c.className=(c.className?c.className+" ":"")+"check-cell";c.innerHTML='<input class="checklist-box" type="checkbox">'}});var s=load();if(!s.cells)s.cells={};if(!s.checks)s.checks={};Array.prototype.slice.call(document.querySelectorAll("td")).filter(function(c){return !c.querySelector("input,button,select,textarea,a")&&!c.classList.contains("check-cell")}).forEach(function(c,i){var k=String(i);c.classList.add("fillable-cell");c.setAttribute("contenteditable","true");c.setAttribute("spellcheck","false");if(Object.prototype.hasOwnProperty.call(s.cells,k))c.textContent=s.cells[k];c.addEventListener("input",function(){s.cells[k]=c.textContent.trim();save(s)});c.addEventListener("keydown",function(e){if(e.key==="Enter"){e.preventDefault();c.blur()}})});Array.prototype.slice.call(document.querySelectorAll(".checklist-box")).forEach(function(b,i){var r=b.closest("tr"),li=b.closest("li"),txt=r?r.textContent.trim():li?li.textContent.trim():"",k=i+":"+txt;if(Object.prototype.hasOwnProperty.call(s.checks,k))b.checked=!!s.checks[k];mark(b);b.addEventListener("change",function(){s.checks[k]=b.checked;mark(b);save(s)})})})();</script></body></html>

@@ -1,0 +1,117 @@
+<main class="shell">
+  <header class="topbar">
+    <div>
+      <p class="eyebrow">HEZ Projektgenerator</p>
+      <h1>Projekt anlegen, Bauabschnitte strukturieren, Codex-Lauf vorbereiten</h1>
+    </div>
+  </header>
+
+  <section class="notice success" *ngIf="message()">{{ message() }}</section>
+  <section class="notice error" *ngIf="error()">{{ error() }}</section>
+
+  <section class="layout">
+    <form class="panel form" (ngSubmit)="createProject()">
+      <div class="panel-head">
+        <h2>Neues Projekt</h2>
+        <button type="submit">Projekt anlegen</button>
+      </div>
+
+      <div class="grid">
+        <label>
+          Slug
+          <input
+            name="slug"
+            [(ngModel)]="form.slug"
+            required
+            pattern="[a-z0-9](?:[a-z0-9\-]{0,61}[a-z0-9])?"
+          >
+        </label>
+        <label>
+          Projektname
+          <input name="name" [(ngModel)]="form.name" required>
+        </label>
+        <label>
+          Adresse
+          <input name="address" [(ngModel)]="form.address">
+        </label>
+        <label>
+          Projektverantwortlicher
+          <input name="responsible" [(ngModel)]="form.responsible">
+        </label>
+        <label>
+          Bauleitung
+          <input name="construction_manager" [(ngModel)]="form.construction_manager">
+        </label>
+        <label>
+          Obermonteur
+          <input name="foreman" [(ngModel)]="form.foreman">
+        </label>
+        <label>
+          Startdatum
+          <input name="planned_start" type="date" [(ngModel)]="form.planned_start">
+        </label>
+        <label>
+          Zieltermin
+          <input name="planned_end" type="date" [(ngModel)]="form.planned_end">
+        </label>
+      </div>
+
+      <label>
+        Notizen / Besonderheiten
+        <textarea name="notes" rows="4" [(ngModel)]="form.notes"></textarea>
+      </label>
+
+      <div class="section-head">
+        <h3>Bauabschnitte</h3>
+        <button type="button" class="secondary" (click)="addSection()">Abschnitt hinzufuegen</button>
+      </div>
+
+      <article class="section-card" *ngFor="let section of form.sections; let i = index">
+        <div class="section-title">
+          <strong>Abschnitt {{ section.number }}</strong>
+          <button type="button" class="text-button" (click)="removeSection(i)">Entfernen</button>
+        </div>
+        <div class="grid">
+          <label>
+            Name
+            <input name="section_name_{{ i }}" [(ngModel)]="section.name" required>
+          </label>
+          <label>
+            Geplante Stunden
+            <input name="section_hours_{{ i }}" type="number" min="0" step="0.5" [(ngModel)]="section.planned_hours">
+          </label>
+          <label>
+            Verantwortlich
+            <input name="section_responsible_{{ i }}" [(ngModel)]="section.responsible">
+          </label>
+          <label>
+            Eingesetzte Mitarbeiter
+            <input name="section_staff_{{ i }}" [(ngModel)]="section.staff">
+          </label>
+        </div>
+        <label>
+          Ziel des Abschnitts
+          <textarea name="section_goal_{{ i }}" rows="3" [(ngModel)]="section.goal"></textarea>
+        </label>
+      </article>
+    </form>
+
+    <aside class="panel">
+      <h2>Projekte</h2>
+      <p class="empty" *ngIf="projects().length === 0">Noch keine Projekte geladen.</p>
+      <article class="project-card" *ngFor="let project of projects()">
+        <div>
+          <strong>{{ project.slug }}</strong>
+          <span>{{ project.status }}</span>
+        </div>
+        <p>{{ project.name }}</p>
+        <button type="button" class="secondary" (click)="runDryGenerate(project.slug)">Dry-Run</button>
+      </article>
+    </aside>
+  </section>
+
+  <section class="panel prompt" *ngIf="dryRunPrompt()">
+    <h2>Generator-Prompt</h2>
+    <pre>{{ dryRunPrompt() }}</pre>
+  </section>
+</main>

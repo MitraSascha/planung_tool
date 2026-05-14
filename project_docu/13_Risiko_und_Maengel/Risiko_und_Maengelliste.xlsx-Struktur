@@ -1,0 +1,16 @@
+Typ;Nr.;Beschreibung;Auswirkung;Eintrittswahrscheinlichkeit;Gegenmassnahme;Wer entscheidet;Eskalation wann;Status;Bemerkung
+Risiko;R01;Bewohner nicht erreichbar;Terminfenster faellt aus, Team verliert Zeit;Mittel;48h vorher bestaetigen, Ersatzwohnung/Alternativaufgabe planen;Bauleitung;sofort am Morgen ohne Zugang;Offen;
+Risiko;R02;Wohnung nicht zugaenglich;Strang kann nicht fertiggestellt/geprueft werden;Hoch;Schluesselregelung, klare Bewohnerinfo, Verwaltung einbinden;Patrick/Bauleitung;wenn Pruefabschnitt blockiert;Offen;
+Risiko;R03;Versteckte Leitungsfuehrung;Mehrarbeit, falsche Anschlusspunkte;Hoch;Bestandsbegehung, Sondage, Fotos, Entscheidung dokumentieren;Bauleitung;bei Planabweichung mit Kosten/Terminfolge;Offen;
+Risiko;R04;Material fehlt;Stillstand oder Provisorium;Mittel;Wochenkommissionierung, taegliche Fehlteilliste;Buero/Obermonteur;wenn Tagesziel gefaehrdet;Offen;
+Risiko;R05;Falsche Dimensionen;Umbau, Verzögerung, technische Maengel;Mittel;Dimensionen vor Montage gegen Plan pruefen;Bauleitung;vor Einbau falscher Teile;Offen;
+Risiko;R06;Brandschutz unklar;Durchdringungen duerfen nicht geschlossen werden;Mittel;System vorab freigeben, Fotos, Kennzeichnung;Bauleitung/Patrick;vor Verschluss;Offen;
+Risiko;R07;Alte Leitungen marode;Leckage/Schaeden bei Demontage;Mittel;vorsichtig entleeren, Auffangschutz, Sofortmeldung;Obermonteur;bei Wasseraustritt;Offen;
+Risiko;R08;Absperrungen funktionieren nicht;Anlage nicht kontrolliert entleerbar;Mittel;Absperrtest vor Demontage, Ersatzteile bereitstellen;Bauleitung;vor Eingriff in Bestand;Offen;
+Risiko;R09;Interne Abhaengigkeiten verzögern Ablauf;Teams warten auf Freigaben/Pruefung;Mittel;Pruefabschnitte klein halten, Tagesfreigaben;Bauleitung;wenn Wochenziel kippt;Offen;
+Risiko;R10;Geräusch- oder Schmutzbeschwerden;Arbeitsunterbrechung, Konflikte;Mittel;Schutz, feste Laermzeiten, saubere Tagesabschluesse;Bauleitung;bei Beschwerde Verwaltung;Offen;
+Risiko;R11;Ungeplante Mehrarbeit;Kosten-/Terminabweichung;Hoch;Nachweisfoto, Stunden separat, Entscheidung vor Ausfuehrung;Patrick;wenn nicht im Auftrag enthalten;Offen;
+Risiko;R12;Technische Abweichung vom Plan;Funktions- oder Dokumentationsrisiko;Mittel;Abweichungsprotokoll, Freigabe einholen;Bauleitung/Patrick;vor Ausfuehrung;Offen;
+Mangel;M01;Undichtigkeit Druckpruefung;Nacharbeit, Terminverzug;Mittel;Leckstelle markieren, reparieren, Nachpruefung;Obermonteur;wenn mehrfacher Fehler;Offen;
+Mangel;M02;Heizkoerper wird nicht warm;Bewohnerreklamation;Mittel;Entlueften, Ventileinstellung, Volumenstrom pruefen;Bauleitung;wenn mehrere Wohnungen betroffen;Offen;
+Mangel;M03;Fotodokumentation fehlt;Abnahme-/Nachweisproblem;Mittel;Fotopflicht in Tagescheckliste, Nachkontrolle;Bauleitung;vor Schliessen verdeckter Leistungen;Offen;

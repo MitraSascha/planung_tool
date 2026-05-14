@@ -1,0 +1,14 @@
+Meilenstein-Nr.;Bezeichnung;Beschreibung;Voraussetzung;Zieltermin;Verantwortlicher;Abnahmekriterium;Status;Bemerkung
+M01;Projektstart freigegeben;Neue 4-Abschnittsstruktur bestaetigt;Auftrag/Startfreigabe;KW __;Patrick;Projektuebersicht freigegeben;Offen;
+M02;Kellerleitung startklar;Plan, Material und Arbeitsbereich Keller freigegeben;Material vorhanden;KW __;Bauleitung;Startcheck Abschnitt 1 erledigt;Offen;
+M03;Kellerleitung fertig;Haupttrasse mit Anschlussstellen montiert;Abschnitt 1 gestartet;KW __;Obermonteur;Fotos und Sichtkontrolle vorhanden;Offen;
+M04;Erster Strang freigegeben;Steigleitung/Strangbereich montiert;Kelleranschluss fertig;KW __;Bauleitung;Freigabe fuer Wohnungen erteilt;Offen;
+M05;Alle Straenge fertig;Alle Strangbereiche montiert und dokumentiert;Abschnitt 2 abgeschlossen;KW __;Bauleitung;Strang-Fertigmeldungen vollstaendig;Offen;
+M06;Heizzentrale angebunden;Zentrale an Kellerleitung angebunden;Kellerleitung zur Zentrale fertig;KW __;Obermonteur;Schema/Fotos/Beschriftung vorhanden;Offen;
+M07;Heizzentrale betriebsbereit;Pumpen, Regelung, Fuell-/Spuelpunkte vorbereitet;M06;KW __;Bauleitung;Freigabe Inbetriebnahme;Offen;
+M08;Erste Wohnungen fertig;Erste Wohnungsgruppe montiert und freigemeldet;zugehoeriger Strang frei;KW __;Obermonteur;Wohnungsfertigmeldung vorhanden;Offen;
+M09;Alle Wohnungen montiert;14 Wohnungen montiert und dokumentiert;Zugang alle Wohnungen;KW __;Bauleitung;Fertigmeldungen vollstaendig;Offen;
+M10;Druckpruefung bestanden;Keller, Straenge und Wohnungen dicht;Montage pruefbereit;KW __;Obermonteur;Pruefprotokolle unterschrieben;Offen;
+M11;Inbetriebnahme abgeschlossen;Zentrale laeuft, Wohnungen werden versorgt;Spuelung/Befuellung erfolgt;KW __;Bauleitung;Inbetriebnahmeprotokoll liegt vor;Offen;
+M12;Hydraulischer Abgleich abgeschlossen;Strang-/Ventilwerte eingestellt;Anlage stabil;KW __;Bauleitung;Einstellliste vollstaendig;Offen;
+M13;Uebergabe abgeschlossen;Dokumentation, Maengel und Einweisung uebergeben;Restpunkte bewertet;KW __;Patrick;Uebergabeprotokoll unterschrieben;Offen;
