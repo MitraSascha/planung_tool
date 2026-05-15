@@ -267,7 +267,7 @@ Nutzerrollen
 Freigabeprozess
 Tagesberichte mit Ruecklauf
 Foto-Uploads von Monteuren
-n8n-Integration
+interne Tagesbericht-API
 E-Mail-Versand
 PDF-Export
 ```

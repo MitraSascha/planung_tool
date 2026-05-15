@@ -222,7 +222,7 @@ Bitte gib mir:
 - sinnvolle Felder
 - Beispiel-Tagesbericht
 - Vorschlag, wie die Daten per E-Mail übergeben werden können
-- Vorschlag, wie man das später mit n8n, Datenbank oder Google Sheet verbinden könnte
+- Vorschlag, wie man das später mit Datenbank, Dateiablage oder interner API verbinden könnte
 
 10. Ausgabeformat
 Bitte gib die Ergebnisse strukturiert aus und verwende klare Überschriften.
@@ -333,7 +333,7 @@ Anforderungen:
 - offline nutzbar, soweit möglich
 - Daten bleiben lokal im Browser erhalten, bis sie gesendet oder gelöscht werden
 - Tagesbericht soll per mailto-Link oder vorbereiteter E-Mail gesendet werden können
-- später erweiterbar für n8n/Webhook
+- später erweiterbar für interne API, Datenbank oder zentrale Dateiablage
 
 Die Seite soll enthalten:
 

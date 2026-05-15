@@ -11,6 +11,12 @@ class Settings(BaseSettings):
     reference_schema_path: Path = Path("/reference_schema")
     codex_profile: str = "hez-generator"
     codex_model: str | None = None
+    gliner_model_name: str = "urchade/gliner_multi_pii-v1"
+    privacy_mapping_ttl_hours: int = 24
+    jwt_secret: str = "change-me-in-production"
+    jwt_access_token_minutes: int = 480
+    initial_admin_username: str = "admin"
+    initial_admin_password: str = "admin"
     public_base_domain: str = "hez.tech-artist.de"
 
     @property

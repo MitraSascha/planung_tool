@@ -135,16 +135,16 @@ Praxisempfehlung:
 - feste Empfaengeradresse im HTML vorbelegen
 - Betreff immer mit Projekt, Abschnitt und Datum erzeugen
 
-## Spaetere Anbindung an n8n, Datenbank oder Google Sheet
+## Spaetere Anbindung an Datenbank, Dateiablage oder interne API
 
-### Variante 1: n8n Webhook
+### Variante 1: Interne API
 
-Die statische HTML-Datei kann spaeter statt `mailto:` einen `fetch()`-Aufruf an einen n8n Webhook senden. n8n kann die Daten dann weiterverarbeiten:
+Die statische HTML-Datei kann spaeter statt `mailto:` einen `fetch()`-Aufruf an eine interne HEZ-API senden. Das Backend kann die Daten dann weiterverarbeiten:
 
 - E-Mail an Buero senden
-- Eintrag in Google Sheet schreiben
+- Eintrag in der Projektdatenbank speichern
 - PDF-Tagesbericht erzeugen
-- Teams/Slack/WhatsApp-Info an Bauleitung senden
+- Benachrichtigung an Bauleitung senden
 - Materialmangel automatisch als Aufgabe anlegen
 
 Beispiel-Datenstruktur:
@@ -165,9 +165,9 @@ Beispiel-Datenstruktur:
 }
 ```
 
-### Variante 2: Google Sheet
+### Variante 2: Datenbank
 
-n8n oder Google Apps Script kann jeden Tagesbericht als neue Tabellenzeile speichern. Sinnvolle Spalten:
+Das Backend kann jeden Tagesbericht als eigenen Datensatz speichern. Sinnvolle Spalten:
 
 - Zeitstempel
 - Projekt
@@ -200,7 +200,7 @@ Fotos sollten nicht direkt in der HTML-Datei gespeichert werden. Besser:
 
 - Monteur fotografiert mit Handy
 - Mail-App: Fotos manuell anhaengen
-- spaeter: Upload-Link zu n8n, Nextcloud, Google Drive oder SharePoint
+- spaeter: Upload-Link zu interner API, Nextcloud, Google Drive oder SharePoint
 - Tagesbericht speichert nur Foto-Hinweise und optional Dateinamen
 
 ## Bedienkonzept fuer Monteure

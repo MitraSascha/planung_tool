@@ -31,14 +31,14 @@ def create_project_workspace(project: ProjectCreate) -> ProjectWorkspace:
     )
 
 
-def publish_project(slug: str, expected_section_count: int) -> Path:
+def publish_project(slug: str, expected_section_count: int, project_type: str = "standard") -> Path:
     workspace_output = settings.workspaces_path / slug / "output"
     public_project = settings.projects_path / slug
 
     if not workspace_output.exists():
         raise FileNotFoundError(f"Workspace output does not exist: {workspace_output}")
 
-    validate_project_output(workspace_output, expected_section_count)
+    validate_project_output(workspace_output, expected_section_count, project_type)
 
     if public_project.exists():
         shutil.rmtree(public_project)

@@ -4,6 +4,8 @@ FROM python:3.13-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
+ENV HF_HOME=/models/huggingface
+ENV TRANSFORMERS_CACHE=/models/huggingface
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends curl ca-certificates git \
@@ -21,6 +23,10 @@ WORKDIR /app
 
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
+
+RUN mkdir -p /models/huggingface \
+    && python -c "from gliner import GLiNER; GLiNER.from_pretrained('urchade/gliner_multi_pii-v1')" \
+    && chown -R appuser:appuser /models
 
 COPY app ./app
 

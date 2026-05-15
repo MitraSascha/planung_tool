@@ -55,6 +55,12 @@ Vor dem ersten echten Generatorlauf muss Codex im Backend-Container authentifizi
 codex/config.toml.example
 ```
 
+Alternativ kann der Backend-Container ueber `.env` mit einem API-Key versorgt werden:
+
+```text
+OPENAI_API_KEY=...
+```
+
 Der Docker-Service nutzt ein persistentes Volume fuer:
 
 ```text
@@ -62,6 +68,8 @@ Der Docker-Service nutzt ein persistentes Volume fuer:
 ```
 
 Damit bleiben Login und Codex-Konfiguration erhalten.
+
+Hinweis fuer Docker: Das Profil `hez-generator` nutzt `sandbox_mode = "danger-full-access"`, weil bubblewrap in vielen Docker-Setups keine unprivilegierten User-Namespaces erstellen kann. Die Eingrenzung erfolgt ueber den Container und die gemounteten Volumes.
 
 ## API MVP
 

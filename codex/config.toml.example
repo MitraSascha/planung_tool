@@ -1,6 +1,6 @@
 [profiles.hez-generator]
 model = "gpt-5.4"
-sandbox_mode = "workspace-write"
+sandbox_mode = "danger-full-access"
 approval_policy = "never"
 
 [profiles.hez-generator.shell_environment_policy]

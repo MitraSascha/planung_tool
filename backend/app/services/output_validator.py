@@ -7,7 +7,17 @@ class OutputValidationError(ValueError):
         super().__init__("; ".join(errors))
 
 
-def validate_project_output(output_path: Path, expected_section_count: int) -> None:
+SMALL_PROJECT_REQUIRED_FOLDERS = (
+    "01_Projektuebersicht",
+    "06_Detaillierter_Ablaufplan",
+    "08_Monteur_Tagescheckliste",
+    "10_Tagesbericht_App",
+    "11_Meilensteinplan",
+    "14_Gantt_Uebersicht",
+)
+
+
+def validate_project_output(output_path: Path, expected_section_count: int, project_type: str = "standard") -> None:
     errors: list[str] = []
 
     if not output_path.exists():
@@ -16,6 +26,18 @@ def validate_project_output(output_path: Path, expected_section_count: int) -> N
     index_file = output_path / "99_HTML_Uebersicht" / "index.html"
     if not index_file.exists():
         errors.append(f"Missing required file: {index_file.relative_to(output_path)}")
+
+    if project_type == "small":
+        for folder in SMALL_PROJECT_REQUIRED_FOLDERS:
+            folder_path = output_path / folder
+            if not folder_path.exists():
+                errors.append(f"Missing required folder: {folder}")
+                continue
+            if not any(folder_path.glob("*.html")):
+                errors.append(f"Missing HTML file in: {folder}")
+        if errors:
+            raise OutputValidationError(errors)
+        return
 
     overview_path = output_path / "01_Projektuebersicht"
     overview_html_exists = any(overview_path.glob("*.html")) if overview_path.exists() else False

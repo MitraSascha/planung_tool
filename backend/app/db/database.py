@@ -3,6 +3,7 @@ from collections.abc import Generator
 
 from sqlalchemy import create_engine
 from sqlalchemy.exc import OperationalError
+from sqlalchemy import text
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 
 from app.core.settings import settings
@@ -26,12 +27,16 @@ def get_db() -> Generator[Session, None, None]:
 
 def init_db() -> None:
     from app.db import orm_models  # noqa: F401
+    from app.services.auth import seed_initial_admin
 
     last_error: OperationalError | None = None
 
     for _ in range(30):
         try:
             Base.metadata.create_all(bind=engine)
+            _ensure_lightweight_schema_updates()
+            with SessionLocal() as db:
+                seed_initial_admin(db)
             return
         except OperationalError as exc:
             last_error = exc
@@ -39,3 +44,8 @@ def init_db() -> None:
 
     if last_error is not None:
         raise last_error
+
+
+def _ensure_lightweight_schema_updates() -> None:
+    with engine.begin() as connection:
+        connection.execute(text("ALTER TABLE projects ADD COLUMN IF NOT EXISTS project_type VARCHAR(32) DEFAULT 'standard'"))
