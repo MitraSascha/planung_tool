@@ -1,0 +1,36 @@
+<section class="view" *ngIf="project() as p">
+  <div class="panel">
+    <div class="panel-head">
+      <div>
+        <p class="panel-kicker">Generator</p>
+        <h2>{{ p.name }} &middot; {{ p.slug }}</h2>
+      </div>
+      <span class="status-pill" [class.published]="p.status === 'published'" [class.failed]="p.status.includes('failed')">{{ statusLabel(p.status) }}</span>
+    </div>
+
+    <div class="planned-output">
+      <strong>Geplante Ausgabe</strong>
+      <span *ngFor="let output of p.planned_outputs">{{ output }}</span>
+    </div>
+
+    <div class="readiness" [class.ready]="p.ready_for_generation">
+      <strong>{{ p.ready_for_generation ? 'Bereit fuer Generatorlauf' : 'Vor Generatorlauf pruefen' }}</strong>
+      <ul *ngIf="!p.ready_for_generation">
+        <li *ngFor="let issue of p.readiness_issues">{{ issue }}</li>
+      </ul>
+    </div>
+
+    <div class="button-row">
+      <button type="button" class="secondary" (click)="runDryGenerate()">Dry-Run</button>
+      <button type="button" [disabled]="!p.ready_for_generation || isGenerating()" (click)="runGenerate()">
+        {{ isGenerating() ? 'Wird erzeugt …' : 'Dokumente erzeugen' }}
+      </button>
+    </div>
+
+    <app-run-progress *ngIf="currentRun() as run" [run]="run"></app-run-progress>
+  </div>
+</section>
+
+<section class="view" *ngIf="!project()">
+  <div class="panel"><p class="empty">Projekt wird geladen...</p></div>
+</section>

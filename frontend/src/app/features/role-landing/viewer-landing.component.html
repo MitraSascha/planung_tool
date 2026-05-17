@@ -1,0 +1,30 @@
+<div class="role-grid">
+  <section class="panel">
+    <div class="panel-head">
+      <div>
+        <p class="panel-kicker">Leseansicht</p>
+        <h2>Freigegebene Unterlagen</h2>
+      </div>
+    </div>
+    <app-empty-state
+      *ngIf="outputs().length === 0"
+      icon="📄"
+      title="Noch keine freigegebenen Unterlagen"
+      description="Sobald die Projektleitung Dokumente freigibt, sind sie hier abrufbar.">
+    </app-empty-state>
+    <ul class="link-list" *ngIf="outputs().length > 0">
+      <li *ngFor="let file of outputs()">
+        <span
+          class="doc-badge"
+          [class.form]="inferDocumentType(file.path) === 'form'"
+          [class.info]="inferDocumentType(file.path) === 'info'"
+          [title]="inferDocumentType(file.path) === 'form' ? 'Zum Ausfüllen' : 'Zur Info'"
+          aria-hidden="true">
+          {{ inferDocumentType(file.path) === 'form' ? '📋' : '📄' }}
+        </span>
+        <a [href]="file.view_url | authedUrl" target="_blank" rel="noopener">{{ file.filename }}</a>
+        <small>{{ file.path }}</small>
+      </li>
+    </ul>
+  </section>
+</div>

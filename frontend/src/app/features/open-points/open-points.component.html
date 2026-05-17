@@ -1,0 +1,49 @@
+<section class="view">
+  <div class="panel">
+    <div class="panel-head">
+      <div>
+        <p class="panel-kicker">Projekt {{ slug }}</p>
+        <h2>Offene Punkte</h2>
+      </div>
+      <a class="button-link secondary" [routerLink]="['/projects', slug]">Zurueck zum Projekt</a>
+    </div>
+
+    <div class="metric-row">
+      <div class="metric">
+        <span>Offenes Material</span>
+        <strong>{{ summary()?.material_issues_open ?? 0 }}</strong>
+      </div>
+      <div class="metric">
+        <span>Offene Blocker</span>
+        <strong>{{ summary()?.blockers_open ?? 0 }}</strong>
+      </div>
+    </div>
+
+    <nav class="sub-tabs">
+      <button type="button" [class.active]="activeTab() === 'material'" (click)="setTab('material')">Material</button>
+      <button type="button" [class.active]="activeTab() === 'blocker'" (click)="setTab('blocker')">Blocker</button>
+    </nav>
+
+    <section *ngIf="activeTab() === 'material'">
+      <div class="list-head">
+        <div>
+          <p class="panel-kicker">Material</p>
+          <h3>Materialmeldungen</h3>
+        </div>
+        <a class="button-link" [routerLink]="['/projects', slug, 'open-points', 'material', 'new']">Neue Materialmeldung</a>
+      </div>
+      <p class="info-note">Aktuell offen: <strong>{{ summary()?.material_issues_open ?? 0 }}</strong>. Eine Detailansicht je Eintrag steht erst zur Verfuegung, sobald das Backend einen Listen-Endpoint fuer Materialmeldungen bereitstellt.</p>
+    </section>
+
+    <section *ngIf="activeTab() === 'blocker'">
+      <div class="list-head">
+        <div>
+          <p class="panel-kicker">Blocker</p>
+          <h3>Blocker</h3>
+        </div>
+        <a class="button-link" [routerLink]="['/projects', slug, 'open-points', 'blocker', 'new']">Neuen Blocker melden</a>
+      </div>
+      <p class="info-note">Aktuell offen: <strong>{{ summary()?.blockers_open ?? 0 }}</strong>. Eine Detailansicht je Eintrag steht erst zur Verfuegung, sobald das Backend einen Listen-Endpoint fuer Blocker bereitstellt.</p>
+    </section>
+  </div>
+</section>

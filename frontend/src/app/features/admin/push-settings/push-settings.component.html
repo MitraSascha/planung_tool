@@ -1,0 +1,58 @@
+<section class="push-settings">
+  <header>
+    <p class="eyebrow">Einstellungen</p>
+    <h2>Push-Benachrichtigungen</h2>
+    <p class="hint">
+      Erhalten Sie Benachrichtigungen, sobald ein kritischer Blocker oder ein roter
+      Tagesbericht gemeldet wird. Push funktioniert auch, wenn der Browser im
+      Hintergrund laeuft.
+    </p>
+  </header>
+
+  <div class="status-row" *ngIf="!supported()">
+    <strong>Browser nicht unterstuetzt.</strong>
+    <span>Web-Push benoetigt einen aktuellen Browser mit Service-Worker-Unterstuetzung (HTTPS oder localhost).</span>
+  </div>
+
+  <div class="status-row" *ngIf="serverInfo() && !serverInfo()!.enabled">
+    <strong>Push ist auf dem Server nicht konfiguriert.</strong>
+    <span>Der Administrator muss VAPID-Schluessel generieren und in der Backend-Umgebung hinterlegen.</span>
+  </div>
+
+  <div class="actions" *ngIf="supported() && serverInfo()?.enabled">
+    <button type="button" (click)="toggle()" [disabled]="busy()">
+      <span *ngIf="enabled()">Push deaktivieren</span>
+      <span *ngIf="!enabled()">Push-Benachrichtigungen aktivieren</span>
+    </button>
+    <button type="button" (click)="sendTest()" [disabled]="busy() || !enabled()" class="secondary">
+      Test-Notification senden
+    </button>
+    <span class="status-text" *ngIf="statusText()">{{ statusText() }}</span>
+  </div>
+
+  <section class="subs" *ngIf="subscriptions().length > 0">
+    <h3>Meine Geraete</h3>
+    <ul>
+      <li *ngFor="let sub of subscriptions()">
+        <div class="sub-meta">
+          <strong>{{ sub.user_agent || 'Unbekanntes Geraet' }}</strong>
+          <span class="endpoint">{{ shortEndpoint(sub.endpoint) }}</span>
+          <span class="meta-line">
+            angelegt: {{ sub.created_at | date:'short' }}
+            <ng-container *ngIf="sub.last_used_at">
+              · zuletzt verwendet: {{ sub.last_used_at | date:'short' }}
+            </ng-container>
+            <ng-container *ngIf="!sub.active"> · <em>inaktiv</em></ng-container>
+          </span>
+        </div>
+        <button type="button" class="ghost" (click)="removeSubscription(sub)" [disabled]="busy()">
+          Entfernen
+        </button>
+      </li>
+    </ul>
+  </section>
+
+  <section class="subs empty" *ngIf="subscriptions().length === 0">
+    <p>Noch keine Geraete abonniert.</p>
+  </section>
+</section>

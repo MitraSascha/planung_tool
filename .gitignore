@@ -1,11 +1,16 @@
 .env
 .venv/
+backend/.venv/
 node_modules/
 dist/
 .angular/
 __pycache__/
 *.pyc
 .pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+backend/alembic/__pycache__/
 storage/workspaces/*
 storage/projects/*
 storage/uploads/*

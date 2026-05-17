@@ -1,0 +1,364 @@
+<section class="view">
+  <div class="panel">
+    <div class="panel-head">
+      <div>
+        <p class="panel-kicker">Strangberechnung</p>
+        <h2>Import aus Excel/CSV</h2>
+      </div>
+      <a class="button-link secondary" [routerLink]="['/projects', slug]">Zurück zum Projekt</a>
+    </div>
+
+    <ol class="wizard-steps">
+      <li [class.active]="step() === 'select'" [class.done]="step() === 'preview'">
+        <span class="step-num">1</span>
+        <span>Datei wählen</span>
+      </li>
+      <li [class.active]="step() === 'preview'">
+        <span class="step-num">2</span>
+        <span>Vorschau und Mapping</span>
+      </li>
+      <li>
+        <span class="step-num">3</span>
+        <span>Übernehmen</span>
+      </li>
+    </ol>
+
+    <!-- =========================================================== -->
+    <!-- Step 1 — File selection                                      -->
+    <!-- =========================================================== -->
+    <ng-container *ngIf="step() === 'select'">
+      <div class="form-grid">
+        <label class="wide">
+          Datei
+          <input
+            type="file"
+            accept=".xlsx,.xls,.csv"
+            (change)="onFileChange($event)"
+          >
+          <small class="field-hint">{{ selectedFileName || 'Akzeptiert: .xlsx, .xls, .csv' }}</small>
+        </label>
+
+        <label>
+          Adapter
+          <select [(ngModel)]="adapterHint" name="adapter_hint">
+            <option value="">Auto-Erkennung</option>
+            <option *ngFor="let imp of importers()" [value]="imp.source_name">
+              {{ imp.display_name }}
+            </option>
+          </select>
+        </label>
+
+        <label>
+          Gespeichertes Mapping
+          <select [(ngModel)]="mappingName" name="mapping_name">
+            <option value="">(keines)</option>
+            <option *ngFor="let m of mappings()" [value]="m.name">
+              {{ m.name }}<span *ngIf="m.description"> — {{ m.description }}</span>
+            </option>
+          </select>
+        </label>
+      </div>
+
+      <div class="button-row right">
+        <button type="button" (click)="requestPreview()" [disabled]="!canRequestPreview()">
+          Vorschau anzeigen
+        </button>
+      </div>
+    </ng-container>
+
+    <!-- =========================================================== -->
+    <!-- Step 2 — Preview / Mapping                                   -->
+    <!-- =========================================================== -->
+    <ng-container *ngIf="step() === 'preview' && preview() as p">
+      <!-- Warnings banner -->
+      <div
+        *ngIf="p.warnings.length > 0"
+        class="warnings"
+        [class.mild]="warningSeverity() === 'mild'"
+        [class.strong]="warningSeverity() === 'strong'"
+      >
+        <strong>{{ p.warnings.length }} Hinweis(e) beim Parsen:</strong>
+        <ul>
+          <li *ngFor="let w of p.warnings">{{ w }}</li>
+        </ul>
+      </div>
+
+      <p class="provenance-line">
+        Quelle: <strong>{{ p.source }}</strong> &middot; Datei: <strong>{{ p.source_file }}</strong>
+      </p>
+
+      <!-- Design / Anlagenkenndaten (editable) -->
+      <section class="info-block">
+        <h3>Anlagenkenndaten</h3>
+        <div class="form-grid compact">
+          <label>System
+            <input
+              type="text"
+              [ngModel]="p.design.system_type ?? ''"
+              (ngModelChange)="updateDesignField('system_type', $event)"
+              name="design_system_type"
+            >
+          </label>
+          <label>Pumpenmodell
+            <input
+              type="text"
+              [ngModel]="p.design.pump_model ?? ''"
+              (ngModelChange)="updateDesignField('pump_model', $event)"
+              name="design_pump_model"
+            >
+          </label>
+          <label>Vorlauf (°C)
+            <input
+              type="number" step="0.1"
+              [ngModel]="p.design.supply_temp_c ?? ''"
+              (ngModelChange)="updateDesignField('supply_temp_c', $event)"
+              name="design_supply_temp_c"
+            >
+          </label>
+          <label>Rücklauf (°C)
+            <input
+              type="number" step="0.1"
+              [ngModel]="p.design.return_temp_c ?? ''"
+              (ngModelChange)="updateDesignField('return_temp_c', $event)"
+              name="design_return_temp_c"
+            >
+          </label>
+          <label>Spreizung ΔT (K)
+            <input
+              type="number" step="0.1"
+              [ngModel]="p.design.delta_t_k ?? ''"
+              (ngModelChange)="updateDesignField('delta_t_k', $event)"
+              name="design_delta_t_k"
+            >
+          </label>
+          <label>Volumenstrom (l/h)
+            <input
+              type="number" step="1"
+              [ngModel]="p.design.total_volume_flow_lph ?? ''"
+              (ngModelChange)="updateDesignField('total_volume_flow_lph', $event)"
+              name="design_total_volume_flow_lph"
+            >
+          </label>
+          <label>Pumpenförderhöhe (Pa)
+            <input
+              type="number" step="1"
+              [ngModel]="p.design.pump_head_pa ?? ''"
+              (ngModelChange)="updateDesignField('pump_head_pa', $event)"
+              name="design_pump_head_pa"
+            >
+          </label>
+          <label class="wide">Notizen
+            <textarea
+              rows="2"
+              [ngModel]="p.design.notes ?? ''"
+              (ngModelChange)="updateDesignField('notes', $event)"
+              name="design_notes"
+            ></textarea>
+          </label>
+        </div>
+      </section>
+
+      <!-- Auto-mapping summary -->
+      <section class="info-block">
+        <div class="section-toolbar">
+          <div>
+            <p class="panel-kicker">Auto-Erkennung</p>
+            <h3>{{ detectedFieldsCount() }} von {{ knownFields.length }} Feldern automatisch gemappt</h3>
+          </div>
+          <div class="button-row">
+            <button type="button" class="secondary" (click)="toggleManualMapping()">
+              {{ showManualMapping ? '▴ Manuelle Anpassung schließen' : '▾ Manuell anpassen' }}
+            </button>
+          </div>
+        </div>
+
+        <!-- Compact auto-mapping status — nur primäre Felder -->
+        <div class="auto-mapping-grid">
+          <!-- Strand: special — comes from Sheet-NAMES, not a column -->
+          <div class="auto-mapping-row" [class.mapped]="strandAutoCount() > 0" [class.unmapped]="strandAutoCount() === 0">
+            <span class="canonical">
+              <span class="check">{{ strandAutoCount() > 0 ? '✓' : '·' }}</span>
+              Strang
+            </span>
+            <span class="arrow" *ngIf="strandAutoCount() > 0">←</span>
+            <span class="source" *ngIf="strandAutoCount() > 0">
+              <code>aus Sheet-Namen 'Strang 1-N'</code> · {{ strandAutoCount() }} Wohnungen zugeordnet
+            </span>
+            <span class="source missing" *ngIf="strandAutoCount() === 0">— keine 'Strang …' Sheets in dieser Datei</span>
+          </div>
+
+          <div
+            *ngFor="let field of primaryFields()"
+            class="auto-mapping-row"
+            [class.mapped]="isFieldInFile(field)"
+            [class.unmapped]="!isFieldInFile(field)"
+          >
+            <span class="canonical">
+              <span class="check">{{ isFieldInFile(field) ? '✓' : '·' }}</span>
+              {{ fieldLabels[field] || field }}
+            </span>
+            <span class="arrow" *ngIf="isFieldInFile(field)">←</span>
+            <span class="source" *ngIf="isFieldInFile(field)"><code>{{ mappingState[field] }}</code></span>
+            <span class="source missing" *ngIf="!isFieldInFile(field)">— nicht in dieser Datei</span>
+          </div>
+        </div>
+
+        <p class="hint-line">
+          Weitere Felder (Heizkörper-Typ, Druckverlust, kv, Voreinstellung, Rohrlänge, …)
+          sind <strong>nur in echten Hydraulik-Strang-Berechnungen</strong> (VIPtool/ETU)
+          enthalten. In einer Heizlast-Aggregat-Datei wie dieser gehören sie nicht
+          rein — Heizkörper-Typ und Material kommen später aus den Angeboten.
+        </p>
+
+        <!-- Manual mapping editor (collapsed by default) -->
+        <div *ngIf="showManualMapping" class="manual-mapping">
+          <p class="manual-hint">
+            Hier kannst du die Zuordnung von Hand korrigieren. Im Dropdown stehen
+            <strong>alle Spalten der Original-Datei</strong> mit Beispieldaten.
+            <br>
+            <em>Strang</em> wird automatisch aus den 'Strang 1-N' Sheet-Namen abgeleitet
+            — keine Spalten-Zuordnung nötig.
+          </p>
+          <table class="mapping-table">
+            <thead>
+              <tr>
+                <th>Zielspalte</th>
+                <th>Aktuelle Zuordnung</th>
+                <th>Manuell wählen</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let field of primaryFields()">
+                <td><strong>{{ fieldLabels[field] || field }}</strong></td>
+                <td><code>{{ formatText(mappingState[field]) }}</code></td>
+                <td>
+                  <select
+                    [ngModel]="mappingState[field]"
+                    (ngModelChange)="setMappingValue(field, $event)"
+                    [name]="'map_' + field"
+                  >
+                    <option value="">(nicht zuordnen)</option>
+                    <option *ngFor="let col of sourceColumns" [value]="col">
+                      {{ sourceColumnLabel(col) }}
+                    </option>
+                  </select>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+          <!-- Hydraulic fields are off-topic for aggregate sheets; only
+               show them if the user really insists. -->
+          <button
+            type="button"
+            class="secondary-fields-toggle"
+            (click)="toggleSecondaryFields()"
+          >
+            {{ showSecondaryFields ? '▴ Hydraulik-Felder ausblenden' : '▾ Hydraulik-Felder einblenden (Druckverlust, kv, …)' }}
+          </button>
+
+          <table class="mapping-table" *ngIf="showSecondaryFields">
+            <thead>
+              <tr>
+                <th>Zielspalte (Hydraulik)</th>
+                <th>Aktuelle Zuordnung</th>
+                <th>Manuell wählen</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let field of secondaryFields()">
+                <td><strong>{{ fieldLabels[field] || field }}</strong></td>
+                <td><code>{{ formatText(mappingState[field]) }}</code></td>
+                <td>
+                  <select
+                    [ngModel]="mappingState[field]"
+                    (ngModelChange)="setMappingValue(field, $event)"
+                    [name]="'map_' + field"
+                  >
+                    <option value="">(nicht zuordnen)</option>
+                    <option *ngFor="let col of sourceColumns" [value]="col">
+                      {{ sourceColumnLabel(col) }}
+                    </option>
+                  </select>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="button-row right">
+            <button type="button" class="secondary" (click)="openSaveMappingModal()">
+              Mapping speichern als…
+            </button>
+            <button type="button" (click)="reapplyMapping()" [disabled]="busy()">
+              Mapping neu anwenden
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Circuits preview (first 20) -->
+      <section class="info-block">
+        <h3>Heizkreis-Vorschau ({{ p.circuits.length }} insgesamt, max. 20 angezeigt)</h3>
+        <div class="circuits-wrap" *ngIf="p.circuits.length > 0">
+          <table class="circuits-table">
+            <thead>
+              <tr>
+                <th>Pos</th>
+                <th>Strang</th>
+                <th>Etage</th>
+                <th>Wohnung / Raum</th>
+                <th class="num">Fläche</th>
+                <th class="num">Heizlast</th>
+                <th class="num">Volumenstrom</th>
+                <th class="num">spez.</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let c of previewCircuitsForDisplay()">
+                <td>{{ c.position }}</td>
+                <td>{{ formatText(c.strand) }}</td>
+                <td>{{ formatText(c.floor) }}</td>
+                <td>{{ formatText(c.room) }}</td>
+                <td class="num"><ng-container *ngIf="c.area_sqm != null">{{ formatNumber(c.area_sqm, 1) }} <span class="unit">m²</span></ng-container><ng-container *ngIf="c.area_sqm == null">–</ng-container></td>
+                <td class="num"><ng-container *ngIf="c.heat_load_w != null">{{ formatNumber(c.heat_load_w / 1000, 2) }} <span class="unit">kW</span></ng-container><ng-container *ngIf="c.heat_load_w == null">–</ng-container></td>
+                <td class="num"><ng-container *ngIf="c.volume_flow_lph != null">{{ formatNumber(c.volume_flow_lph, 0) }} <span class="unit">l/h</span></ng-container><ng-container *ngIf="c.volume_flow_lph == null">–</ng-container></td>
+                <td class="num"><ng-container *ngIf="c.area_sqm && c.heat_load_w">{{ formatNumber(c.heat_load_w / c.area_sqm, 0) }} <span class="unit">W/m²</span></ng-container><ng-container *ngIf="!(c.area_sqm && c.heat_load_w)">–</ng-container></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="empty" *ngIf="p.circuits.length === 0">
+          Keine Heizkreise im Quell-Dokument erkannt.
+        </p>
+      </section>
+
+      <div class="button-row right">
+        <button type="button" class="secondary" (click)="backToSelect()" [disabled]="busy()">
+          Andere Datei wählen
+        </button>
+        <button type="button" (click)="confirmImport()" [disabled]="busy() || p.circuits.length === 0">
+          Übernehmen
+        </button>
+      </div>
+    </ng-container>
+  </div>
+</section>
+
+<!-- Save-mapping modal -->
+<div class="modal-overlay" *ngIf="showSaveMappingModal" (click)="cancelSaveMapping()">
+  <div class="modal-panel" (click)="$event.stopPropagation()">
+    <h3>Mapping speichern</h3>
+    <label>
+      Name
+      <input type="text" [(ngModel)]="saveMappingName" name="save_mapping_name" placeholder="z.B. architekt-mueller-2024">
+    </label>
+    <label>
+      Beschreibung (optional)
+      <input type="text" [(ngModel)]="saveMappingDescription" name="save_mapping_description">
+    </label>
+    <div class="button-row right">
+      <button type="button" class="secondary" (click)="cancelSaveMapping()">Abbrechen</button>
+      <button type="button" (click)="confirmSaveMapping()" [disabled]="busy()">Speichern</button>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,38 @@
+<section class="view">
+  <form class="panel form-panel" (ngSubmit)="submit()">
+    <div class="panel-head">
+      <div>
+        <p class="panel-kicker">Projekt {{ slug }}</p>
+        <h2>Neuen Blocker melden</h2>
+      </div>
+      <div class="button-row">
+        <a class="button-link secondary" [routerLink]="['/projects', slug, 'open-points']">Abbrechen</a>
+        <button type="submit" [disabled]="submitting()">Speichern</button>
+      </div>
+    </div>
+
+    <div class="status-row">
+      <span class="panel-kicker">Schwere</span>
+      <div class="pill-row">
+        <button type="button" class="pill-toggle green" [class.active]="form.severity === 'low'" (click)="setSeverity('low')">Niedrig</button>
+        <button type="button" class="pill-toggle brand" [class.active]="form.severity === 'medium'" (click)="setSeverity('medium')">Mittel</button>
+        <button type="button" class="pill-toggle yellow" [class.active]="form.severity === 'high'" (click)="setSeverity('high')">Hoch</button>
+        <button type="button" class="pill-toggle red" [class.active]="form.severity === 'critical'" (click)="setSeverity('critical')">Kritisch</button>
+      </div>
+    </div>
+
+    <div class="form-grid">
+      <label>Bauabschnitt
+        <select name="section_number" [(ngModel)]="form.section_number">
+          <option [ngValue]="null">— kein Abschnitt —</option>
+          <option *ngFor="let section of project()?.sections ?? []" [ngValue]="section.number">
+            Abschnitt {{ section.number }} &middot; {{ section.name }}
+          </option>
+        </select>
+      </label>
+      <label class="wide">Beschreibung
+        <textarea name="description" rows="4" [(ngModel)]="form.description" required placeholder="Was blockiert die Arbeit?"></textarea>
+      </label>
+    </div>
+  </form>
+</section>

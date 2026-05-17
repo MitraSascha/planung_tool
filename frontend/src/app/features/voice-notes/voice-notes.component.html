@@ -1,0 +1,93 @@
+<section class="view">
+  <div class="panel">
+    <div class="panel-head">
+      <div>
+        <p class="panel-kicker">Sprachnotizen</p>
+        <h2>Notizen zum Projekt</h2>
+      </div>
+      <div class="button-row">
+        <a class="button-link secondary" [routerLink]="['/projects', slug]">Zurueck</a>
+      </div>
+    </div>
+
+    <app-voice-recorder [slug]="slug" (voiceNoteSaved)="onVoiceNoteSaved($event)"></app-voice-recorder>
+
+    <section class="info-block">
+      <div class="block-head">
+        <h3>Aufgenommene Notizen ({{ notes().length }})</h3>
+        <button type="button" class="link" (click)="reload()" [disabled]="loading()">
+          Neu laden
+        </button>
+      </div>
+
+      <p class="empty" *ngIf="!loading() && notes().length === 0">
+        Noch keine Sprachnotizen.
+      </p>
+      <p class="empty" *ngIf="loading()">Wird geladen...</p>
+
+      <article class="note-card" *ngFor="let note of notes()">
+        <header class="note-head">
+          <span class="badge">{{ intentLabels[note.intent] }}</span>
+          <span class="meta">{{ formatDateTime(note.created_at) }}</span>
+          <span class="meta" *ngIf="note.username">von {{ note.username }}</span>
+        </header>
+
+        <audio [src]="note.audio_url" controls preload="none"></audio>
+
+        <div class="status" [ngSwitch]="note.transcription_status">
+          <p *ngSwitchCase="'pending'" class="pending">
+            Transkription laeuft...
+            <button type="button" class="link" (click)="refreshNote(note.id)">Aktualisieren</button>
+          </p>
+          <p *ngSwitchCase="'failed'" class="failed">
+            Transkription fehlgeschlagen<span *ngIf="note.transcription_error">: {{ note.transcription_error }}</span>.
+            <button type="button" class="link" (click)="startEdit(note)">Manuell erfassen</button>
+          </p>
+          <div *ngSwitchCase="'ok'" class="transcript-block">
+            <ng-container *ngIf="editingId() === note.id; else viewMode">
+              <textarea
+                [ngModel]="editingTranscript()"
+                (ngModelChange)="editingTranscript.set($event)"
+                rows="4"
+              ></textarea>
+              <div class="button-row">
+                <button type="button" class="primary" (click)="saveEdit(note)">Speichern</button>
+                <button type="button" (click)="cancelEdit()">Abbrechen</button>
+              </div>
+            </ng-container>
+            <ng-template #viewMode>
+              <blockquote>{{ note.transcript }}</blockquote>
+              <small *ngIf="note.transcript_provider">
+                Provider: {{ note.transcript_provider }}
+                <span *ngIf="note.transcript_language"> &middot; Sprache: {{ note.transcript_language }}</span>
+              </small>
+            </ng-template>
+          </div>
+        </div>
+
+        <div class="note-actions">
+          <label class="intent-select">
+            <span>Notiztyp aendern</span>
+            <select
+              [ngModel]="note.intent"
+              (ngModelChange)="updateIntent(note, $event)"
+            >
+              <option value="freitext">Freitext</option>
+              <option value="daily_report">Tagesbericht</option>
+              <option value="ibn">Inbetriebnahme</option>
+              <option value="uebergabe">Uebergabe</option>
+            </select>
+          </label>
+          <button
+            type="button"
+            *ngIf="note.transcription_status === 'ok' && editingId() !== note.id"
+            (click)="startEdit(note)"
+          >
+            Transkript bearbeiten
+          </button>
+          <button type="button" class="danger" (click)="deleteNote(note)">Loeschen</button>
+        </div>
+      </article>
+    </section>
+  </div>
+</section>

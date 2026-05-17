@@ -1,0 +1,109 @@
+<section class="view">
+  <form class="panel" (ngSubmit)="save()">
+    <div class="panel-head">
+      <div>
+        <p class="panel-kicker">Strangberechnung</p>
+        <h2>Manuell bearbeiten</h2>
+      </div>
+      <div class="button-row">
+        <a class="button-link secondary" [routerLink]="['/projects', slug]">Abbrechen</a>
+        <button type="submit" [disabled]="saving() || loading()">
+          {{ saving() ? 'Speichert…' : 'Speichern' }}
+        </button>
+      </div>
+    </div>
+
+    <p class="empty" *ngIf="loading()">Wird geladen…</p>
+
+    <ng-container *ngIf="!loading()">
+      <section class="info-block">
+        <h3>Anlagenkenndaten</h3>
+        <div class="form-grid compact">
+          <label>System
+            <select name="system_type" [(ngModel)]="design.system_type">
+              <option *ngFor="let opt of systemTypeOptions" [value]="opt.value">{{ opt.label }}</option>
+            </select>
+          </label>
+          <label>Pumpenmodell
+            <input type="text" name="pump_model" [(ngModel)]="design.pump_model">
+          </label>
+          <label>Vorlauf (°C)
+            <input type="number" step="0.1" name="supply_temp_c" [(ngModel)]="design.supply_temp_c">
+          </label>
+          <label>Rücklauf (°C)
+            <input type="number" step="0.1" name="return_temp_c" [(ngModel)]="design.return_temp_c">
+          </label>
+          <label>Spreizung ΔT (K)
+            <input type="number" step="0.1" name="delta_t_k" [(ngModel)]="design.delta_t_k">
+          </label>
+          <label>Volumenstrom (l/h)
+            <input type="number" step="1" name="total_volume_flow_lph" [(ngModel)]="design.total_volume_flow_lph">
+          </label>
+          <label>Pumpenförderhöhe (Pa)
+            <input type="number" step="1" name="pump_head_pa" [(ngModel)]="design.pump_head_pa">
+          </label>
+          <label class="wide">Notizen
+            <textarea rows="2" name="design_notes" [(ngModel)]="design.notes"></textarea>
+          </label>
+        </div>
+      </section>
+
+      <section class="info-block">
+        <div class="section-toolbar">
+          <div>
+            <p class="panel-kicker">Heizkreise</p>
+            <h3>Kreis-Tabelle</h3>
+          </div>
+          <button type="button" class="secondary" (click)="addRow()">Heizkreis hinzufügen</button>
+        </div>
+
+        <div class="circuits-wrap" *ngIf="circuits.length > 0">
+          <table class="circuits-table">
+            <thead>
+              <tr>
+                <th>Pos</th>
+                <th>Strang</th>
+                <th>Raum</th>
+                <th>Etage</th>
+                <th>Heizfläche</th>
+                <th class="num">Heizlast (W)</th>
+                <th class="num">Volumenstrom (l/h)</th>
+                <th>Voreinstellung</th>
+                <th class="num">Rohrlänge (m)</th>
+                <th class="row-actions">Aktion</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let row of circuits; let i = index; trackBy: trackByIndex">
+                <td class="pos">{{ row.position }}</td>
+                <td><input type="text" [(ngModel)]="row.strand" [name]="'strand_' + i"></td>
+                <td><input type="text" [(ngModel)]="row.room" [name]="'room_' + i"></td>
+                <td><input type="text" [(ngModel)]="row.floor" [name]="'floor_' + i"></td>
+                <td><input type="text" [(ngModel)]="row.radiator_type" [name]="'radiator_type_' + i"></td>
+                <td class="num"><input type="number" step="1" [(ngModel)]="row.heat_load_w" [name]="'heat_load_w_' + i"></td>
+                <td class="num"><input type="number" step="1" [(ngModel)]="row.volume_flow_lph" [name]="'volume_flow_lph_' + i"></td>
+                <td><input type="text" [(ngModel)]="row.valve_preset" [name]="'valve_preset_' + i"></td>
+                <td class="num"><input type="number" step="0.1" [(ngModel)]="row.pipe_length_m" [name]="'pipe_length_m_' + i"></td>
+                <td class="row-actions">
+                  <button type="button" class="icon-button" title="Nach oben" (click)="moveRow(i, -1)" [disabled]="i === 0">↑</button>
+                  <button type="button" class="icon-button" title="Nach unten" (click)="moveRow(i, 1)" [disabled]="i === circuits.length - 1">↓</button>
+                  <button type="button" class="icon-button danger" title="Entfernen" (click)="removeRow(i)">✕</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <p class="empty" *ngIf="circuits.length === 0">
+          Noch keine Heizkreise — über „Heizkreis hinzufügen“ Zeilen erstellen.
+        </p>
+      </section>
+
+      <div class="button-row right">
+        <button type="submit" [disabled]="saving()">
+          {{ saving() ? 'Speichert…' : 'Speichern' }}
+        </button>
+      </div>
+    </ng-container>
+  </form>
+</section>

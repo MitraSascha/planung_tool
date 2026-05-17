@@ -1,0 +1,114 @@
+<div class="list-head">
+  <div>
+    <p class="panel-kicker">Liste</p>
+    <h3>{{ filteredReports().length }} Tagesberichte</h3>
+  </div>
+  <a class="button-link" [routerLink]="['/projects', slug, 'reports', 'daily', 'new']">Neuer Tagesbericht</a>
+</div>
+
+<div class="filter-row">
+  <label>Status
+    <select [(ngModel)]="filterStatus" (change)="filterStatus.set($any($event.target).value)">
+      <option value="all">Alle</option>
+      <option value="green">Gruen</option>
+      <option value="yellow">Gelb</option>
+      <option value="red">Rot</option>
+    </select>
+  </label>
+  <label>Abschnitt
+    <select [(ngModel)]="filterSection" (change)="filterSection.set($any($event.target).value)">
+      <option value="all">Alle</option>
+      <option *ngFor="let s of project()?.sections ?? []" [value]="s.number">Abschnitt {{ s.number }} &middot; {{ s.name }}</option>
+    </select>
+  </label>
+  <label>Von
+    <input type="date" [(ngModel)]="filterFrom" (change)="filterFrom.set($any($event.target).value)">
+  </label>
+  <label>Bis
+    <input type="date" [(ngModel)]="filterTo" (change)="filterTo.set($any($event.target).value)">
+  </label>
+  <button type="button" class="secondary" (click)="resetFilters()">Filter zuruecksetzen</button>
+</div>
+
+<p class="empty" *ngIf="loading()">Tagesberichte werden geladen...</p>
+<app-empty-state
+  *ngIf="!loading() && filteredReports().length === 0"
+  icon="📋"
+  title="Keine Tagesberichte gefunden"
+  description="Mit den gewählten Filtern bleibt nichts übrig — oder es wurde noch kein Bericht erfasst."
+  actionLabel="Neuen Tagesbericht starten"
+  (action)="createReport()">
+</app-empty-state>
+
+<ul class="report-list">
+  <li *ngFor="let report of filteredReports()" class="report-item" [class.expanded]="expandedId() === report.id">
+    <button type="button" class="report-summary" (click)="toggleExpanded(report.id)">
+      <span class="status-pill" [class.green]="report.status === 'green'" [class.yellow]="report.status === 'yellow'" [class.red]="report.status === 'red'">
+        {{ reportStatusLabel(report.status) }}
+      </span>
+      <div class="report-info">
+        <strong>{{ formatDate(report.report_date) }}</strong>
+        <span>{{ report.display_name }} &middot; Abschnitt {{ report.section_number ?? '—' }}</span>
+      </div>
+      <span class="open-text">{{ report.completed_work || '—' }}</span>
+    </button>
+
+    <div class="report-detail" *ngIf="expandedId() === report.id">
+      <dl class="key-list">
+        <div><dt>Datum</dt><dd>{{ formatDate(report.report_date) }}</dd></div>
+        <div><dt>Status</dt><dd>{{ reportStatusLabel(report.status) }}</dd></div>
+        <div><dt>Abschnitt</dt><dd>{{ report.section_number ?? '—' }}</dd></div>
+        <div><dt>Team</dt><dd>{{ report.team || '—' }}</dd></div>
+      </dl>
+      <section class="info-block" *ngIf="report.completed_work">
+        <h4>Erledigte Arbeiten</h4>
+        <p>{{ report.completed_work }}</p>
+      </section>
+      <section class="info-block" *ngIf="report.open_work">
+        <h4>Offene Arbeiten</h4>
+        <p>{{ report.open_work }}</p>
+      </section>
+      <section class="info-block" *ngIf="report.material_missing">
+        <h4>Fehlendes Material</h4>
+        <p>{{ report.material_missing }}</p>
+      </section>
+      <section class="info-block" *ngIf="report.blockers">
+        <h4>Blocker</h4>
+        <p>{{ report.blockers }}</p>
+      </section>
+      <section class="info-block" *ngIf="report.notes">
+        <h4>Notizen</h4>
+        <p>{{ report.notes }}</p>
+      </section>
+
+      <section class="info-block photo-gallery-block">
+        <h4>Foto-Doku</h4>
+        <p class="empty" *ngIf="photosFor(report.id).length === 0">Keine Fotos zu diesem Tagesbericht.</p>
+        <ul class="photo-gallery" *ngIf="photosFor(report.id).length > 0">
+          <li *ngFor="let photo of photosFor(report.id)" class="photo-tile">
+            <button type="button" class="photo-tile-button" (click)="openLightbox(photo)">
+              <img [src]="photo.annotated_url ?? photo.view_url" [alt]="photo.caption || photo.filename">
+              <span class="exif-overlay" *ngIf="hasExif(photo)">
+                <span *ngIf="photo.taken_at">{{ formatDateTime(photo.taken_at) }}</span>
+                <span *ngIf="formatGeo(photo) as geo">GPS {{ geo }}</span>
+              </span>
+            </button>
+            <small *ngIf="photo.caption">{{ photo.caption }}</small>
+          </li>
+        </ul>
+      </section>
+
+      <small>Erfasst von {{ report.display_name }} am {{ formatDateTime(report.created_at) }}</small>
+    </div>
+  </li>
+</ul>
+
+<div class="lightbox" *ngIf="lightbox() as lb" (click)="closeLightbox()">
+  <div class="lightbox-inner" (click)="$event.stopPropagation()">
+    <header class="lightbox-head">
+      <strong>{{ lb.caption || lb.filename }}</strong>
+      <button type="button" class="secondary" (click)="closeLightbox()">Schliessen</button>
+    </header>
+    <img [src]="lb.url" [alt]="lb.caption || lb.filename">
+  </div>
+</div>

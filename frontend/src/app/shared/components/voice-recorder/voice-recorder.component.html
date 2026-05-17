@@ -1,0 +1,68 @@
+<section class="voice-recorder">
+  <header class="head">
+    <strong>Sprachnotiz aufnehmen</strong>
+    <small *ngIf="!supported">Browser unterstuetzt keine Audio-Aufnahme.</small>
+  </header>
+
+  <div class="controls" *ngIf="supported">
+    <label class="intent-select">
+      <span>Notiztyp</span>
+      <select
+        [ngModel]="intent()"
+        (ngModelChange)="setIntent($event)"
+        [disabled]="state() === 'recording' || state() === 'paused' || state() === 'uploading'"
+      >
+        <option value="freitext">Freitext</option>
+        <option value="daily_report">Tagesbericht</option>
+        <option value="ibn">Inbetriebnahme</option>
+        <option value="uebergabe">Uebergabe</option>
+      </select>
+    </label>
+
+    <div class="timer" [class.active]="state() === 'recording'" [class.paused]="state() === 'paused'">
+      <span class="dot"></span>
+      <span class="time">{{ formatElapsed() }}</span>
+    </div>
+
+    <div class="buttons">
+      <button
+        type="button"
+        class="primary"
+        *ngIf="state() === 'idle'"
+        (click)="start()"
+      >
+        Aufnehmen
+      </button>
+      <button type="button" *ngIf="state() === 'recording'" (click)="pause()">Pause</button>
+      <button type="button" *ngIf="state() === 'paused'" (click)="resume()">Weiter</button>
+      <button
+        type="button"
+        *ngIf="state() === 'recording' || state() === 'paused'"
+        (click)="stop()"
+      >
+        Stop
+      </button>
+      <button
+        type="button"
+        class="secondary"
+        *ngIf="state() === 'review'"
+        (click)="discard()"
+      >
+        Verwerfen
+      </button>
+      <button
+        type="button"
+        class="primary"
+        *ngIf="state() === 'review'"
+        (click)="upload()"
+      >
+        Hochladen
+      </button>
+      <span class="uploading" *ngIf="state() === 'uploading'">Upload laeuft...</span>
+    </div>
+  </div>
+
+  <audio *ngIf="previewUrl() && state() === 'review'" [src]="previewUrl()" controls></audio>
+
+  <p class="error" *ngIf="errorMessage()">{{ errorMessage() }}</p>
+</section>

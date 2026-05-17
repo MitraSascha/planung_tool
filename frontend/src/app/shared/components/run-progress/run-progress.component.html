@@ -1,0 +1,33 @@
+<div class="run-stepper" [class.errored]="isFailed()" [class.completed]="isDone()">
+  <div class="step" [class.active]="ingestActive()" [class.done]="!ingestActive() && !isFailed()">
+    <div class="step-head">
+      <span class="step-num">1</span>
+      <span class="step-label">Einlesen</span>
+      <span class="step-detail">{{ ingestDetail() }}</span>
+    </div>
+    <div class="bar" [class.indeterminate]="ingestActive()">
+      <div class="bar-fill" [style.width.%]="ingestPercent()"></div>
+    </div>
+  </div>
+
+  <div class="step"
+       [class.active]="generateActive()"
+       [class.done]="isDone()"
+       [class.pending]="ingestActive()">
+    <div class="step-head">
+      <span class="step-num">2</span>
+      <span class="step-label">Generieren</span>
+      <span class="step-detail">{{ generateDetail() }}</span>
+    </div>
+    <div class="bar">
+      <div class="bar-fill" [style.width.%]="generatePercent()"></div>
+    </div>
+  </div>
+
+  <div class="finish" *ngIf="isDone()">
+    <span class="finish-icon">✓</span><span>Fertig</span>
+  </div>
+  <div class="finish failed" *ngIf="isFailed()">
+    <span class="finish-icon">!</span><span>Fehler</span>
+  </div>
+</div>

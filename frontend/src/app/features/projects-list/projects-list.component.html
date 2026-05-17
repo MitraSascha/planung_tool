@@ -1,0 +1,44 @@
+<section class="view">
+  <div class="panel">
+    <div class="panel-head">
+      <div>
+        <p class="panel-kicker">Projekte</p>
+        <h2>Projektliste</h2>
+      </div>
+      <a class="button-link" routerLink="/projects/new">Neues Projekt</a>
+    </div>
+
+    <app-empty-state
+      *ngIf="projects().length === 0"
+      icon="🏗"
+      title="Noch keine Projekte"
+      description="Lege das erste Projekt an, um Abschnitte, Unterlagen und Mitglieder zu pflegen."
+      actionLabel="Neues Projekt anlegen"
+      (action)="createProject()">
+    </app-empty-state>
+
+    <div class="projects-grid" *ngIf="projects().length > 0">
+      <article class="project-card" *ngFor="let project of projects()">
+        <div class="project-card-head">
+          <div>
+            <strong>{{ project.slug }}</strong>
+            <p>{{ project.name }} &middot; {{ projectTypeLabel(project.project_type) }}</p>
+          </div>
+          <span class="status-pill" [class.published]="project.status === 'published'" [class.failed]="project.status.includes('failed')">
+            {{ statusLabel(project.status) }}
+          </span>
+        </div>
+        <dl class="project-meta">
+          <div><dt>Unterlagen</dt><dd>{{ project.upload_count }}</dd></div>
+          <div><dt>Abschnitte</dt><dd>{{ project.sections.length }}</dd></div>
+          <div><dt>Bereit</dt><dd>{{ project.ready_for_generation ? 'Ja' : 'Nein' }}</dd></div>
+        </dl>
+        <div class="button-row">
+          <a class="button-link" [routerLink]="['/projects', project.slug]">Oeffnen</a>
+          <a class="button-link secondary" [routerLink]="['/projects', project.slug, 'edit']">Bearbeiten</a>
+          <a class="button-link secondary" [routerLink]="['/projects', project.slug, 'generate']">Generator</a>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>

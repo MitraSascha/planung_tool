@@ -1,0 +1,57 @@
+<section class="view">
+  <form class="panel form-panel" (ngSubmit)="submit()">
+    <div class="panel-head">
+      <div>
+        <p class="panel-kicker">Projekt {{ slug }}</p>
+        <h2>Neuer Wochenbericht</h2>
+      </div>
+      <div class="button-row">
+        <button
+          type="button"
+          class="draft-button"
+          (click)="requestDraft()"
+          [disabled]="!canDraft()"
+          [title]="canDraft() ? 'Entwurf aus Tagesberichten generieren' : 'Bitte Zeitraum waehlen'"
+        >
+          <span aria-hidden="true">✨</span>
+          {{ drafting() ? 'Entwurf laeuft ...' : 'Entwurf generieren' }}
+        </button>
+        <a class="button-link secondary" [routerLink]="['/projects', slug, 'reports', 'weekly']">Abbrechen</a>
+        <button type="submit" [disabled]="submitting()">Speichern</button>
+      </div>
+    </div>
+
+    <div class="status-row">
+      <span class="panel-kicker">Status</span>
+      <div class="pill-row">
+        <button type="button" class="pill-toggle green" [class.active]="form.status === 'green'" (click)="setStatus('green')">Gruen</button>
+        <button type="button" class="pill-toggle yellow" [class.active]="form.status === 'yellow'" (click)="setStatus('yellow')">Gelb</button>
+        <button type="button" class="pill-toggle red" [class.active]="form.status === 'red'" (click)="setStatus('red')">Rot</button>
+      </div>
+    </div>
+
+    <div class="form-grid">
+      <label>Woche von
+        <input name="week_start" type="date" [(ngModel)]="form.week_start" required>
+      </label>
+      <label>Woche bis
+        <input name="week_end" type="date" [(ngModel)]="form.week_end" required>
+      </label>
+      <label class="wide">Zusammenfassung
+        <textarea name="summary" rows="3" [(ngModel)]="form.summary"></textarea>
+      </label>
+      <label class="wide">Plan naechste Woche
+        <textarea name="next_week_plan" rows="3" [(ngModel)]="form.next_week_plan"></textarea>
+      </label>
+      <label class="wide">Mannschaft / Personal
+        <textarea name="manpower_notes" rows="2" [(ngModel)]="form.manpower_notes"></textarea>
+      </label>
+      <label class="wide">Material
+        <textarea name="material_notes" rows="2" [(ngModel)]="form.material_notes"></textarea>
+      </label>
+      <label class="wide">Risiken
+        <textarea name="risks" rows="2" [(ngModel)]="form.risks"></textarea>
+      </label>
+    </div>
+  </form>
+</section>

@@ -7,7 +7,9 @@ services:
     volumes:
       - ./storage:/storage
       - ./project_docu:/reference_schema:ro
-      - codex_home:/home/appuser/.codex
+      - ${HOME}/.codex:/home/appuser/.codex
+      - ${HOME}/.claude:/home/appuser/.claude
+      - ${HOME}/.claude.json:/home/appuser/.claude.json
     depends_on:
       postgres:
         condition: service_healthy
@@ -51,4 +53,3 @@ services:
 
 volumes:
   postgres_data:
-  codex_home:

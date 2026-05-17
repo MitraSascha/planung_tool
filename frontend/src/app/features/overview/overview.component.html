@@ -1,0 +1,38 @@
+<section class="view">
+  <div class="metric-grid">
+    <div class="metric"><span>Projekte</span><strong>{{ projects().length }}</strong></div>
+    <div class="metric"><span>Bereit</span><strong>{{ readyCount() }}</strong></div>
+    <div class="metric"><span>Publiziert</span><strong>{{ publishedCount() }}</strong></div>
+    <div class="metric"><span>Ausgabedateien</span><strong>{{ totalOutputs() }}</strong></div>
+  </div>
+  <div class="dashboard-grid">
+    <section class="panel">
+      <div class="panel-head"><div><p class="panel-kicker">Live</p><h2>Projektstatus</h2></div></div>
+      <article class="compact-row" *ngFor="let project of projects()">
+        <div><strong>{{ project.slug }}</strong><span>{{ project.name }}</span></div>
+        <span class="status-pill" [class.published]="project.status === 'published'" [class.failed]="project.status.includes('failed')">{{ statusLabel(project.status) }}</span>
+      </article>
+      <app-empty-state
+        *ngIf="projects().length === 0"
+        icon="🏗"
+        title="Noch keine Projekte"
+        description="Sobald Projekte angelegt sind, erscheinen sie hier in der Statusübersicht.">
+      </app-empty-state>
+    </section>
+    <section class="panel">
+      <div class="panel-head"><div><p class="panel-kicker">Baustelle</p><h2>Erfassungsstand</h2></div></div>
+      <article class="compact-row" *ngFor="let project of projects()">
+        <div><strong>{{ project.slug }}</strong><span>{{ summaries()[project.slug]?.daily_reports ?? 0 }} Tagesberichte &middot; {{ summaries()[project.slug]?.weekly_reports ?? 0 }} Wochenberichte</span></div>
+        <span class="status-dot red" *ngIf="(summaries()[project.slug]?.status_red ?? 0) > 0">Rot</span>
+        <span class="status-dot yellow" *ngIf="(summaries()[project.slug]?.status_red ?? 0) === 0 && (summaries()[project.slug]?.status_yellow ?? 0) > 0">Gelb</span>
+        <span class="status-dot green" *ngIf="(summaries()[project.slug]?.status_red ?? 0) === 0 && (summaries()[project.slug]?.status_yellow ?? 0) === 0">Gruen</span>
+      </article>
+      <app-empty-state
+        *ngIf="projects().length === 0"
+        icon="📋"
+        title="Noch keine Erfassung"
+        description="Sobald die ersten Tages- und Wochenberichte einlaufen, siehst du hier den Stand pro Projekt.">
+      </app-empty-state>
+    </section>
+  </div>
+</section>

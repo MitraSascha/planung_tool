@@ -1,0 +1,80 @@
+<div class="role-grid">
+  <section class="panel">
+    <div class="panel-head">
+      <div>
+        <p class="panel-kicker">Heute</p>
+        <h2>Was ich erfassen kann</h2>
+      </div>
+    </div>
+    <div class="action-grid">
+      <a class="action-card" [routerLink]="['/projects', project().slug, 'reports', 'daily', 'new']">
+        <strong>Tagesbericht ausfuellen</strong>
+        <small>Heutige Arbeiten, Material, Blocker</small>
+      </a>
+      <a class="action-card" [routerLink]="['/projects', project().slug, 'open-points', 'material', 'new']">
+        <strong>Material fehlt melden</strong>
+        <small>Bauleitung wird informiert</small>
+      </a>
+      <a class="action-card" [routerLink]="['/projects', project().slug, 'open-points', 'blocker', 'new']">
+        <strong>Blocker melden</strong>
+        <small>Stoerung, Mangel oder Risiko</small>
+      </a>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-head">
+      <div>
+        <p class="panel-kicker">Meine Unterlagen</p>
+        <h2>Tagescheckliste &amp; Plaene</h2>
+      </div>
+    </div>
+    <app-empty-state
+      *ngIf="outputs().length === 0"
+      icon="📄"
+      title="Noch keine Unterlagen für dich"
+      description="Sobald die Bauleitung Tagescheckliste oder Pläne freigibt, erscheinen sie hier.">
+    </app-empty-state>
+    <ul class="link-list" *ngIf="outputs().length > 0">
+      <li *ngFor="let file of outputs()">
+        <span
+          class="doc-badge"
+          [class.form]="inferDocumentType(file.path) === 'form'"
+          [class.info]="inferDocumentType(file.path) === 'info'"
+          [title]="inferDocumentType(file.path) === 'form' ? 'Zum Ausfüllen' : 'Zur Info'"
+          aria-hidden="true">
+          {{ inferDocumentType(file.path) === 'form' ? '📋' : '📄' }}
+        </span>
+        <a [href]="file.view_url | authedUrl" target="_blank" rel="noopener">{{ file.filename }}</a>
+        <small>{{ file.path }}</small>
+      </li>
+    </ul>
+  </section>
+
+  <section class="panel">
+    <div class="panel-head">
+      <div>
+        <p class="panel-kicker">Verlauf</p>
+        <h2>Meine letzten Tagesberichte</h2>
+      </div>
+      <a class="button-link secondary" [routerLink]="['/projects', project().slug, 'reports']">Alle Berichte</a>
+    </div>
+    <app-empty-state
+      *ngIf="myDailyReports().length === 0"
+      icon="📋"
+      title="Noch kein Tagesbericht"
+      description="Erfasse jetzt, was du heute auf der Baustelle gemacht hast."
+      actionLabel="Tagesbericht starten"
+      (action)="startDailyReport()">
+    </app-empty-state>
+    <ul class="report-list" *ngIf="myDailyReports().length > 0">
+      <li *ngFor="let report of myDailyReports()">
+        <div>
+          <strong>{{ formatDate(report.report_date) }}</strong>
+          <small>Abschnitt {{ report.section_number ?? '-' }}</small>
+        </div>
+        <span class="status-pill" [class.green]="report.status === 'green'" [class.yellow]="report.status === 'yellow'" [class.red]="report.status === 'red'">{{ reportStatusLabel(report.status) }}</span>
+      </li>
+    </ul>
+  </section>
+</div>

@@ -1,0 +1,96 @@
+<section class="view">
+  <div class="panel">
+    <div class="panel-head">
+      <div>
+        <p class="panel-kicker">Querschnitt</p>
+        <h2>Alle Projekte im Blick</h2>
+      </div>
+    </div>
+
+    <div class="metric-grid">
+      <div class="metric"><span>Projekte</span><strong>{{ totalCount() }}</strong></div>
+      <div class="metric"><span>Status rot</span><strong>{{ redCount() }}</strong></div>
+      <div class="metric"><span>Status gelb</span><strong>{{ yellowCount() }}</strong></div>
+      <div class="metric"><span>Offene Blocker</span><strong>{{ blockerSum() }}</strong></div>
+    </div>
+
+    <div class="filters">
+      <label class="filter-search">
+        <span>Suche</span>
+        <input
+          type="search"
+          [ngModel]="search"
+          (ngModelChange)="onSearch($event)"
+          placeholder="Name, Slug, Adresse"
+        >
+      </label>
+      <label class="filter-select">
+        <span>Status</span>
+        <select [ngModel]="statusFilter" (ngModelChange)="onStatusFilter($event)">
+          <option value="all">Alle</option>
+          <option value="draft">Entwurf</option>
+          <option value="generating">Dokumente werden erzeugt</option>
+          <option value="generated">Dokumente erstellt</option>
+          <option value="published">Veröffentlicht</option>
+          <option value="generation_failed">Erzeugung fehlgeschlagen</option>
+          <option value="generation_failed_partial">Erzeugung teilweise fehlgeschlagen</option>
+          <option value="publish_failed">Veröffentlichen fehlgeschlagen</option>
+        </select>
+      </label>
+      <label class="filter-check">
+        <input type="checkbox" [ngModel]="onlyBlockers" (ngModelChange)="onBlockersToggle($event)">
+        <span>Nur Projekte mit offenen Blockern</span>
+      </label>
+      <label class="filter-check">
+        <input type="checkbox" [ngModel]="onlyAtRisk" (ngModelChange)="onAtRiskToggle($event)">
+        <span>Nur rot oder gelb</span>
+      </label>
+    </div>
+
+    <p class="empty" *ngIf="loadingSummaries() && filteredRows().length === 0">Lade Auswertung ...</p>
+    <app-empty-state
+      *ngIf="!loadingSummaries() && filteredRows().length === 0"
+      icon="🔍"
+      title="Keine Treffer"
+      description="Mit den aktuellen Filtern bleibt nichts übrig — passe Suche oder Status an.">
+    </app-empty-state>
+
+    <div class="overview-table" *ngIf="filteredRows().length > 0">
+      <div class="table-head">
+        <span>Projekt</span>
+        <span>Status</span>
+        <span>Ampel</span>
+        <span>Tagesb.</span>
+        <span>Blocker</span>
+        <span>Material</span>
+      </div>
+      <button
+        type="button"
+        class="table-row"
+        *ngFor="let row of filteredRows()"
+        (click)="openProject(row.project.slug)"
+      >
+        <span class="cell-project">
+          <strong>{{ row.project.name }}</strong>
+          <small>{{ row.project.slug }}<ng-container *ngIf="row.project.address"> &middot; {{ row.project.address }}</ng-container></small>
+        </span>
+        <span class="status-pill" [class.published]="row.project.status === 'published'" [class.failed]="row.project.status.includes('failed')">
+          {{ statusLabel(row.project.status) }}
+        </span>
+        <span class="status-dot"
+          [class.green]="row.trafficLight === 'green'"
+          [class.yellow]="row.trafficLight === 'yellow'"
+          [class.red]="row.trafficLight === 'red'"
+        >
+          {{ row.trafficLight === 'green' ? 'Gruen' : row.trafficLight === 'yellow' ? 'Gelb' : row.trafficLight === 'red' ? 'Rot' : '-' }}
+        </span>
+        <span class="cell-num">{{ row.summary?.daily_reports ?? 0 }}</span>
+        <span class="cell-num" [class.warn-num]="(row.summary?.blockers_open ?? 0) > 0">{{ row.summary?.blockers_open ?? 0 }}</span>
+        <span class="cell-num" [class.warn-num]="(row.summary?.material_issues_open ?? 0) > 0">{{ row.summary?.material_issues_open ?? 0 }}</span>
+        <span class="anomaly-badge" *ngIf="row.anomalyCount > 0" title="Anomalien">
+          ⚠ {{ row.anomalyCount }}
+        </span>
+      </button>
+    </div>
+  </div>
+</section>

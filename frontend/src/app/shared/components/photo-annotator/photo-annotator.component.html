@@ -1,0 +1,56 @@
+<div class="photo-annotator">
+  <div class="toolbar">
+    <div class="pill-row">
+      <button
+        type="button"
+        class="pill-toggle"
+        [class.active]="tool() === 'arrow'"
+        (click)="selectTool('arrow')"
+      >Pfeil</button>
+      <button
+        type="button"
+        class="pill-toggle"
+        [class.active]="tool() === 'line'"
+        (click)="selectTool('line')"
+      >Linie</button>
+      <button
+        type="button"
+        class="pill-toggle"
+        [class.active]="tool() === 'rect'"
+        (click)="selectTool('rect')"
+      >Markierung</button>
+      <button
+        type="button"
+        class="pill-toggle"
+        [class.active]="tool() === 'text'"
+        (click)="selectTool('text')"
+      >Text</button>
+    </div>
+
+    <div class="tool-actions">
+      <button type="button" class="secondary" (click)="undoLast()" [disabled]="!hasContent()">Zurueck</button>
+      <button type="button" class="secondary danger" (click)="clearAnnotations()" [disabled]="!hasContent()">Loeschen</button>
+    </div>
+  </div>
+
+  <div class="canvas-wrap" [class.loading]="loading()">
+    <p class="empty" *ngIf="loading()">Bild wird geladen...</p>
+    <p class="empty error" *ngIf="errorText() as err">{{ err }}</p>
+    <div class="canvas-stack" [class.hidden]="loading() || errorText()">
+      <canvas #imageCanvas class="image-canvas"></canvas>
+      <canvas
+        #overlayCanvas
+        class="overlay-canvas"
+        (pointerdown)="onPointerDown($event)"
+        (pointermove)="onPointerMove($event)"
+        (pointerup)="onPointerUp($event)"
+        (pointercancel)="onPointerUp($event)"
+      ></canvas>
+    </div>
+  </div>
+
+  <div class="actions">
+    <button type="button" class="secondary" (click)="cancel()">Abbrechen</button>
+    <button type="button" (click)="save()" [disabled]="loading() || !!errorText()">Speichern</button>
+  </div>
+</div>

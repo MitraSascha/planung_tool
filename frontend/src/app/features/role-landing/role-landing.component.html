@@ -1,0 +1,112 @@
+<section class="view">
+  <ng-container *ngIf="!currentUser(); else loggedIn">
+    <div class="panel">
+      <app-empty-state
+        icon="🔐"
+        title="Bitte anmelden"
+        description="Melde dich oben an, um deine Baustelle zu sehen.">
+      </app-empty-state>
+    </div>
+  </ng-container>
+
+  <ng-template #loggedIn>
+    <ng-container *ngIf="slug() as activeSlug; else picker">
+      <ng-container *ngIf="currentProject() as project; else loadingProject">
+        <header class="role-header panel">
+          <div class="role-header-copy">
+            <p class="panel-kicker">Meine Baustelle</p>
+            <h2>{{ project.name }}</h2>
+            <p class="role-meta">
+              <span *ngIf="project.address">{{ project.address }}</span>
+              <span class="role-pill">Rolle: {{ effectiveRole() }}</span>
+              <span class="status-pill" [class.published]="project.status === 'published'" [class.failed]="project.status.includes('failed')">{{ statusLabel(project.status) }}</span>
+            </p>
+          </div>
+          <div class="role-header-actions">
+            <a class="button-link secondary" routerLink="/landing">Andere Baustelle</a>
+            <a class="button-link secondary" [routerLink]="['/projects', project.slug]">Projektdetails</a>
+          </div>
+        </header>
+
+        <ng-container [ngSwitch]="effectiveRole()">
+          <app-monteur-landing
+            *ngSwitchCase="'monteur'"
+            [project]="project"
+          ></app-monteur-landing>
+
+          <app-obermonteur-landing
+            *ngSwitchCase="'obermonteur'"
+            [project]="project"
+          ></app-obermonteur-landing>
+
+          <app-bauleitung-landing
+            *ngSwitchCase="'bauleitung'"
+            [project]="project"
+          ></app-bauleitung-landing>
+
+          <app-projektleitung-landing
+            *ngSwitchCase="'projektleitung'"
+            [project]="project"
+          ></app-projektleitung-landing>
+
+          <app-projektleitung-landing
+            *ngSwitchCase="'admin'"
+            [project]="project"
+            [isAdmin]="true"
+          ></app-projektleitung-landing>
+
+          <app-viewer-landing
+            *ngSwitchDefault
+            [project]="project"
+          ></app-viewer-landing>
+        </ng-container>
+      </ng-container>
+      <ng-template #loadingProject>
+        <div class="panel">
+          <p class="empty" *ngIf="loading()">Projekt wird geladen ...</p>
+          <app-empty-state
+            *ngIf="!loading()"
+            icon="🔍"
+            title="Projekt nicht gefunden"
+            [description]="'Das Projekt \'' + activeSlug + '\' existiert nicht oder du bist kein Mitglied. Wende dich an die Projektleitung.'">
+          </app-empty-state>
+        </div>
+      </ng-template>
+    </ng-container>
+
+    <ng-template #picker>
+      <div class="panel">
+        <div class="panel-head">
+          <div>
+            <p class="panel-kicker">Meine Baustellen</p>
+            <h2>Welche Baustelle moechtest du oeffnen?</h2>
+          </div>
+        </div>
+        <p class="empty" *ngIf="loading()">Projekte werden geladen ...</p>
+        <app-empty-state
+          *ngIf="!loading() && projects().length === 0"
+          icon="🏗"
+          title="Noch keine Baustelle für dich"
+          description="Du bist aktuell keinem Projekt zugewiesen. Wende dich an die Projektleitung, um Zugang zu bekommen.">
+        </app-empty-state>
+        <div class="picker-grid" *ngIf="!loading() && projects().length > 0">
+          <button
+            type="button"
+            class="picker-card"
+            *ngFor="let project of projects()"
+            (click)="openProject(project.slug)"
+          >
+            <div class="picker-head">
+              <strong>{{ project.name }}</strong>
+              <span class="status-pill" [class.published]="project.status === 'published'" [class.failed]="project.status.includes('failed')">
+                {{ statusLabel(project.status) }}
+              </span>
+            </div>
+            <small *ngIf="project.address">{{ project.address }}</small>
+            <small>{{ project.sections.length }} Abschnitt(e)</small>
+          </button>
+        </div>
+      </div>
+    </ng-template>
+  </ng-template>
+</section>

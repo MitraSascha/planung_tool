@@ -1,0 +1,134 @@
+import { HttpClient } from '@angular/common/http';
+import { Injectable, inject, signal } from '@angular/core';
+import { Observable, tap } from 'rxjs';
+
+import {
+  AnomalyRead,
+  BlockerCreate,
+  DailyReportForm,
+  DailyReportRead,
+  MaterialIssueCreate,
+  ProjectMemberRead,
+  ProjectRole,
+  ReportSummary,
+  WeeklyReportDraftRead,
+  WeeklyReportDraftRequest,
+  WeeklyReportForm,
+  WeeklyReportRead,
+} from '../models';
+
+export interface AddMemberPayload {
+  user_id: number;
+  project_role: ProjectRole | string;
+}
+
+@Injectable({ providedIn: 'root' })
+export class ReportsService {
+  private readonly http = inject(HttpClient);
+
+  private readonly membersSignal = signal<Record<string, ProjectMemberRead[]>>({});
+  private readonly dailyReportsSignal = signal<Record<string, DailyReportRead[]>>({});
+  private readonly weeklyReportsSignal = signal<Record<string, WeeklyReportRead[]>>({});
+  private readonly summariesSignal = signal<Record<string, ReportSummary>>({});
+
+  readonly members = this.membersSignal.asReadonly();
+  readonly dailyReports = this.dailyReportsSignal.asReadonly();
+  readonly weeklyReports = this.weeklyReportsSignal.asReadonly();
+  readonly summaries = this.summariesSignal.asReadonly();
+
+  loadMembers(slug: string): Observable<ProjectMemberRead[]> {
+    return this.http
+      .get<ProjectMemberRead[]>(`/api/reports/projects/${slug}/members`)
+      .pipe(
+        tap((members) =>
+          this.membersSignal.update((current) => ({ ...current, [slug]: members })),
+        ),
+      );
+  }
+
+  addMember(slug: string, payload: AddMemberPayload): Observable<unknown> {
+    return this.http.post(`/api/reports/projects/${slug}/members`, payload);
+  }
+
+  loadDailyReports(slug: string): Observable<DailyReportRead[]> {
+    return this.http
+      .get<DailyReportRead[]>(`/api/reports/projects/${slug}/daily-reports`)
+      .pipe(
+        tap((reports) =>
+          this.dailyReportsSignal.update((current) => ({ ...current, [slug]: reports })),
+        ),
+      );
+  }
+
+  submitDailyReport(slug: string, payload: DailyReportForm): Observable<DailyReportRead> {
+    return this.http.post<DailyReportRead>(
+      `/api/reports/projects/${slug}/daily-reports`,
+      payload,
+    );
+  }
+
+  loadWeeklyReports(slug: string): Observable<WeeklyReportRead[]> {
+    return this.http
+      .get<WeeklyReportRead[]>(`/api/reports/projects/${slug}/weekly-reports`)
+      .pipe(
+        tap((reports) =>
+          this.weeklyReportsSignal.update((current) => ({ ...current, [slug]: reports })),
+        ),
+      );
+  }
+
+  submitWeeklyReport(slug: string, payload: WeeklyReportForm): Observable<WeeklyReportRead> {
+    return this.http.post<WeeklyReportRead>(
+      `/api/reports/projects/${slug}/weekly-reports`,
+      payload,
+    );
+  }
+
+  draftWeeklyReport(
+    slug: string,
+    payload: WeeklyReportDraftRequest,
+  ): Observable<WeeklyReportDraftRead> {
+    return this.http.post<WeeklyReportDraftRead>(
+      `/api/reports/projects/${slug}/weekly-reports/draft`,
+      payload,
+    );
+  }
+
+  listAnomalies(slug?: string): Observable<AnomalyRead[]> {
+    const url = slug
+      ? `/api/reports/projects/${slug}/anomalies`
+      : `/api/reports/anomalies`;
+    return this.http.get<AnomalyRead[]>(url);
+  }
+
+  createMaterialIssue(slug: string, payload: MaterialIssueCreate): Observable<{ id: number }> {
+    return this.http.post<{ id: number }>(
+      `/api/reports/projects/${slug}/material-issues`,
+      payload,
+    );
+  }
+
+  createBlocker(slug: string, payload: BlockerCreate): Observable<{ id: number }> {
+    return this.http.post<{ id: number }>(
+      `/api/reports/projects/${slug}/blockers`,
+      payload,
+    );
+  }
+
+  loadSummary(slug: string): Observable<ReportSummary> {
+    return this.http
+      .get<ReportSummary>(`/api/reports/projects/${slug}/summary`)
+      .pipe(
+        tap((summary) =>
+          this.summariesSignal.update((current) => ({ ...current, [slug]: summary })),
+        ),
+      );
+  }
+
+  clear(): void {
+    this.membersSignal.set({});
+    this.dailyReportsSignal.set({});
+    this.weeklyReportsSignal.set({});
+    this.summariesSignal.set({});
+  }
+}

@@ -1,0 +1,88 @@
+<div class="role-grid">
+  <section class="panel">
+    <div class="panel-head">
+      <div>
+        <p class="panel-kicker">Steuerung</p>
+        <h2>Tagesberichte pruefen</h2>
+      </div>
+      <a class="button-link secondary" [routerLink]="['/projects', project().slug, 'reports']">Alle Berichte</a>
+    </div>
+    <div class="metric-row" *ngIf="summary() as s">
+      <div class="metric-card"><span>Tagesberichte</span><strong>{{ s.daily_reports }}</strong></div>
+      <div class="metric-card"><span>Wochenberichte</span><strong>{{ s.weekly_reports }}</strong></div>
+      <div class="metric-card"><span>Offene Blocker</span><strong>{{ s.blockers_open }}</strong></div>
+      <div class="metric-card"><span>Material offen</span><strong>{{ s.material_issues_open }}</strong></div>
+    </div>
+    <app-empty-state
+      *ngIf="recentReports().length === 0"
+      icon="📋"
+      title="Noch keine Tagesberichte"
+      description="Sobald Monteure ihren Tag eintragen, erscheinen die Berichte hier.">
+    </app-empty-state>
+    <ul class="report-list" *ngIf="recentReports().length > 0">
+      <li *ngFor="let report of recentReports()">
+        <div>
+          <strong>{{ report.display_name || report.username }} &middot; {{ formatDate(report.report_date) }}</strong>
+          <small>Abschnitt {{ report.section_number ?? '-' }}</small>
+        </div>
+        <span class="status-pill" [class.green]="report.status === 'green'" [class.yellow]="report.status === 'yellow'" [class.red]="report.status === 'red'">{{ reportStatusLabel(report.status) }}</span>
+      </li>
+    </ul>
+  </section>
+
+  <section class="panel">
+    <div class="panel-head">
+      <div>
+        <p class="panel-kicker">Aktionen</p>
+        <h2>Erfassen &amp; bearbeiten</h2>
+      </div>
+    </div>
+    <div class="action-grid">
+      <a class="action-card" [routerLink]="['/projects', project().slug, 'reports', 'weekly', 'new']">
+        <strong>Wochenbericht</strong>
+        <small>Statusbericht erstellen</small>
+      </a>
+      <a class="action-card" [routerLink]="['/projects', project().slug, 'open-points']">
+        <strong>Offene Punkte</strong>
+        <small>Material, Blocker, Maengel</small>
+      </a>
+      <a class="action-card" [routerLink]="['/projects', project().slug, 'reports', 'daily', 'new']">
+        <strong>Tagesbericht</strong>
+        <small>Ergaenzend zur Erfassung</small>
+      </a>
+      <a class="action-card" [routerLink]="['/projects', project().slug]">
+        <strong>Projektdaten</strong>
+        <small>Stammdaten und Mitglieder</small>
+      </a>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-head">
+      <div>
+        <p class="panel-kicker">Projektunterlagen</p>
+        <h2>Bauleitung &amp; Allgemein</h2>
+      </div>
+    </div>
+    <app-empty-state
+      *ngIf="outputs().length === 0"
+      icon="📄"
+      title="Noch keine Unterlagen"
+      description="Sobald Dokumente erzeugt und veröffentlicht sind, findest du sie hier.">
+    </app-empty-state>
+    <ul class="link-list" *ngIf="outputs().length > 0">
+      <li *ngFor="let file of outputs()">
+        <span
+          class="doc-badge"
+          [class.form]="inferDocumentType(file.path) === 'form'"
+          [class.info]="inferDocumentType(file.path) === 'info'"
+          [title]="inferDocumentType(file.path) === 'form' ? 'Zum Ausfüllen' : 'Zur Info'"
+          aria-hidden="true">
+          {{ inferDocumentType(file.path) === 'form' ? '📋' : '📄' }}
+        </span>
+        <a [href]="file.view_url | authedUrl" target="_blank" rel="noopener">{{ file.filename }}</a>
+        <small>{{ file.path }}</small>
+      </li>
+    </ul>
+  </section>
+</div>

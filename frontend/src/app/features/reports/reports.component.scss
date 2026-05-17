@@ -1,0 +1,58 @@
+/* ═══════════════════════════════════════════════════════════════════════
+ * REPORTS — Tages-/Wochenberichte (Sub-Tab-Layout)
+ * ═══════════════════════════════════════════════════════════════════════ */
+:host { display: block; }
+
+.view {
+  width: 100%;
+  max-width: var(--content-max-width);
+  margin-inline: auto;
+}
+
+.sub-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-1);
+  margin: 0 0 var(--s-5);
+  padding: 4px;
+  border: 1px solid var(--line-soft);
+  border-radius: var(--r-pill);
+  background: var(--bg-panel);
+  width: max-content;
+  max-width: 100%;
+  box-shadow: var(--shadow-xs);
+
+  a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 38px;
+    padding: 0 var(--s-4);
+    border-radius: var(--r-pill);
+    color: var(--text-muted);
+    font-weight: var(--fw-semi);
+    font-size: var(--fs-sm);
+    text-decoration: none;
+    transition: background var(--transition-fast), color var(--transition-fast);
+    border-bottom: none;
+
+    &:hover {
+      color: var(--mitra-primary);
+      background: var(--bg-soft);
+      border-bottom-color: transparent;
+    }
+    &.active {
+      color: var(--text-on-dark);
+      background: linear-gradient(135deg, var(--mitra-primary), var(--mitra-primary-soft));
+      box-shadow: var(--shadow-sm);
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .sub-tabs {
+    width: 100%;
+    justify-content: stretch;
+    a { flex: 1; padding: 0 var(--s-2); font-size: var(--fs-xs); }
+  }
+}

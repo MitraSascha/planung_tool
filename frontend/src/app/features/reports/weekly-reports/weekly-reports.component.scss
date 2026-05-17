@@ -1,0 +1,98 @@
+/* ═══════════════════════════════════════════════════════════════════════
+ * WEEKLY-REPORTS — Listenansicht Wochenberichte
+ * ═══════════════════════════════════════════════════════════════════════ */
+:host { display: block; }
+
+.view {
+  width: 100%;
+  max-width: var(--content-max-width);
+  margin-inline: auto;
+}
+
+.list-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--s-3);
+  margin-bottom: var(--s-4);
+  flex-wrap: wrap;
+
+  h1 {
+    margin: 0 0 var(--s-1);
+    font-size: clamp(var(--fs-2xl), 4vw, var(--fs-3xl));
+    color: var(--mitra-primary);
+  }
+  p {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: var(--fs-sm);
+  }
+  .actions {
+    display: flex;
+    gap: var(--s-2);
+    flex-wrap: wrap;
+  }
+}
+
+.empty {
+  padding: var(--s-8);
+  text-align: center;
+  background: var(--bg-panel);
+  border-radius: var(--r-md);
+  border: 1px dashed var(--line-medium);
+  color: var(--text-muted);
+}
+
+.weeks-list {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--s-3);
+
+  @media (min-width: 768px) { grid-template-columns: repeat(2, 1fr); }
+}
+
+.week-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+  padding: var(--s-4);
+  background: var(--bg-panel);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--r-md);
+  text-decoration: none;
+  color: inherit;
+  box-shadow: var(--shadow-xs);
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+  border-left: 4px solid var(--mitra-accent);
+
+  &:hover, &:focus-visible {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow);
+    color: inherit;
+    border-bottom-color: var(--mitra-accent);
+  }
+  &.status-green  { border-left-color: var(--status-ok); }
+  &.status-yellow { border-left-color: var(--status-warn); }
+  &.status-red    { border-left-color: var(--status-err); }
+
+  .week-range {
+    font-size: var(--fs-lg);
+    font-weight: var(--fw-bold);
+    color: var(--mitra-primary);
+  }
+  .week-summary {
+    color: var(--text-ink);
+    font-size: var(--fs-sm);
+    line-height: var(--lh-normal);
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+  }
+  .week-meta {
+    display: flex;
+    gap: var(--s-3);
+    font-size: var(--fs-xs);
+    color: var(--text-muted);
+  }
+}

@@ -5,3 +5,7 @@ approval_policy = "never"
 
 [profiles.hez-generator.shell_environment_policy]
 inherit = "all"
+
+# Hinweis: Der Provider wird in der Anwendung ueber LLM_PROVIDER ausgewaehlt
+# (codex oder claude). Fuer Claude Code muss separat `claude login` im Container
+# durchlaufen oder ANTHROPIC_API_KEY gesetzt sein.

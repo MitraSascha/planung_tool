@@ -7,62 +7,101 @@ class OutputValidationError(ValueError):
         super().__init__("; ".join(errors))
 
 
-SMALL_PROJECT_REQUIRED_FOLDERS = (
-    "01_Projektuebersicht",
-    "06_Detaillierter_Ablaufplan",
-    "08_Monteur_Tagescheckliste",
-    "10_Tagesbericht_App",
-    "11_Meilensteinplan",
-    "14_Gantt_Uebersicht",
-)
+STANDARD_REQUIRED_FILES: dict[str, tuple[str, ...]] = {
+    "00_Start": ("index.html", "Projekt_Navigation.html"),
+    "01_Monteur": (
+        "MONTEUR_Tagescheckliste.html",
+        "MONTEUR_Wochenplan.html",
+        "MONTEUR_Ablaufplan_Abschnitte.html",
+        "MONTEUR_Baustellenhinweise.html",
+    ),
+    "02_Obermonteur": (
+        "OBERMONTEUR_Teamstatus.html",
+        "OBERMONTEUR_Abschnittsplanung.html",
+        "OBERMONTEUR_Checklisten.html",
+    ),
+    "03_Bauleitung": (
+        "BAULEITUNG_Detaillierter_Ablaufplan.html",
+        "BAULEITUNG_Material_und_Werkzeug.html",
+        "BAULEITUNG_Risiken_und_Maengel.html",
+        "BAULEITUNG_Blocker_und_Offene_Punkte.html",
+        # Pflicht-Dokumente (IMPLEMENTIERUNGSPLAN_V2 10.2 + 10.6)
+        "BAULEITUNG_Hydraulischer_Abgleich.html",
+        "BAULEITUNG_Gefaehrdungsbeurteilung.html",
+    ),
+    "04_Projektleitung": (
+        "PROJEKTLEITUNG_Projektuebersicht.html",
+        "PROJEKTLEITUNG_Meilensteinplan.html",
+        "PROJEKTLEITUNG_Gantt_Uebersicht.html",
+        "PROJEKTLEITUNG_Statusuebersicht.html",
+        # Pflicht-Dokument (IMPLEMENTIERUNGSPLAN_V2 10.3)
+        "PROJEKTLEITUNG_Inbetriebnahmeprotokoll.html",
+        # Pflicht-Dokument (IMPLEMENTIERUNGSPLAN_V2 10.4) — KfW-FUE BEG-EM
+        "PROJEKTLEITUNG_KfW_Fachunternehmererklaerung.html",
+    ),
+    "05_Allgemein": (
+        "ALLGEMEIN_Projektunterlagen.html",
+        "ALLGEMEIN_Kontakte.html",
+        "ALLGEMEIN_Dokumentenindex.html",
+        # Pflicht-Dokument (IMPLEMENTIERUNGSPLAN_V2 10.5)
+        "ALLGEMEIN_Uebergabeprotokoll.html",
+    ),
+}
 
 
-def validate_project_output(output_path: Path, expected_section_count: int, project_type: str = "standard") -> None:
+SMALL_REQUIRED_FILES: dict[str, tuple[str, ...]] = {
+    "00_Start": ("index.html", "Projekt_Navigation.html"),
+    "01_Monteur": (
+        "MONTEUR_Tagescheckliste.html",
+        "MONTEUR_Ablaufplan_Abschnitte.html",
+        "MONTEUR_Baustellenhinweise.html",
+    ),
+    "04_Projektleitung": (
+        "PROJEKTLEITUNG_Projektuebersicht.html",
+        "PROJEKTLEITUNG_Meilensteinplan.html",
+        "PROJEKTLEITUNG_Gantt_Uebersicht.html",
+        # Pflicht-Dokument: IBN auch bei Kleinprojekten zwingend.
+        "PROJEKTLEITUNG_Inbetriebnahmeprotokoll.html",
+        # Pflicht-Dokument: KfW-FUE auch bei Kleinprojekten zwingend
+        # (Etagenheizung & Co. werden oft ueber KfW gefoerdert).
+        "PROJEKTLEITUNG_KfW_Fachunternehmererklaerung.html",
+    ),
+    "05_Allgemein": (
+        "ALLGEMEIN_Projektunterlagen.html",
+        "ALLGEMEIN_Kontakte.html",
+        # Pflicht-Dokument: Uebergabeprotokoll auch bei Kleinprojekten zwingend.
+        "ALLGEMEIN_Uebergabeprotokoll.html",
+    ),
+}
+
+
+def _required_for(project_type: str) -> dict[str, tuple[str, ...]]:
+    return SMALL_REQUIRED_FILES if project_type == "small" else STANDARD_REQUIRED_FILES
+
+
+def validate_project_output(
+    output_path: Path,
+    expected_section_count: int,
+    project_type: str = "standard",
+) -> None:
     errors: list[str] = []
 
     if not output_path.exists():
         raise OutputValidationError([f"Output directory does not exist: {output_path}"])
 
-    index_file = output_path / "99_HTML_Uebersicht" / "index.html"
-    if not index_file.exists():
-        errors.append(f"Missing required file: {index_file.relative_to(output_path)}")
+    required = _required_for(project_type)
 
-    if project_type == "small":
-        for folder in SMALL_PROJECT_REQUIRED_FOLDERS:
-            folder_path = output_path / folder
-            if not folder_path.exists():
-                errors.append(f"Missing required folder: {folder}")
-                continue
-            if not any(folder_path.glob("*.html")):
-                errors.append(f"Missing HTML file in: {folder}")
-        if errors:
-            raise OutputValidationError(errors)
-        return
-
-    overview_path = output_path / "01_Projektuebersicht"
-    overview_html_exists = any(overview_path.glob("*.html")) if overview_path.exists() else False
-    overview_md_exists = any(overview_path.glob("*.md")) if overview_path.exists() else False
-
-    if not overview_path.exists():
-        errors.append("Missing required folder: 01_Projektuebersicht")
-    elif not overview_html_exists:
-        errors.append("Missing HTML file in: 01_Projektuebersicht")
-    elif not overview_md_exists:
-        errors.append("Missing Markdown file in: 01_Projektuebersicht")
-
-    for section_number in range(1, expected_section_count + 1):
-        folder_number = section_number + 1
-        section_path = output_path / f"{folder_number:02d}_Abschnitt_{section_number}"
-
-        if not section_path.exists():
-            errors.append(f"Missing section folder: {section_path.relative_to(output_path)}")
+    for folder, files in required.items():
+        folder_path = output_path / folder
+        if not folder_path.exists():
+            errors.append(f"Missing required folder: {folder}")
             continue
 
-        if not any(section_path.glob("*.html")):
-            errors.append(f"Missing HTML file in: {section_path.relative_to(output_path)}")
-
-        if not any(section_path.glob("*.md")):
-            errors.append(f"Missing Markdown file in: {section_path.relative_to(output_path)}")
+        for filename in files:
+            html_path = folder_path / filename
+            if not html_path.exists():
+                errors.append(f"Missing required file: {folder}/{filename}")
+                continue
 
     if errors:
         raise OutputValidationError(errors)

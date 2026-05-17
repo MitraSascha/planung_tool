@@ -1,0 +1,128 @@
+:host {
+  display: block;
+}
+
+.photo-annotator {
+  display: grid;
+  gap: 12px;
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, .82);
+}
+
+.pill-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.pill-toggle {
+  min-height: 32px;
+  padding: 4px 12px;
+  border: 1px solid rgba(13, 107, 143, .25);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 850;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background .15s ease, color .15s ease, border-color .15s ease;
+}
+
+.pill-toggle:hover {
+  background: rgba(13, 107, 143, .08);
+}
+
+.pill-toggle.active {
+  border-color: rgba(13, 107, 143, .55);
+  background: rgba(13, 107, 143, .14);
+  color: var(--ink);
+}
+
+.tool-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.tool-actions .secondary {
+  min-height: 32px;
+  padding: 4px 12px;
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.tool-actions .danger {
+  color: var(--danger);
+  border-color: rgba(217, 83, 79, .35);
+}
+
+.canvas-wrap {
+  display: grid;
+  place-items: center;
+  min-height: 120px;
+  border: 1px dashed rgba(13, 107, 143, .35);
+  border-radius: 14px;
+  padding: 12px;
+  background: rgba(0, 0, 0, .03);
+}
+
+.canvas-wrap.loading {
+  min-height: 220px;
+}
+
+.canvas-stack {
+  position: relative;
+  display: inline-block;
+  line-height: 0;
+}
+
+.canvas-stack.hidden {
+  display: none;
+}
+
+.image-canvas,
+.overlay-canvas {
+  display: block;
+  border-radius: 10px;
+}
+
+.image-canvas {
+  background: #ffffff;
+  box-shadow: var(--shadow-sm);
+}
+
+.overlay-canvas {
+  position: absolute;
+  inset: 0;
+  background: transparent;
+  touch-action: none;
+  cursor: crosshair;
+}
+
+.empty {
+  margin: 0;
+  padding: 12px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.empty.error {
+  color: var(--danger);
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}

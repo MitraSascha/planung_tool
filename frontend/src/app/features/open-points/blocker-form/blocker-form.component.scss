@@ -1,0 +1,25 @@
+:host {
+  display: block;
+}
+
+.view {
+  width: min(960px, 100%);
+  margin-inline: auto;
+  animation: rise-in .34s ease both;
+}
+
+.button-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.status-row {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 18px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, .72);
+}

@@ -1,0 +1,156 @@
+:host {
+  display: block;
+}
+
+.role-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 16px;
+}
+
+.action-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 10px;
+}
+
+.action-card {
+  display: grid;
+  gap: 4px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, .94);
+  color: var(--ink);
+  text-decoration: none;
+  text-align: left;
+  font-weight: 600;
+  transition: transform .15s ease, border-color .15s ease, box-shadow .15s ease;
+  box-shadow: none;
+  min-height: 0;
+}
+
+.action-card:hover:not([disabled]) {
+  transform: translateY(-2px);
+  border-color: rgba(13, 107, 143, .38);
+  box-shadow: var(--shadow-sm);
+}
+
+.action-card[disabled] {
+  opacity: .52;
+  cursor: not-allowed;
+}
+
+.action-card strong {
+  font-size: 14px;
+}
+
+.action-card small {
+  font-size: 12px;
+}
+
+.metric-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.metric-card {
+  display: grid;
+  gap: 4px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #fff;
+}
+
+.metric-card span {
+  font-size: 11px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  font-weight: 850;
+}
+
+.metric-card strong {
+  font-size: 22px;
+}
+
+.link-list,
+.report-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.link-list li {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  column-gap: 10px;
+  row-gap: 2px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
+}
+
+.link-list li .doc-badge {
+  grid-row: span 2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  font-size: 16px;
+  line-height: 1;
+}
+
+.link-list li .doc-badge.form {
+  background: rgba(13, 107, 143, .14);
+  color: var(--brand-strong);
+}
+
+.link-list li .doc-badge.info {
+  background: rgba(60, 76, 88, .08);
+  color: var(--muted);
+}
+
+.link-list li a {
+  color: var(--brand-strong);
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.link-list li a:hover {
+  text-decoration: underline;
+}
+
+.link-list li small {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.report-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
+}
+
+.report-list li > div {
+  display: grid;
+  gap: 2px;
+}
+
+.report-list li small {
+  color: var(--muted);
+  font-size: 12px;
+}

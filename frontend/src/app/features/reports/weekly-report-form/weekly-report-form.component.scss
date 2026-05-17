@@ -1,0 +1,187 @@
+/* ═══════════════════════════════════════════════════════════════════════
+ * WEEKLY-REPORT-FORM — saubere Mitra-Optik, gleicher Stil wie daily-form
+ * ═══════════════════════════════════════════════════════════════════════ */
+:host { display: block; }
+
+.view {
+  width: 100%;
+  max-width: 900px;
+  margin-inline: auto;
+}
+
+.form-panel {
+  background: var(--bg-panel);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+  padding: 0;
+}
+
+.panel-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--s-3);
+  padding: var(--s-5);
+  background: linear-gradient(135deg, var(--mitra-primary) 0%, var(--mitra-primary-soft) 100%);
+  color: var(--text-on-dark);
+  flex-wrap: wrap;
+
+  & > div:first-child { flex: 1; min-width: 0; }
+  h2 {
+    margin: 0;
+    color: var(--text-on-dark);
+    font-size: var(--fs-2xl);
+    line-height: 1.15;
+  }
+  .panel-kicker {
+    color: var(--mitra-accent);
+    margin-bottom: var(--s-1);
+  }
+  .button-row {
+    display: flex;
+    gap: var(--s-2);
+    flex-wrap: wrap;
+  }
+}
+
+/* Inhalts-Wrapper für alles unter dem Header */
+.form-panel > *:not(.panel-head):not(.wizard-footer) {
+  padding-left: var(--s-5);
+  padding-right: var(--s-5);
+}
+.form-panel > .form-grid:last-of-type {
+  padding-bottom: var(--s-5);
+}
+
+@media (max-width: 767px) {
+  .form-panel > *:not(.panel-head):not(.wizard-footer) {
+    padding-left: var(--s-4);
+    padding-right: var(--s-4);
+  }
+}
+
+.button-row {
+  display: flex;
+  gap: var(--s-2);
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+/* Im Header sehen Buttons auf dunklem Hintergrund anders aus */
+.panel-head .button-row {
+  & > .draft-button {
+    background: rgba(255, 255, 255, 0.92);
+    color: var(--mitra-primary);
+    border-color: rgba(255, 255, 255, 0.4);
+
+    &:hover:not(:disabled) {
+      background: var(--bg-panel);
+      transform: translateY(-1px);
+    }
+  }
+  & > .button-link.secondary,
+  & > a.secondary {
+    background: rgba(255, 255, 255, 0.10);
+    color: var(--text-on-dark);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.18);
+      color: var(--text-on-dark);
+      border-bottom-color: rgba(255, 255, 255, 0.40);
+    }
+  }
+  & > button[type="submit"] {
+    background: linear-gradient(135deg, var(--status-ok) 0%, #1d8a4a 100%);
+    color: var(--text-on-dark);
+    border: none;
+    font-weight: var(--fw-bold);
+
+    &:hover:not(:disabled) {
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-sm);
+    }
+  }
+}
+
+/* ───── Status-Row (Grün/Gelb/Rot Pills) ───── */
+.status-row {
+  display: grid;
+  gap: var(--s-3);
+  padding: var(--s-4);
+  margin: var(--s-5) 0 var(--s-4);
+  background: var(--bg-soft);
+  border-radius: var(--r-md);
+  border: 1px solid var(--line-soft);
+
+  .panel-kicker {
+    margin: 0;
+    font-size: var(--fs-xs);
+    font-weight: var(--fw-bold);
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+  .pill-row {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--s-2);
+
+    @media (min-width: 600px) { grid-template-columns: repeat(3, 1fr); }
+
+    .pill-toggle {
+      min-height: 48px;
+      padding: var(--s-3) var(--s-4);
+      font-size: var(--fs-base);
+      font-weight: var(--fw-bold);
+      justify-content: center;
+      border-width: 2px;
+    }
+  }
+}
+
+/* ───── Form-Grid mit großzügigen Feldern ───── */
+.form-panel .form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: var(--s-4);
+  padding-top: 0;
+  padding-bottom: var(--s-5);
+
+  label {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-1);
+    font-size: var(--fs-sm);
+    font-weight: var(--fw-bold);
+    color: var(--mitra-primary);
+
+    & > input,
+    & > select,
+    & > textarea {
+      min-height: 48px;
+      padding: 12px var(--s-3);
+      font-size: var(--fs-md);
+      font-weight: var(--fw-normal);
+      color: var(--text-ink);
+      border: 1.5px solid var(--line-medium);
+      border-radius: var(--r);
+      background: var(--bg-panel);
+      transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+
+      &:focus {
+        outline: none;
+        border-color: var(--mitra-accent);
+        box-shadow: 0 0 0 3px rgba(239, 128, 78, 0.18);
+      }
+    }
+    & > textarea {
+      min-height: 100px;
+      line-height: var(--lh-normal);
+      resize: vertical;
+    }
+    &.wide { grid-column: 1 / -1; }
+  }
+}

@@ -6,7 +6,7 @@ import os
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
-from fastapi import Depends, HTTPException
+from fastapi import Depends, HTTPException, Query
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 
@@ -15,10 +15,87 @@ from app.db.database import get_db
 from app.db.orm_models import Project, ProjectMember, User
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
+# Used only by endpoints that ALSO accept a ?token=... query param. Setting
+# auto_error=False here means missing header doesn't 401 immediately — we
+# fall through and try the query param instead.
+_oauth2_scheme_optional = OAuth2PasswordBearer(
+    tokenUrl="/api/auth/login",
+    auto_error=False,
+)
+
+
+def _bearer_or_query_token(
+    header_token: str | None = Depends(_oauth2_scheme_optional),
+    token: str | None = Query(None),
+) -> str:
+    """Resolve the JWT from either the Authorization header or a ``?token=``
+    query parameter. The query fallback exists so direct browser navigations
+    (e.g. `<a href="/api/.../outputs/file/...">` opened in a new tab, or
+    relative links inside published HTML) can authenticate — those bypass
+    the SPA's request interceptor and therefore arrive without an
+    Authorization header.
+    """
+    candidate = header_token or token
+    if not candidate:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    return candidate
 
 ADMIN_ROLES = {"admin", "projektleitung"}
 SITE_LEAD_ROLES = {"admin", "projektleitung", "bauleitung", "obermonteur"}
 PROJECT_READ_ROLES = {"admin", "projektleitung", "bauleitung", "obermonteur", "monteur", "viewer"}
+
+# Mapping role -> visible output folders (top-level segment names).
+# Empty frozenset means "all folders visible" (admin / projektleitung / viewer).
+ROLE_OUTPUT_FOLDERS: dict[str, frozenset[str]] = {
+    "monteur": frozenset({"01_Monteur", "05_Allgemein"}),
+    "obermonteur": frozenset({"01_Monteur", "02_Obermonteur", "05_Allgemein"}),
+    "bauleitung": frozenset({"01_Monteur", "02_Obermonteur", "03_Bauleitung", "05_Allgemein"}),
+    "projektleitung": frozenset(),
+    "admin": frozenset(),
+    "viewer": frozenset(),
+}
+
+# Datei-spezifische Ausschlüsse pro Rolle. Greift NACH den Folder-Filtern:
+# erlaubt das Ausblenden einzelner HTMLs (z.B. Übergabeprotokoll für Monteur).
+# Pfade sind relativ zu 'output/' und matchen das genaue Datei-Suffix.
+ROLE_OUTPUT_EXCLUSIONS: dict[str, frozenset[str]] = {
+    "monteur": frozenset({
+        "05_Allgemein/ALLGEMEIN_Uebergabeprotokoll.html",
+        "05_Allgemein/ALLGEMEIN_Dokumentenindex.html",
+    }),
+}
+
+
+def allowed_output_folders(role: str | None) -> frozenset[str] | None:
+    """Return None if user may see all folders, otherwise the set of allowed top-level folders.
+
+    Unknown roles are treated restrictively: they see nothing.
+    """
+    if role is None:
+        return frozenset()
+    if role not in ROLE_OUTPUT_FOLDERS:
+        return frozenset()
+    folders = ROLE_OUTPUT_FOLDERS[role]
+    if not folders:
+        return None  # all visible
+    return folders
+
+
+def resolve_effective_role(db: Session, current_user: User, project: Project) -> str:
+    """Effective role on this project: project-level role overrides global role.
+
+    Global admins keep full admin access regardless of project membership.
+    """
+    if current_user.global_role in ADMIN_ROLES:
+        return current_user.global_role
+    membership = (
+        db.query(ProjectMember)
+        .filter(ProjectMember.user_id == current_user.id, ProjectMember.project_id == project.id)
+        .one_or_none()
+    )
+    if membership is not None:
+        return membership.project_role
+    return current_user.global_role
 
 
 def hash_password(password: str) -> str:
@@ -52,7 +129,7 @@ def create_access_token(user: User) -> str:
     return _encode_jwt(payload)
 
 
-def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)) -> User:
+def _user_from_token(token: str, db: Session) -> User:
     try:
         payload = _decode_jwt(token)
         user_id = int(payload["sub"])
@@ -63,6 +140,28 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
     if user is None:
         raise HTTPException(status_code=401, detail="User not found or inactive")
     return user
+
+
+def get_current_user(
+    token: str = Depends(oauth2_scheme),
+    db: Session = Depends(get_db),
+) -> User:
+    """Default auth — Authorization header only. Use this everywhere except
+    endpoints that legitimately need to authenticate browser navigations
+    (file/PDF downloads)."""
+    return _user_from_token(token, db)
+
+
+def get_current_user_query_or_header(
+    token: str = Depends(_bearer_or_query_token),
+    db: Session = Depends(get_db),
+) -> User:
+    """Auth that also accepts the JWT via ``?token=...``. Use ONLY on
+    endpoints that need to be reachable via direct browser navigation
+    (download links opened in a new tab, relative refs inside served HTML).
+    Tradeoff: tokens appearing in URLs land in browser history and access
+    logs — fine for short-lived JWTs but don't sprinkle this widely."""
+    return _user_from_token(token, db)
 
 
 def require_global_role(user: User, allowed_roles: set[str]) -> None:

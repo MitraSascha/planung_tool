@@ -1,0 +1,248 @@
+<section class="view">
+  <form class="panel form-panel wizard" (ngSubmit)="submit()">
+    <div class="panel-head">
+      <div>
+        <p class="panel-kicker">Projekt {{ slug }}</p>
+        <h2>Neuer Tagesbericht</h2>
+      </div>
+      <a class="button-link secondary" [routerLink]="['/projects', slug, 'reports', 'daily']">Abbrechen</a>
+    </div>
+
+    <div class="wizard-progress" aria-label="Fortschritt">
+      <div class="wizard-progress-bar">
+        <div class="wizard-progress-fill" [style.width.%]="progressPercent()"></div>
+      </div>
+      <p class="wizard-progress-text">Schritt {{ currentStep() }} von {{ totalSteps }}</p>
+    </div>
+
+    <!-- Schritt 1: Wann? + Sicherheits-Check -->
+    <section class="wizard-step" *ngIf="currentStep() === 1">
+      <header class="wizard-step-head">
+        <h3>1. Wann?</h3>
+        <p>Datum und Bauabschnitt wählen. Sicherheits-Check optional — wenn du auf Papier abgehakt hast, hier leer lassen.</p>
+      </header>
+      <div class="form-grid">
+        <label>
+          <span>Datum <em class="required" title="Pflichtfeld">*</em></span>
+          <input
+            name="report_date"
+            type="date"
+            [(ngModel)]="form.report_date"
+            (ngModelChange)="persistDraft()"
+            required>
+        </label>
+        <label>
+          <span>Bauabschnitt</span>
+          <select
+            name="section_number"
+            [(ngModel)]="form.section_number"
+            (ngModelChange)="persistDraft()">
+            <option [ngValue]="null">— kein Abschnitt —</option>
+            <option *ngFor="let section of sections()" [ngValue]="section.number">
+              Abschnitt {{ section.number }} · {{ section.name }}
+            </option>
+          </select>
+          <small *ngIf="sections().length === 0" style="color:var(--text-muted);font-size:12px;margin-top:4px;display:block;">
+            Lade Bauabschnitte … (Projekt-Slug: {{ slug }})
+          </small>
+        </label>
+      </div>
+
+      <fieldset class="safety-block">
+        <legend>🛡 Sicherheits-Pre-Check (optional)</legend>
+        <p class="safety-hint">Nur ausfüllen wenn nicht bereits auf Papier-Tagescheckliste abgehakt.</p>
+        <div class="safety-grid">
+          <label><input type="checkbox" name="safety_psa" [(ngModel)]="form.safety_psa" (ngModelChange)="persistDraft()"> PSA komplett (Helm/Brille/Handschuhe/S3)</label>
+          <label><input type="checkbox" name="safety_tools" [(ngModel)]="form.safety_tools" (ngModelChange)="persistDraft()"> Werkzeug funktionsfähig</label>
+          <label><input type="checkbox" name="safety_material" [(ngModel)]="form.safety_material" (ngModelChange)="persistDraft()"> Material bereitgestellt</label>
+          <label><input type="checkbox" name="safety_workarea" [(ngModel)]="form.safety_workarea" (ngModelChange)="persistDraft()"> Arbeitsbereich abgesichert, Fluchtwege frei</label>
+          <label><input type="checkbox" name="safety_approval" [(ngModel)]="form.safety_approval" (ngModelChange)="persistDraft()"> Anlagenstillstand / Freigabe vorhanden</label>
+        </div>
+      </fieldset>
+    </section>
+
+    <!-- Schritt 2: Wer? -->
+    <section class="wizard-step" *ngIf="currentStep() === 2">
+      <header class="wizard-step-head">
+        <h3>2. Wer war heute auf der Baustelle?</h3>
+        <p>Trage die Namen oder Kürzel der Monteure ein.</p>
+      </header>
+      <div class="form-grid">
+        <label class="wide">
+          <span>Team / Mannschaft <em class="required" title="Pflichtfeld">*</em></span>
+          <input
+            name="team"
+            [(ngModel)]="form.team"
+            (ngModelChange)="persistDraft()"
+            placeholder="z.B. Schmidt, Yilmaz"
+            required>
+        </label>
+      </div>
+    </section>
+
+    <!-- Schritt 3: Was? -->
+    <section class="wizard-step" *ngIf="currentStep() === 3">
+      <header class="wizard-step-head">
+        <h3>3. Was wurde gemacht?</h3>
+        <p>Erledigtes, Offenes, Material und Probleme — kurze Stichworte reichen.</p>
+      </header>
+      <div class="form-grid">
+        <label class="wide">
+          <span>Erledigte Arbeiten <em class="required" title="Pflichtfeld">*</em></span>
+          <textarea
+            name="completed_work"
+            rows="3"
+            [(ngModel)]="form.completed_work"
+            (ngModelChange)="persistDraft()"
+            placeholder="z.B. Heizkörper Wohnung 3 montiert"
+            required></textarea>
+        </label>
+        <label class="wide">
+          <span>Offene Arbeiten <em class="required" title="Pflichtfeld">*</em></span>
+          <textarea
+            name="open_work"
+            rows="3"
+            [(ngModel)]="form.open_work"
+            (ngModelChange)="persistDraft()"
+            placeholder="z.B. Heizungstausch Wohnung 4 noch offen"
+            required></textarea>
+        </label>
+        <label class="wide">
+          <span>Fehlendes Material</span>
+          <textarea
+            name="material_missing"
+            rows="2"
+            [(ngModel)]="form.material_missing"
+            (ngModelChange)="persistDraft()"
+            placeholder="Wird automatisch als Materialmeldung übernommen."></textarea>
+        </label>
+        <label class="wide">
+          <span>Blocker / Probleme</span>
+          <textarea
+            name="blockers"
+            rows="2"
+            [(ngModel)]="form.blockers"
+            (ngModelChange)="persistDraft()"
+            placeholder="Wird automatisch als Blocker übernommen."></textarea>
+        </label>
+        <label class="wide">
+          <span>Notizen</span>
+          <textarea
+            name="notes"
+            rows="2"
+            [(ngModel)]="form.notes"
+            (ngModelChange)="persistDraft()"></textarea>
+        </label>
+      </div>
+    </section>
+
+    <!-- Schritt 4: Status & Senden -->
+    <section class="wizard-step" *ngIf="currentStep() === 4">
+      <header class="wizard-step-head">
+        <h3>4. Status & Senden</h3>
+        <p>Wie lief der Tag? Fotos sind optional.</p>
+      </header>
+      <div class="status-row">
+        <span class="panel-kicker">Status der Baustelle</span>
+        <div class="pill-row">
+          <button type="button" class="pill-toggle green" [class.active]="form.status === 'green'" (click)="setStatus('green')">Grün — Alles ok</button>
+          <button type="button" class="pill-toggle yellow" [class.active]="form.status === 'yellow'" (click)="setStatus('yellow')">Gelb — Verzögerung</button>
+          <button type="button" class="pill-toggle red" [class.active]="form.status === 'red'" (click)="setStatus('red')">Rot — Kritisch</button>
+        </div>
+      </div>
+
+      <div class="form-grid">
+        <label>
+          <span>Ist-Stunden (netto)</span>
+          <input
+            type="number"
+            step="0.5"
+            min="0"
+            name="ist_hours"
+            [(ngModel)]="form.ist_hours"
+            (ngModelChange)="persistDraft()"
+            placeholder="z.B. 7.5">
+        </label>
+      </div>
+
+      <section class="photo-section">
+        <header class="photo-section-head">
+          <div>
+            <p class="panel-kicker">Foto-Doku (optional)</p>
+            <h3>Fotos zum Tagesbericht</h3>
+          </div>
+          <label class="file-button">
+            Fotos auswählen
+            <input
+              type="file"
+              accept="image/*"
+              multiple
+              (change)="onPhotoFilesSelected($event)"
+              hidden>
+          </label>
+        </header>
+
+        <p class="empty" *ngIf="photoCount() === 0">Noch keine Fotos angehängt — das ist optional.</p>
+
+        <ul class="photo-list" *ngIf="photoCount() > 0">
+          <li *ngFor="let photo of draftPhotos()" class="photo-item">
+            <div class="photo-row">
+              <div class="photo-preview">
+                <img [src]="photo.previewUrl" alt="">
+              </div>
+              <div class="photo-meta">
+                <label class="caption-label">Bildunterschrift
+                  <input
+                    type="text"
+                    [ngModel]="photo.caption"
+                    (ngModelChange)="updateCaption(photo.id, $event)"
+                    [ngModelOptions]="{ standalone: true }"
+                    placeholder="Was zeigt das Foto?">
+                </label>
+                <div class="photo-actions">
+                  <button type="button" class="secondary" (click)="toggleAnnotator(photo.id)">
+                    {{ photo.annotating ? 'Annotation schließen' : 'Annotieren' }}
+                  </button>
+                  <button type="button" class="secondary danger" (click)="removePhoto(photo.id)">Entfernen</button>
+                </div>
+                <small class="photo-filename">{{ photo.filename }}</small>
+              </div>
+            </div>
+
+            <div class="annotator-shell" *ngIf="photo.annotating">
+              <app-photo-annotator
+                [imageUrl]="photo.previewUrl"
+                (annotationSaved)="onAnnotationSaved(photo.id, $event)"
+                (cancelled)="cancelAnnotation(photo.id)"
+              ></app-photo-annotator>
+            </div>
+          </li>
+        </ul>
+      </section>
+    </section>
+
+    <footer class="wizard-footer">
+      <button
+        type="button"
+        class="secondary"
+        (click)="prevStep()"
+        [disabled]="currentStep() === 1">
+        ← Zurück
+      </button>
+      <button
+        *ngIf="currentStep() < totalSteps"
+        type="button"
+        (click)="nextStep()"
+        [disabled]="!canGoNext()">
+        Weiter →
+      </button>
+      <button
+        *ngIf="currentStep() === totalSteps"
+        type="submit"
+        class="wizard-submit"
+        [disabled]="submitting()">
+        {{ submitting() ? 'Wird gesendet …' : 'Bericht abschicken' }}
+      </button>
+    </footer>
+  </form>
+</section>

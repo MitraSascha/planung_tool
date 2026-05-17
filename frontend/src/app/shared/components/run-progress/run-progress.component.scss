@@ -1,0 +1,146 @@
+.run-stepper {
+  display: grid;
+  gap: 14px;
+  padding: 14px 16px;
+  border: 1px solid rgba(13, 107, 143, .2);
+  border-radius: 14px;
+  background: rgba(13, 107, 143, .07);
+
+  &.completed {
+    border-color: rgba(20, 130, 60, .25);
+    background: rgba(20, 130, 60, .07);
+  }
+
+  &.errored {
+    border-color: rgba(180, 50, 50, .3);
+    background: rgba(180, 50, 50, .07);
+  }
+}
+
+.step {
+  display: grid;
+  gap: 6px;
+
+  &.pending {
+    opacity: 0.55;
+  }
+}
+
+.step-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+}
+
+.step-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: rgba(13, 107, 143, .15);
+  color: var(--brand, #0d6b8f);
+  font-weight: 800;
+  font-size: 12px;
+}
+
+.step.active .step-num {
+  background: var(--brand, #0d6b8f);
+  color: #fff;
+}
+
+.step.done .step-num {
+  background: rgba(20, 130, 60, .85);
+  color: #fff;
+}
+
+.step-label {
+  font-weight: 700;
+  color: var(--ink, #1a1a1a);
+}
+
+.step-detail {
+  margin-left: auto;
+  color: var(--muted, #5b6770);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.bar {
+  position: relative;
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(13, 107, 143, .14);
+  overflow: hidden;
+}
+
+.bar-fill {
+  height: 100%;
+  background: var(--brand, #0d6b8f);
+  border-radius: 999px;
+  transition: width 0.3s ease-out;
+}
+
+.step.done .bar-fill {
+  background: rgba(20, 130, 60, .85);
+}
+
+.run-stepper.errored .bar-fill {
+  background: rgba(180, 50, 50, .75);
+}
+
+// Indeterminate animation for the ingest step while filter pipeline runs
+.bar.indeterminate {
+  background: linear-gradient(
+    90deg,
+    rgba(13, 107, 143, .14) 0%,
+    rgba(13, 107, 143, .14) 30%,
+    rgba(13, 107, 143, .45) 50%,
+    rgba(13, 107, 143, .14) 70%,
+    rgba(13, 107, 143, .14) 100%
+  );
+  background-size: 220% 100%;
+  animation: stepper-indeterminate 1.4s linear infinite;
+}
+
+.bar.indeterminate .bar-fill {
+  display: none;
+}
+
+@keyframes stepper-indeterminate {
+  0% { background-position: 100% 0; }
+  100% { background-position: -100% 0; }
+}
+
+.finish {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  color: rgba(20, 130, 60, .9);
+  font-size: 14px;
+  margin-top: 2px;
+
+  &.failed {
+    color: rgba(180, 50, 50, .9);
+  }
+}
+
+.finish-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: rgba(20, 130, 60, .85);
+  color: #fff;
+  font-weight: 800;
+  font-size: 13px;
+}
+
+.finish.failed .finish-icon {
+  background: rgba(180, 50, 50, .85);
+}

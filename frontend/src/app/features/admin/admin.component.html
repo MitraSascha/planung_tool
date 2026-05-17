@@ -1,0 +1,105 @@
+<section class="view admin-layout">
+  <nav class="admin-subnav">
+    <a routerLink="/admin/dsgvo">DSGVO &amp; Audit</a>
+    <a routerLink="/admin/push">Push-Benachrichtigungen</a>
+  </nav>
+  <div class="admin-column">
+    <form class="panel" (ngSubmit)="createUser()">
+      <div class="panel-head">
+        <div>
+          <p class="panel-kicker">Benutzer</p>
+          <h2>Benutzer anlegen</h2>
+        </div>
+        <button type="submit">Anlegen</button>
+      </div>
+      <div class="form-grid">
+        <label>Login<input name="user_username" [(ngModel)]="userForm.username"></label>
+        <label>Name<input name="user_display" [(ngModel)]="userForm.display_name"></label>
+        <label>Passwort<input name="user_password" type="password" [(ngModel)]="userForm.password"></label>
+        <label>Globale Rolle
+          <select name="user_role" [(ngModel)]="userForm.global_role">
+            <option value="admin">Admin</option>
+            <option value="projektleitung">Projektleitung</option>
+            <option value="bauleitung">Bauleitung</option>
+            <option value="obermonteur">Obermonteur</option>
+            <option value="monteur">Monteur</option>
+            <option value="viewer">Viewer</option>
+          </select>
+        </label>
+      </div>
+    </form>
+
+    <section class="panel">
+      <div class="panel-head">
+        <div>
+          <p class="panel-kicker">Verzeichnis</p>
+          <h2>Benutzer</h2>
+        </div>
+        <button type="button" class="secondary" (click)="refreshUsers()">Aktualisieren</button>
+      </div>
+      <div class="admin-list">
+        <article class="admin-row" *ngFor="let user of users()">
+          <div><strong>{{ user.display_name }}</strong><span>{{ user.username }}</span></div>
+          <span class="status-pill">{{ user.global_role }}</span>
+        </article>
+        <p class="empty" *ngIf="users().length === 0">Noch keine Benutzer geladen.</p>
+      </div>
+    </section>
+  </div>
+
+  <div class="admin-column">
+    <form class="panel" (ngSubmit)="addProjectMember()">
+      <div class="panel-head">
+        <div>
+          <p class="panel-kicker">Projektzugriff</p>
+          <h2>Rolle zuweisen</h2>
+        </div>
+        <button type="submit">Speichern</button>
+      </div>
+      <div class="form-grid">
+        <label>Projekt
+          <select name="member_slug" [(ngModel)]="memberForm.slug">
+            <option *ngFor="let project of projects()" [value]="project.slug">{{ project.slug }}</option>
+          </select>
+        </label>
+        <label>Benutzer
+          <select name="member_user" [(ngModel)]="memberForm.user_id">
+            <option *ngFor="let user of users()" [value]="user.id">{{ user.display_name }}</option>
+          </select>
+        </label>
+        <label class="wide">Projektrolle
+          <select name="member_role" [(ngModel)]="memberForm.project_role">
+            <option value="projektleitung">Projektleitung</option>
+            <option value="bauleitung">Bauleitung</option>
+            <option value="obermonteur">Obermonteur</option>
+            <option value="monteur">Monteur</option>
+            <option value="viewer">Viewer</option>
+          </select>
+        </label>
+      </div>
+    </form>
+
+    <section class="panel">
+      <div class="panel-head">
+        <div>
+          <p class="panel-kicker">Zugriffe</p>
+          <h2>Projektrollen</h2>
+        </div>
+        <button type="button" class="secondary" (click)="refreshMembers()">Aktualisieren</button>
+      </div>
+      <details class="member-project" *ngFor="let project of projects()" open>
+        <summary>
+          <strong>{{ project.slug }}</strong>
+          <span>{{ memberList(project.slug).length }} Mitglied(er)</span>
+        </summary>
+        <div class="admin-list">
+          <article class="admin-row" *ngFor="let member of memberList(project.slug)">
+            <div><strong>{{ member.display_name }}</strong><span>{{ member.username }}</span></div>
+            <span class="status-pill">{{ member.project_role }}</span>
+          </article>
+          <p class="empty" *ngIf="memberList(project.slug).length === 0">Noch keine Projektmitglieder.</p>
+        </div>
+      </details>
+    </section>
+  </div>
+</section>

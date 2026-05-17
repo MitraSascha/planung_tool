@@ -1,0 +1,257 @@
+<section class="view dsgvo-layout">
+  <header class="dsgvo-header">
+    <h1>DSGVO &amp; Audit</h1>
+    <p class="muted">
+      Audit-Log, Aufbewahrungsfristen, manueller Cleanup, Projekt-Anonymisierung
+      und Hard-Delete. Alle Aktionen sind nicht rueckgaengig zu machen.
+    </p>
+  </header>
+
+  <!-- Audit-Log -->
+  <section class="panel">
+    <div class="panel-head">
+      <div>
+        <p class="panel-kicker">Audit</p>
+        <h2>Audit-Log</h2>
+      </div>
+      <button type="button" class="secondary" (click)="refreshAudit()" [disabled]="auditLoading()">
+        Aktualisieren
+      </button>
+    </div>
+
+    <div class="filter-row">
+      <label>Entity-Type
+        <select name="filter_entity" [(ngModel)]="auditFilter.entity_type">
+          <option value="">Alle</option>
+          <option *ngFor="let opt of entityOptions" [value]="opt">{{ opt }}</option>
+        </select>
+      </label>
+      <label>Action
+        <select name="filter_action" [(ngModel)]="auditFilter.action">
+          <option value="">Alle</option>
+          <option *ngFor="let opt of actionOptions" [value]="opt">{{ opt }}</option>
+        </select>
+      </label>
+      <label>Projekt
+        <input name="filter_slug" [(ngModel)]="auditFilter.project_slug" placeholder="slug">
+      </label>
+      <label>Von
+        <input name="filter_from" type="datetime-local" [(ngModel)]="auditFilter.from">
+      </label>
+      <label>Bis
+        <input name="filter_to" type="datetime-local" [(ngModel)]="auditFilter.to">
+      </label>
+      <label>Limit
+        <input name="filter_limit" type="number" min="1" max="2000" [(ngModel)]="auditFilter.limit">
+      </label>
+      <button type="button" (click)="refreshAudit()" [disabled]="auditLoading()">Filtern</button>
+    </div>
+
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Zeitpunkt</th>
+          <th>Action</th>
+          <th>Entity</th>
+          <th>Entity-ID</th>
+          <th>Projekt</th>
+          <th>User</th>
+          <th>IP</th>
+          <th>Diff</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let event of auditEvents()">
+          <td>{{ event.created_at }}</td>
+          <td>{{ event.action }}</td>
+          <td>{{ event.entity_type }}</td>
+          <td>{{ event.entity_id }}</td>
+          <td>{{ event.project_slug }}</td>
+          <td>{{ event.user_id }}</td>
+          <td>{{ event.ip_address }}</td>
+          <td><code *ngIf="event.changes_json">{{ event.changes_json }}</code></td>
+        </tr>
+        <tr *ngIf="!auditEvents().length">
+          <td colspan="8" class="empty">Keine Audit-Eintraege gefunden.</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- Aufbewahrungsfristen -->
+  <section class="panel">
+    <div class="panel-head">
+      <div>
+        <p class="panel-kicker">Retention</p>
+        <h2>Aufbewahrungsfristen</h2>
+      </div>
+      <button type="button" class="secondary" (click)="refreshRules()">Aktualisieren</button>
+    </div>
+
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Entity-Type</th>
+          <th>TTL (Tage)</th>
+          <th>Action</th>
+          <th>Aktiv</th>
+          <th>Beschreibung</th>
+          <th>Aktionen</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let rule of retentionRules()">
+          <td>{{ rule.entity_type }}</td>
+          <td><input type="number" min="0" [(ngModel)]="rule.ttl_days" [name]="'ttl_' + rule.id"></td>
+          <td>
+            <select [(ngModel)]="rule.action" [name]="'action_' + rule.id">
+              <option value="delete">delete</option>
+              <option value="anonymize">anonymize</option>
+            </select>
+          </td>
+          <td>
+            <input type="checkbox" [checked]="rule.enabled" (change)="toggleRule(rule)">
+          </td>
+          <td><input [(ngModel)]="rule.description" [name]="'desc_' + rule.id"></td>
+          <td>
+            <button type="button" class="secondary" (click)="updateRule(rule)" [disabled]="busy()">
+              Speichern
+            </button>
+            <button type="button" class="danger" (click)="deleteRule(rule)" [disabled]="busy()">
+              Loeschen
+            </button>
+          </td>
+        </tr>
+        <tr *ngIf="!retentionRules().length">
+          <td colspan="6" class="empty">Noch keine Aufbewahrungsregeln definiert.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <form class="rule-form" (ngSubmit)="addRule()">
+      <h3>Neue Regel</h3>
+      <label>Entity
+        <select name="new_entity" [(ngModel)]="newRule.entity_type">
+          <option *ngFor="let opt of retentionEntities" [value]="opt">{{ opt }}</option>
+        </select>
+      </label>
+      <label>TTL (Tage)
+        <input type="number" min="0" name="new_ttl" [(ngModel)]="newRule.ttl_days">
+      </label>
+      <label>Action
+        <select name="new_action" [(ngModel)]="newRule.action">
+          <option value="delete">delete</option>
+          <option value="anonymize">anonymize</option>
+        </select>
+      </label>
+      <label>Aktiv
+        <input type="checkbox" name="new_enabled" [(ngModel)]="newRule.enabled">
+      </label>
+      <label>Beschreibung
+        <input name="new_desc" [(ngModel)]="newRule.description">
+      </label>
+      <button type="submit" [disabled]="busy()">Regel hinzufuegen</button>
+    </form>
+  </section>
+
+  <!-- Cleanup -->
+  <section class="panel">
+    <div class="panel-head">
+      <div>
+        <p class="panel-kicker">Cleanup</p>
+        <h2>Aufbewahrung anwenden</h2>
+      </div>
+      <div class="button-row">
+        <button type="button" class="secondary" (click)="runDryRun()" [disabled]="busy()">
+          Dry-Run starten
+        </button>
+        <button type="button" class="danger" (click)="runCleanup()" [disabled]="busy()">
+          Cleanup jetzt durchfuehren
+        </button>
+      </div>
+    </div>
+
+    <table class="data-table" *ngIf="cleanupResult() as result">
+      <caption>
+        Ergebnis ({{ result.dry_run ? 'Dry-Run' : 'Live-Run' }})
+      </caption>
+      <thead>
+        <tr>
+          <th>Entity</th>
+          <th>Action</th>
+          <th>Betroffen</th>
+          <th>Ausgefuehrt</th>
+          <th>Hinweise</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let row of cleanupRules()">
+          <td>{{ row.entity_type }}</td>
+          <td>{{ row.stats.action }}</td>
+          <td>{{ row.stats.affected }}</td>
+          <td>{{ row.stats.executed ?? 0 }}</td>
+          <td>{{ row.stats.skipped ? ('Uebersprungen: ' + row.stats.reason) : '-' }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- Anonymisierung -->
+  <section class="panel">
+    <div class="panel-head">
+      <div>
+        <p class="panel-kicker">Projekt</p>
+        <h2>Anonymisierung</h2>
+      </div>
+    </div>
+    <p class="muted">
+      Alle PII-haltigen Felder eines Projekts werden tokenisiert oder durch
+      <code>[anonymisiert]</code> ersetzt. Datensaetze bleiben erhalten.
+    </p>
+    <div class="action-row">
+      <label>Projekt
+        <select name="anon_slug" [(ngModel)]="anonymizeSlug">
+          <option value="">— bitte waehlen —</option>
+          <option *ngFor="let slug of projectSlugs()" [value]="slug">{{ slug }}</option>
+        </select>
+      </label>
+      <button type="button" class="danger" (click)="anonymize()" [disabled]="busy() || !anonymizeSlug">
+        Anonymisieren
+      </button>
+    </div>
+  </section>
+
+  <!-- Loeschung -->
+  <section class="panel">
+    <div class="panel-head">
+      <div>
+        <p class="panel-kicker">Projekt</p>
+        <h2>Hard-Delete</h2>
+      </div>
+    </div>
+    <p class="muted">
+      Das Projekt wird unwiderruflich aus DB und Dateisystem entfernt. Zum
+      Bestaetigen muss <code>DELETE-&lt;slug&gt;</code> exakt eingegeben werden.
+    </p>
+    <div class="action-row">
+      <label>Projekt
+        <select name="del_slug" [ngModel]="deleteSlug" (ngModelChange)="onDeleteSlugChange($event)">
+          <option value="">— bitte waehlen —</option>
+          <option *ngFor="let slug of projectSlugs()" [value]="slug">{{ slug }}</option>
+        </select>
+      </label>
+      <label *ngIf="deleteSlug">
+        Bestaetigung (<code>DELETE-{{ deleteSlug }}</code>)
+        <input name="del_confirm" [(ngModel)]="deleteConfirm">
+      </label>
+      <button
+        type="button"
+        class="danger"
+        (click)="deleteProject()"
+        [disabled]="busy() || !deleteSlug || deleteConfirm !== ('DELETE-' + deleteSlug)"
+      >
+        Endgueltig loeschen
+      </button>
+    </div>
+  </section>
+</section>

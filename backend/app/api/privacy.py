@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 
 from app.core.settings import settings
 from app.db.database import get_db
+from app.db.orm_models import User
 from app.models.privacy import (
     PrivacyHealthResponse,
     PrivacyToken,
@@ -11,6 +12,7 @@ from app.models.privacy import (
     TokenizeRequest,
     TokenizeResponse,
 )
+from app.services.auth import ADMIN_ROLES, get_current_user, require_global_role
 from app.services.pii_tokenizer import FALLBACK_PATTERNS, pii_tokenizer
 
 router = APIRouter()
@@ -27,7 +29,14 @@ def privacy_health() -> PrivacyHealthResponse:
 
 
 @router.post("/tokenize", response_model=TokenizeResponse)
-def tokenize(request: TokenizeRequest, db: Session = Depends(get_db)) -> TokenizeResponse:
+def tokenize(
+    request: TokenizeRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> TokenizeResponse:
+    if request.include_mapping:
+        require_global_role(current_user, ADMIN_ROLES)
+
     run, anonymized_text = pii_tokenizer.tokenize(
         db=db,
         text=request.text,
@@ -58,7 +67,13 @@ def tokenize(request: TokenizeRequest, db: Session = Depends(get_db)) -> Tokeniz
 
 
 @router.post("/reidentify", response_model=ReidentifyResponse)
-def reidentify(request: ReidentifyRequest, db: Session = Depends(get_db)) -> ReidentifyResponse:
+def reidentify(
+    request: ReidentifyRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> ReidentifyResponse:
+    require_global_role(current_user, ADMIN_ROLES)
+
     try:
         text, replaced_count = pii_tokenizer.reidentify(
             db=db,

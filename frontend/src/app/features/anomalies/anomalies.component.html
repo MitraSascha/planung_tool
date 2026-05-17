@@ -1,0 +1,61 @@
+<section class="view">
+  <div class="panel">
+    <div class="panel-head">
+      <div>
+        <p class="panel-kicker">Smart-Auswertung</p>
+        <h2>
+          Anomalien
+          <ng-container *ngIf="slug"> &middot; {{ slug }}</ng-container>
+        </h2>
+      </div>
+      <div class="button-row">
+        <button type="button" class="button-link secondary" (click)="load()" [disabled]="loading()">
+          {{ loading() ? 'Lade ...' : 'Aktualisieren' }}
+        </button>
+      </div>
+    </div>
+
+    <div class="metric-grid">
+      <div class="metric"><span>Gesamt</span><strong>{{ anomalies().length }}</strong></div>
+      <div class="metric"><span>Kritisch</span><strong>{{ criticalCount() }}</strong></div>
+      <div class="metric"><span>Warnungen</span><strong>{{ warningCount() }}</strong></div>
+    </div>
+
+    <p class="empty" *ngIf="loading() && anomalies().length === 0">Lade Anomalien ...</p>
+    <app-empty-state
+      *ngIf="!loading() && anomalies().length === 0"
+      icon="✅"
+      title="Alles im grünen Bereich"
+      description="Aktuell wurden keine Anomalien erkannt. Wir melden uns, sobald etwas auffällt.">
+    </app-empty-state>
+
+    <div class="anomaly-groups" *ngIf="grouped().length > 0">
+      <div class="anomaly-group" *ngFor="let group of grouped()">
+        <h3 class="group-title">
+          <a [routerLink]="['/projects', group.projectSlug]">{{ group.projectSlug }}</a>
+          <span class="count-badge">{{ group.anomalies.length }}</span>
+        </h3>
+
+        <ul class="anomaly-list">
+          <li *ngFor="let anomaly of group.anomalies" class="anomaly-item">
+            <button type="button" class="anomaly-row" (click)="openTarget(anomaly)">
+              <span
+                class="severity-pill"
+                [class.critical]="anomaly.severity === 'critical'"
+                [class.warning]="anomaly.severity === 'warning'"
+                [class.info]="anomaly.severity === 'info'"
+              >
+                {{ severityLabel(anomaly.severity) }}
+              </span>
+              <div class="anomaly-text">
+                <strong>{{ anomaly.title }}</strong>
+                <small>{{ kindLabel(anomaly.kind) }}</small>
+                <p>{{ anomaly.detail }}</p>
+              </div>
+            </button>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>

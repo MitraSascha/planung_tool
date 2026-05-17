@@ -1,154 +1,183 @@
-<main class="shell">
-  <header class="app-header">
-    <div class="header-copy">
-      <p class="eyebrow">HEZ Projektgenerator</p>
-      <h1>Projektzentrale</h1>
-      <p>Projekte, DB-Auswertung, Ausgaben und Rollen sauber getrennt in einem Dashboard.</p>
+<main class="shell" [class.shell--authenticated]="!!currentUser()">
+
+  <!-- ───── TopBar (volle Breite, durchgehend) ───── -->
+  <header class="topbar" *ngIf="currentUser() as user">
+    <div class="topbar-brand">
+      <div class="brand-mark" aria-hidden="true">M</div>
+      <div class="brand-text">
+        <div class="brand-name">MITRA SANITÄR</div>
+        <div class="brand-tag">HEZ Projektgenerator</div>
+      </div>
     </div>
-    <form class="login-card" *ngIf="!currentUser()" (ngSubmit)="login()">
-      <label>Benutzer<input name="login_user" [(ngModel)]="loginForm.username"></label>
-      <label>Passwort<input name="login_password" type="password" [(ngModel)]="loginForm.password"></label>
-      <button type="submit">Anmelden</button>
-    </form>
-    <div class="login-card user-card" *ngIf="currentUser() as user">
-      <span>Angemeldet</span>
-      <strong>{{ user.display_name }}</strong>
-      <small>{{ user.global_role }}</small>
-      <button type="button" class="secondary" (click)="logout()">Abmelden</button>
+
+    <div class="topbar-actions">
+      <div class="topbar-sync" [class.offline]="!online()" role="status">
+        <span class="dot"></span>
+        <span class="text">{{ online()
+          ? 'Online · ' + lastSyncRelative()
+          : 'Offline · ' + pendingCount() + ' Berichte warten' }}</span>
+      </div>
+      <a routerLink="/settings/push" class="topbar-icon-btn" title="Benachrichtigungen" aria-label="Benachrichtigungen">
+        <span aria-hidden="true">🔔</span>
+      </a>
+      <div class="topbar-user">
+        <div class="user-avatar" aria-hidden="true">{{ user.display_name.charAt(0).toUpperCase() }}</div>
+        <div class="user-meta">
+          <div class="user-name">{{ user.display_name }}</div>
+          <div class="user-role">{{ user.global_role }}</div>
+        </div>
+      </div>
+      <button type="button" class="topbar-logout" (click)="logout()" title="Abmelden">
+        <span class="logout-icon" aria-hidden="true">⏻</span>
+        <span class="logout-label">Abmelden</span>
+      </button>
     </div>
   </header>
 
-  <nav class="app-nav">
-    <button type="button" [class.active]="activeView() === 'overview'" (click)="setView('overview')">Uebersicht</button>
-    <button type="button" [class.active]="activeView() === 'projects'" (click)="setView('projects')">Projekte</button>
-    <button type="button" [class.active]="activeView() === 'analyses'" (click)="setView('analyses')">Analysen</button>
-    <button type="button" [class.active]="activeView() === 'outputs'" (click)="setView('outputs')">Generator & Ausgaben</button>
-    <button type="button" [class.active]="activeView() === 'admin'" (click)="setView('admin')">Administration</button>
+  <!-- ───── Offline-Sync-Banner (nur wenn Queue nicht leer ODER offline) ───── -->
+  <section
+    class="offline-sync-banner"
+    *ngIf="currentUser() && (offlinePendingCount() > 0 || !offlineOnline())"
+    [class.offline-sync-banner--offline]="!offlineOnline()"
+  >
+    <span class="osb-icon" aria-hidden="true">
+      {{ offlineOnline() ? '🔄' : '📴' }}
+    </span>
+    <div class="osb-text">
+      <strong *ngIf="!offlineOnline()">Offline-Modus aktiv</strong>
+      <strong *ngIf="offlineOnline() && offlinePendingCount() > 0">
+        {{ offlinePendingCount() }}
+        Bericht{{ offlinePendingCount() === 1 ? '' : 'e' }} wartet auf Synchronisation
+      </strong>
+      <span *ngIf="!offlineOnline()">
+        Eingaben werden lokal gespeichert und automatisch nachgesendet, sobald du wieder online bist.
+      </span>
+      <span *ngIf="offlineOnline() && offlinePendingCount() > 0">
+        Wird automatisch nachgesendet — du kannst auch jetzt manuell triggern.
+      </span>
+    </div>
+    <button
+      type="button"
+      class="osb-action"
+      *ngIf="offlineOnline() && offlinePendingCount() > 0"
+      (click)="manualSync()"
+      [disabled]="offlineSyncing()">
+      {{ offlineSyncing() ? '⟳ wird gesendet …' : 'Jetzt senden' }}
+    </button>
+  </section>
+
+  <!-- ───── Public Login-Hero (nur ohne Session) ───── -->
+  <header class="app-header app-header--login" *ngIf="!currentUser()">
+    <div class="header-copy">
+      <p class="eyebrow">Baustellen-App</p>
+      <h1>Willkommen</h1>
+      <p>Melde dich an, um deine Baustellen zu sehen.</p>
+    </div>
+    <form class="login-card" (ngSubmit)="login()">
+      <div class="login-logo" aria-hidden="true">🏗</div>
+      <h2 class="login-title">Anmelden</h2>
+      <label>
+        <span>Benutzername</span>
+        <input
+          name="login_user"
+          autocomplete="username"
+          placeholder="z.B. max.mustermann"
+          [(ngModel)]="loginForm.username">
+      </label>
+      <label>
+        <span>Passwort</span>
+        <input
+          name="login_password"
+          type="password"
+          autocomplete="current-password"
+          placeholder="Dein Passwort"
+          [(ngModel)]="loginForm.password">
+      </label>
+      <button type="submit" class="login-submit">Anmelden</button>
+      <a class="login-help" href="mailto:support@firma.de?subject=Passwort%20vergessen">
+        Passwort vergessen?
+      </a>
+    </form>
+  </header>
+
+  <section class="offline-banner" *ngIf="!online()">
+    <strong>Offline-Modus</strong>
+    <span>Eingaben werden bei Wiederverbindung synchronisiert. Bereits geladene Daten bleiben sichtbar.</span>
+  </section>
+
+  <!-- ───── Hauptlayout: Sidebar + Content ───── -->
+  <div class="layout" *ngIf="currentUser(); else publicContent" [class.sidebar-collapsed]="sidebarCollapsed()">
+    <aside class="sidebar" role="navigation" aria-label="Hauptnavigation">
+      <button type="button" class="sidebar-toggle" (click)="toggleSidebar()"
+              [attr.aria-label]="sidebarCollapsed() ? 'Navigation ausklappen' : 'Navigation einklappen'"
+              [attr.title]="sidebarCollapsed() ? 'Ausklappen' : 'Einklappen'">
+        <span class="toggle-icon" aria-hidden="true">{{ sidebarCollapsed() ? '›' : '‹' }}</span>
+      </button>
+
+      <div class="sidebar-groups">
+        <div class="sidebar-group" *ngFor="let group of navGroups()">
+          <div class="group-label" *ngIf="!sidebarCollapsed()">{{ group.label }}</div>
+          <ng-container *ngFor="let item of group.items">
+            <a *ngIf="item.visible; else disabledItem"
+               [routerLink]="item.route"
+               [routerLinkActiveOptions]="item.exact ? { exact: true } : { exact: false }"
+               routerLinkActive="active"
+               class="sidebar-item"
+               [title]="sidebarCollapsed() ? item.label : null">
+              <span class="item-icon" aria-hidden="true">{{ item.icon }}</span>
+              <span class="item-label" *ngIf="!sidebarCollapsed()">{{ item.label }}</span>
+            </a>
+            <ng-template #disabledItem>
+              <span class="sidebar-item disabled"
+                    [title]="item.disabledReason || ''"
+                    [attr.aria-label]="item.label + ' (' + (item.disabledReason || '') + ')'">
+                <span class="item-icon" aria-hidden="true">{{ item.icon }}</span>
+                <span class="item-label" *ngIf="!sidebarCollapsed()">{{ item.label }}</span>
+                <span class="lock-icon" aria-hidden="true" *ngIf="!sidebarCollapsed()">🔒</span>
+              </span>
+            </ng-template>
+          </ng-container>
+        </div>
+      </div>
+    </aside>
+
+    <div class="main-area">
+      <section class="notice success" *ngIf="message()">{{ message() }}</section>
+      <section class="notice error" *ngIf="error()">
+        <span class="notice-text">{{ error() }}</span>
+        <button
+          type="button"
+          class="notice-action"
+          *ngIf="errorAction() as action"
+          (click)="action.callback()">
+          {{ action.label }}
+        </button>
+      </section>
+
+      <router-outlet></router-outlet>
+
+      <section class="panel prompt" *ngIf="dryRunPrompt()">
+        <div class="panel-head"><div><p class="panel-kicker">Generator</p><h2>Rueckgabe</h2></div></div>
+        <pre>{{ dryRunPrompt() }}</pre>
+      </section>
+    </div>
+  </div>
+
+  <ng-template #publicContent>
+    <section class="notice success" *ngIf="message()">{{ message() }}</section>
+    <section class="notice error" *ngIf="error()">
+      <span class="notice-text">{{ error() }}</span>
+    </section>
+    <router-outlet></router-outlet>
+  </ng-template>
+
+  <nav class="bottom-nav" *ngIf="currentUser() as user">
+    <a *ngFor="let tab of bottomTabs()"
+       [routerLink]="tab.route"
+       [routerLinkActiveOptions]="tab.exact ? { exact: true } : { exact: false }"
+       routerLinkActive="active">
+      <span class="bn-icon" aria-hidden="true">{{ tab.icon }}</span>
+      <span class="bn-label">{{ tab.label }}</span>
+    </a>
   </nav>
-
-  <section class="notice success" *ngIf="message()">{{ message() }}</section>
-  <section class="notice error" *ngIf="error()">{{ error() }}</section>
-
-  <section class="view" *ngIf="activeView() === 'overview'">
-    <div class="metric-grid">
-      <div class="metric"><span>Projekte</span><strong>{{ projects().length }}</strong></div>
-      <div class="metric"><span>Bereit</span><strong>{{ readyProjectsCount() }}</strong></div>
-      <div class="metric"><span>Publiziert</span><strong>{{ publishedProjectsCount() }}</strong></div>
-      <div class="metric"><span>Ausgabedateien</span><strong>{{ totalOutputFiles() }}</strong></div>
-    </div>
-    <div class="dashboard-grid">
-      <section class="panel">
-        <div class="panel-head"><div><p class="panel-kicker">Live</p><h2>Projektstatus</h2></div></div>
-        <article class="compact-row" *ngFor="let project of projects()">
-          <div><strong>{{ project.slug }}</strong><span>{{ project.name }}</span></div>
-          <span class="status-pill" [class.published]="project.status === 'published'" [class.failed]="project.status.includes('failed')">{{ statusLabel(project.status) }}</span>
-        </article>
-      </section>
-      <section class="panel">
-        <div class="panel-head"><div><p class="panel-kicker">Baustelle</p><h2>Erfassungsstand</h2></div></div>
-        <article class="compact-row" *ngFor="let project of projects()">
-          <div><strong>{{ project.slug }}</strong><span>{{ summaries()[project.slug]?.daily_reports ?? 0 }} Tagesberichte · {{ summaries()[project.slug]?.weekly_reports ?? 0 }} Wochenberichte</span></div>
-          <span class="status-dot red" *ngIf="(summaries()[project.slug]?.status_red ?? 0) > 0">Rot</span>
-          <span class="status-dot yellow" *ngIf="(summaries()[project.slug]?.status_red ?? 0) === 0 && (summaries()[project.slug]?.status_yellow ?? 0) > 0">Gelb</span>
-          <span class="status-dot green" *ngIf="(summaries()[project.slug]?.status_red ?? 0) === 0 && (summaries()[project.slug]?.status_yellow ?? 0) === 0">Gruen</span>
-        </article>
-      </section>
-    </div>
-  </section>
-
-  <section class="view" *ngIf="activeView() === 'projects'">
-    <form class="panel form-panel" (ngSubmit)="createProject()">
-      <div class="panel-head"><div><p class="panel-kicker">Stammdaten</p><h2>Neues Projekt</h2></div><button type="submit">Projekt anlegen</button></div>
-      <div class="mode-switch">
-        <label [class.active]="form.project_type === 'standard'"><input type="radio" name="project_type" value="standard" [(ngModel)]="form.project_type">Standardprojekt<span>Mehr Unterlagen, Abschnittsordner und vollstaendige Struktur.</span></label>
-        <label [class.active]="form.project_type === 'small'"><input type="radio" name="project_type" value="small" [(ngModel)]="form.project_type">Kleinprojekt<span>Wochenbaustelle mit kompakter Ausgabe und optionalen Uploads.</span></label>
-      </div>
-      <div class="template-row" *ngIf="form.project_type === 'small'">
-        <button type="button" class="secondary" (click)="applySmallProjectTemplate('bathroom')">Badsanierung</button>
-        <button type="button" class="secondary" (click)="applySmallProjectTemplate('gas_floor')">Gasetagenheizung</button>
-        <button type="button" class="secondary" (click)="applySmallProjectTemplate('custom')">Freies Kleinprojekt</button>
-      </div>
-      <div class="form-grid">
-        <label>Slug<input name="slug" [(ngModel)]="form.slug" required pattern="[a-z0-9](?:[a-z0-9\-]{0,61}[a-z0-9])?"></label>
-        <label>Projektname<input name="name" [(ngModel)]="form.name" required></label>
-        <label class="wide">Adresse<input name="address" [(ngModel)]="form.address"></label>
-        <label>Projektverantwortlicher<input name="responsible" [(ngModel)]="form.responsible"></label>
-        <label>Bauleitung<input name="construction_manager" [(ngModel)]="form.construction_manager"></label>
-        <label>Obermonteur<input name="foreman" [(ngModel)]="form.foreman"></label>
-        <label>Startdatum<input name="planned_start" type="date" [(ngModel)]="form.planned_start"></label>
-        <label>Zieltermin<input name="planned_end" type="date" [(ngModel)]="form.planned_end"></label>
-        <label class="wide">Notizen<textarea name="notes" rows="3" [(ngModel)]="form.notes"></textarea></label>
-      </div>
-      <div class="output-plan" *ngIf="form.project_type === 'small'">
-        <strong>Kompakte Ausgabe</strong>
-        <span *ngFor="let output of smallProjectOutputs">{{ output }}</span>
-      </div>
-      <div class="section-toolbar"><div><p class="panel-kicker">Abschnitte</p><h2>Bauabschnitte</h2></div><button type="button" class="secondary" (click)="addSection()">Abschnitt hinzufuegen</button></div>
-      <article class="section-card" *ngFor="let section of form.sections; let i = index">
-        <div class="section-title"><strong>Abschnitt {{ section.number }}</strong><button type="button" class="text-button" (click)="removeSection(i)">Entfernen</button></div>
-        <div class="form-grid compact">
-          <label>Name<input name="section_name_{{ i }}" [(ngModel)]="section.name" required></label>
-          <label>Geplante Stunden<input name="section_hours_{{ i }}" type="number" min="0" step="0.5" [(ngModel)]="section.planned_hours"></label>
-          <label>Verantwortlich<input name="section_responsible_{{ i }}" [(ngModel)]="section.responsible"></label>
-          <label>Mitarbeiter<input name="section_staff_{{ i }}" [(ngModel)]="section.staff"></label>
-          <label class="wide">Ziel<textarea name="section_goal_{{ i }}" rows="3" [(ngModel)]="section.goal"></textarea></label>
-        </div>
-      </article>
-    </form>
-  </section>
-
-  <section class="view" *ngIf="activeView() === 'analyses'">
-    <div class="panel">
-      <div class="panel-head"><div><p class="panel-kicker">Datenbank</p><h2>Projektanalysen</h2></div></div>
-      <div class="analysis-grid">
-        <article class="analysis-card" *ngFor="let project of projects()">
-          <div class="project-card-head"><div><strong>{{ project.slug }}</strong><p>{{ project.name }} · {{ projectTypeLabel(project.project_type) }}</p></div><span class="status-pill" [class.published]="project.status === 'published'" [class.failed]="project.status.includes('failed')">{{ statusLabel(project.status) }}</span></div>
-          <dl class="project-meta">
-            <div><dt>Tagesberichte</dt><dd>{{ summaries()[project.slug]?.daily_reports ?? 0 }}</dd></div>
-            <div><dt>Wochenstatus</dt><dd>{{ summaries()[project.slug]?.weekly_reports ?? 0 }}</dd></div>
-            <div><dt>Blocker</dt><dd>{{ summaries()[project.slug]?.blockers_open ?? 0 }}</dd></div>
-            <div><dt>Material offen</dt><dd>{{ summaries()[project.slug]?.material_issues_open ?? 0 }}</dd></div>
-            <div><dt>Gruen</dt><dd>{{ summaries()[project.slug]?.status_green ?? 0 }}</dd></div>
-            <div><dt>Rot</dt><dd>{{ summaries()[project.slug]?.status_red ?? 0 }}</dd></div>
-          </dl>
-          <div class="readiness" [class.ready]="(summaries()[project.slug]?.status_red ?? 0) === 0 && (summaries()[project.slug]?.blockers_open ?? 0) === 0">
-            <strong>{{ (summaries()[project.slug]?.status_red ?? 0) > 0 || (summaries()[project.slug]?.blockers_open ?? 0) > 0 ? 'Handlungsbedarf' : 'Keine kritischen DB-Signale' }}</strong>
-          </div>
-        </article>
-      </div>
-    </div>
-  </section>
-
-  <section class="view panel outputs-panel" *ngIf="activeView() === 'outputs'">
-    <div class="panel-head"><div><p class="panel-kicker">Generator</p><h2>Projektsteuerung und Ablage</h2></div></div>
-    <details class="output-project" *ngFor="let project of projects()" open>
-      <summary><div class="output-project-head"><div class="folder-title"><span class="folder-icon">▸</span><div><strong>{{ project.slug }}</strong><span>{{ project.name }} · {{ statusLabel(project.status) }} · {{ projectOutputCount(project.slug) }} Datei(en)</span></div></div><div class="button-row"><button type="button" class="secondary" (click)="loadOutputs(project.slug); $event.preventDefault()">Aktualisieren</button><a class="button-link secondary" [href]="project.preview_url" target="_blank" rel="noopener" (click)="$event.stopPropagation()">Subdomain</a></div></div></summary>
-      <div class="output-project-body">
-        <dl class="project-meta"><div><dt>Unterlagen</dt><dd>{{ project.upload_count }}</dd></div><div><dt>Ausgaben</dt><dd>{{ projectOutputCount(project.slug) }}</dd></div><div><dt>Abschnitte</dt><dd>{{ project.sections.length }}</dd></div></dl>
-        <div class="planned-output"><strong>Geplante Ausgabe</strong><span *ngFor="let output of project.planned_outputs">{{ output }}</span></div>
-        <div class="readiness" [class.ready]="project.ready_for_generation"><strong>{{ project.ready_for_generation ? 'Bereit fuer Generatorlauf' : 'Vor Generatorlauf pruefen' }}</strong><ul *ngIf="!project.ready_for_generation"><li *ngFor="let issue of project.readiness_issues">{{ issue }}</li></ul></div>
-        <div class="button-row"><button type="button" class="secondary" (click)="runDryGenerate(project.slug)">Dry-Run</button><button type="button" [disabled]="!project.ready_for_generation || generatingSlug() === project.slug" (click)="runGenerate(project)">{{ generatingSlug() === project.slug ? 'Generator laeuft...' : 'Generieren' }}</button></div>
-        <div class="upload-box">
-          <div class="upload-line"><label>Unterlagen-Ablage (CSV, PDF, XLSX, XLS)<input type="file" multiple [accept]="allowedUploadTypes" (change)="onUploadSelection(project.slug, $event)"></label><button type="button" class="secondary" [disabled]="uploadingSlug() === project.slug" (click)="uploadFiles(project.slug)">{{ uploadingSlug() === project.slug ? 'Upload laeuft...' : 'Dateien hochladen' }}</button></div>
-          <p class="selected-files" *ngIf="selectedUploadNames()[project.slug]?.length">{{ selectedUploadNames()[project.slug].join(', ') }}</p>
-        </div>
-        <p class="empty" *ngIf="project.status !== 'published'">Noch keine veroeffentlichten Ausgaben.</p><div class="output-groups" *ngIf="outputs()[project.slug] as projectOutputs"><section class="output-group" *ngFor="let group of outputGroups(projectOutputs.files)"><h3>{{ group.folder }}</h3><ul><li *ngFor="let file of group.files"><a [href]="file.view_url" target="_blank" rel="noopener">{{ file.filename }}</a><small>{{ file.extension }} · {{ formatFileSize(file.size_bytes) }}</small></li></ul></section></div></div>
-    </details>
-  </section>
-
-  <section class="view dashboard-grid" *ngIf="activeView() === 'admin'">
-    <form class="panel" (ngSubmit)="createUser()">
-      <div class="panel-head"><div><p class="panel-kicker">Rollen</p><h2>Benutzer anlegen</h2></div><button type="submit">Anlegen</button></div>
-      <div class="form-grid"><label>Login<input name="user_username" [(ngModel)]="userForm.username"></label><label>Name<input name="user_display" [(ngModel)]="userForm.display_name"></label><label>Passwort<input name="user_password" type="password" [(ngModel)]="userForm.password"></label><label>Rolle<select name="user_role" [(ngModel)]="userForm.global_role"><option value="admin">Admin</option><option value="projektleitung">Projektleitung</option><option value="bauleitung">Bauleitung</option><option value="obermonteur">Obermonteur</option><option value="monteur">Monteur</option><option value="viewer">Viewer</option></select></label></div>
-    </form>
-    <form class="panel" (ngSubmit)="addProjectMember()">
-      <div class="panel-head"><div><p class="panel-kicker">Projektzugriff</p><h2>Mitglied zuweisen</h2></div><button type="submit">Speichern</button></div>
-      <div class="form-grid"><label>Projekt<select name="member_slug" [(ngModel)]="memberForm.slug"><option *ngFor="let project of projects()" [value]="project.slug">{{ project.slug }}</option></select></label><label>Benutzer<select name="member_user" [(ngModel)]="memberForm.user_id"><option *ngFor="let user of users()" [value]="user.id">{{ user.display_name }}</option></select></label><label class="wide">Projektrolle<select name="member_role" [(ngModel)]="memberForm.project_role"><option value="projektleitung">Projektleitung</option><option value="bauleitung">Bauleitung</option><option value="obermonteur">Obermonteur</option><option value="monteur">Monteur</option><option value="viewer">Viewer</option></select></label></div>
-    </form>
-  </section>
-
-  <section class="panel prompt" *ngIf="dryRunPrompt()">
-    <div class="panel-head"><div><p class="panel-kicker">Generator</p><h2>Rueckgabe</h2></div></div>
-    <pre>{{ dryRunPrompt() }}</pre>
-  </section>
 </main>

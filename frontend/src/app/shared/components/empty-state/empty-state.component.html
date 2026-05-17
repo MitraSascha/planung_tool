@@ -1,0 +1,12 @@
+<div class="empty-state">
+  <div class="empty-icon" aria-hidden="true">{{ icon() }}</div>
+  <h3>{{ title() }}</h3>
+  <p *ngIf="description()">{{ description() }}</p>
+  <button
+    type="button"
+    class="primary"
+    *ngIf="actionLabel()"
+    (click)="onAction()">
+    {{ actionLabel() }}
+  </button>
+</div>

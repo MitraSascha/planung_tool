@@ -1,0 +1,19 @@
+<div class="signature-pad">
+  <div class="signature-head" *ngIf="label">
+    <span class="signature-label">{{ label }}</span>
+  </div>
+
+  <canvas
+    #canvas
+    class="signature-canvas"
+    (pointerdown)="onPointerDown($event)"
+    (pointermove)="onPointerMove($event)"
+    (pointerup)="onPointerUp($event)"
+    (pointercancel)="onPointerUp($event)"
+    (pointerleave)="onPointerUp($event)"
+  ></canvas>
+
+  <div class="signature-actions">
+    <button type="button" class="secondary text-button" (click)="clear()">Löschen</button>
+  </div>
+</div>

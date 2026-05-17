@@ -1,0 +1,73 @@
+<div class="role-grid">
+  <section class="panel">
+    <div class="panel-head">
+      <div>
+        <p class="panel-kicker">Projektueberblick</p>
+        <h2>Statusampel</h2>
+      </div>
+      <span class="status-pill" [class.green]="trafficLight() === 'green'" [class.yellow]="trafficLight() === 'yellow'" [class.red]="trafficLight() === 'red'">
+        {{ trafficLight() === 'green' ? 'Auf Kurs' : trafficLight() === 'yellow' ? 'Achtung' : 'Kritisch' }}
+      </span>
+    </div>
+    <div class="metric-row" *ngIf="summary() as s">
+      <div class="metric-card"><span>Tagesberichte</span><strong>{{ s.daily_reports }}</strong></div>
+      <div class="metric-card"><span>Wochenberichte</span><strong>{{ s.weekly_reports }}</strong></div>
+      <div class="metric-card"><span>Status rot</span><strong>{{ s.status_red }}</strong></div>
+      <div class="metric-card"><span>Status gelb</span><strong>{{ s.status_yellow }}</strong></div>
+      <div class="metric-card"><span>Blocker offen</span><strong>{{ s.blockers_open }}</strong></div>
+      <div class="metric-card"><span>Material offen</span><strong>{{ s.material_issues_open }}</strong></div>
+    </div>
+    <div class="action-grid">
+      <a class="action-card" [routerLink]="['/projects', project().slug]">
+        <strong>Projektdetails</strong>
+        <small>Stammdaten, Abschnitte, Mitglieder</small>
+      </a>
+      <a class="action-card" [routerLink]="['/projects', project().slug, 'generate']">
+        <strong>Generator-Runs</strong>
+        <small>Historie und neuer Lauf</small>
+      </a>
+      <a class="action-card" [routerLink]="['/projects', project().slug, 'reports']">
+        <strong>Berichtsarchiv</strong>
+        <small>Alle Tages-/Wochenberichte</small>
+      </a>
+      <a class="action-card" [routerLink]="['/projects', project().slug, 'open-points']">
+        <strong>Offene Punkte</strong>
+        <small>Material, Blocker, Risiken</small>
+      </a>
+      <a class="action-card" *ngIf="isAdmin()" routerLink="/admin">
+        <strong>Administration</strong>
+        <small>Benutzer und globale Rollen</small>
+      </a>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-head">
+      <div>
+        <p class="panel-kicker">Dokumentation</p>
+        <h2>Generator-Ausgaben</h2>
+      </div>
+      <span>{{ outputs().length }} Datei(en)</span>
+    </div>
+    <app-empty-state
+      *ngIf="outputs().length === 0"
+      icon="📄"
+      title="Noch keine Dokumente erzeugt"
+      description="Starte den Generator, sobald die Eingangsdaten vollständig sind.">
+    </app-empty-state>
+    <ul class="link-list" *ngIf="outputs().length > 0">
+      <li *ngFor="let file of outputs()">
+        <span
+          class="doc-badge"
+          [class.form]="inferDocumentType(file.path) === 'form'"
+          [class.info]="inferDocumentType(file.path) === 'info'"
+          [title]="inferDocumentType(file.path) === 'form' ? 'Zum Ausfüllen' : 'Zur Info'"
+          aria-hidden="true">
+          {{ inferDocumentType(file.path) === 'form' ? '📋' : '📄' }}
+        </span>
+        <a [href]="file.view_url | authedUrl" target="_blank" rel="noopener">{{ file.filename }}</a>
+        <small>{{ file.path }}</small>
+      </li>
+    </ul>
+  </section>
+</div>

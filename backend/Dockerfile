@@ -8,16 +8,25 @@ ENV HF_HOME=/models/huggingface
 ENV TRANSFORMERS_CACHE=/models/huggingface
 
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends curl ca-certificates git \
+    && apt-get install -y --no-install-recommends \
+       curl ca-certificates git \
+       libpango-1.0-0 libpangoft2-1.0-0 libharfbuzz-subset0 \
+       libcairo2 libgdk-pixbuf-2.0-0 \
+       fonts-dejavu-core \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=node /usr/local /usr/local
 
-RUN npm install -g @openai/codex@0.130.0 \
+RUN npm install -g @openai/codex@0.130.0 @anthropic-ai/claude-code \
     && npm cache clean --force
 
-RUN useradd --create-home --shell /bin/bash appuser
+ARG APP_UID=1000
+ARG APP_GID=1000
+RUN groupadd --gid ${APP_GID} appuser \
+    && useradd --uid ${APP_UID} --gid ${APP_GID} --create-home --shell /bin/bash appuser
+
+ENV HOME=/home/appuser
 
 WORKDIR /app
 
@@ -29,6 +38,9 @@ RUN mkdir -p /models/huggingface \
     && chown -R appuser:appuser /models
 
 COPY app ./app
+COPY alembic ./alembic
+COPY alembic.ini ./alembic.ini
+COPY scripts ./scripts
 
 RUN mkdir -p /storage/workspaces /storage/projects /storage/uploads \
     && chown -R appuser:appuser /storage /app

@@ -1,0 +1,106 @@
+<section class="view panel outputs-panel">
+  <div class="panel-head">
+    <div>
+      <p class="panel-kicker">Generator</p>
+      <h2>Projektsteuerung und Ablage</h2>
+    </div>
+    <a class="button-link" routerLink="/projects/new">Neues Projekt</a>
+  </div>
+
+  <app-empty-state
+    *ngIf="projects().length === 0"
+    icon="🏗"
+    title="Noch keine Projekte"
+    description="Lege das erste Projekt an, um Dokumente erzeugen und ablegen zu können.">
+  </app-empty-state>
+
+  <details class="output-project" *ngFor="let project of projects()">
+    <summary>
+      <div class="output-project-head">
+        <div class="folder-title">
+          <span class="folder-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" focusable="false"><path d="M3 6.75A2.75 2.75 0 0 1 5.75 4h4.4c.73 0 1.43.29 1.94.8l1.2 1.2h4.96A2.75 2.75 0 0 1 21 8.75v8.5A2.75 2.75 0 0 1 18.25 20H5.75A2.75 2.75 0 0 1 3 17.25V6.75Z"/></svg>
+          </span>
+          <div>
+            <strong>{{ project.slug }}</strong>
+            <span>{{ project.name }} &middot; {{ statusLabel(project.status) }} &middot; {{ projectOutputCount(project.slug) }} Datei(en)</span>
+          </div>
+        </div>
+        <div class="button-row">
+          <button type="button" class="secondary" (click)="loadOutputs(project.slug); $event.preventDefault()">Aktualisieren</button>
+        </div>
+      </div>
+    </summary>
+
+    <div class="output-project-body">
+      <dl class="project-meta">
+        <div><dt>Unterlagen</dt><dd>{{ project.upload_count }}</dd></div>
+        <div><dt>Ausgaben</dt><dd>{{ projectOutputCount(project.slug) }}</dd></div>
+        <div><dt>Abschnitte</dt><dd>{{ project.sections.length }}</dd></div>
+      </dl>
+
+      <div class="planned-output">
+        <strong>Geplante Ausgabe</strong>
+        <span *ngFor="let output of project.planned_outputs">{{ output }}</span>
+      </div>
+
+      <div class="readiness" [class.ready]="project.ready_for_generation">
+        <strong>{{ project.ready_for_generation ? 'Bereit fuer Generatorlauf' : 'Vor Generatorlauf pruefen' }}</strong>
+        <ul *ngIf="!project.ready_for_generation">
+          <li *ngFor="let issue of project.readiness_issues">{{ issue }}</li>
+        </ul>
+      </div>
+
+      <div class="button-row">
+        <button type="button" class="secondary" (click)="runDryGenerate(project.slug)">Dry-Run</button>
+        <button type="button" [disabled]="!project.ready_for_generation || generatingSlug() === project.slug" (click)="runGenerate(project)">
+          {{ generatingSlug() === project.slug ? 'Wird erzeugt …' : 'Dokumente erzeugen' }}
+        </button>
+      </div>
+
+      <app-run-progress *ngIf="generationRuns()[project.slug] as run" [run]="run"></app-run-progress>
+
+      <div class="upload-box">
+        <div class="upload-line">
+          <label>Unterlagen-Ablage (CSV, PDF, XLSX, XLS)
+            <input type="file" multiple [accept]="allowedUploadTypes" (change)="onUploadSelection(project.slug, $event)">
+          </label>
+          <button type="button" class="secondary" [disabled]="uploadingSlug() === project.slug" (click)="uploadFiles(project.slug)">
+            {{ uploadingSlug() === project.slug ? 'Upload laeuft...' : 'Dateien hochladen' }}
+          </button>
+        </div>
+        <p class="selected-files" *ngIf="selectedUploadNames()[project.slug]?.length">
+          {{ selectedUploadNames()[project.slug].join(', ') }}
+        </p>
+      </div>
+
+      <app-empty-state
+        *ngIf="project.status !== 'published'"
+        icon="📄"
+        title="Noch keine veröffentlichten Ausgaben"
+        description="Sobald der Generator abgeschlossen und freigegeben ist, erscheinen die Dateien hier.">
+      </app-empty-state>
+
+      <div class="output-groups" *ngIf="outputs()[project.slug] as projectOutputs">
+        <section class="output-group" *ngFor="let group of outputGroups(projectOutputs.files)">
+          <h3>{{ group.folder }}</h3>
+          <ul>
+            <li *ngFor="let file of group.files">
+              <button type="button" class="file-link" (click)="openOutputFile(file)">{{ file.filename }}</button>
+              <small>{{ file.extension }} &middot; {{ formatFileSize(file.size_bytes) }}</small>
+            </li>
+          </ul>
+        </section>
+        <section class="output-group archive-group" *ngIf="projectOutputs.versions.length">
+          <h3>Archiv</h3>
+          <ul>
+            <li *ngFor="let version of projectOutputs.versions">
+              <strong>{{ version.label }}</strong>
+              <small>{{ version.file_count }} Datei(en) &middot; {{ formatDateTime(version.created_at) }}</small>
+            </li>
+          </ul>
+        </section>
+      </div>
+    </div>
+  </details>
+</section>

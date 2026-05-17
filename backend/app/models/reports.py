@@ -1,11 +1,11 @@
-from datetime import datetime
+from datetime import date, datetime
 
 from pydantic import BaseModel, Field
 
 
 class DailyReportCreate(BaseModel):
     section_number: int | None = None
-    report_date: str
+    report_date: date
     status: str = Field(default="green", pattern="^(green|yellow|red)$")
     team: str | None = None
     completed_work: str | None = None
@@ -13,6 +13,13 @@ class DailyReportCreate(BaseModel):
     material_missing: str | None = None
     blockers: str | None = None
     notes: str | None = None
+    ist_hours: float | None = None
+    # Sicherheits-Pre-Check (alle optional — NULL = nicht erfasst)
+    safety_psa: bool | None = None
+    safety_tools: bool | None = None
+    safety_material: bool | None = None
+    safety_workarea: bool | None = None
+    safety_approval: bool | None = None
 
 
 class DailyReportRead(DailyReportCreate):
@@ -25,8 +32,8 @@ class DailyReportRead(DailyReportCreate):
 
 
 class WeeklyReportCreate(BaseModel):
-    week_start: str
-    week_end: str
+    week_start: date
+    week_end: date
     status: str = Field(default="green", pattern="^(green|yellow|red)$")
     summary: str | None = None
     next_week_plan: str | None = None
@@ -50,10 +57,38 @@ class MaterialIssueCreate(BaseModel):
     priority: str = Field(default="normal", pattern="^(low|normal|high|urgent)$")
 
 
+class MaterialIssueRead(MaterialIssueCreate):
+    id: int
+    project_slug: str
+    user_id: int
+    username: str
+    display_name: str
+    status: str
+    created_at: datetime
+
+
+class MaterialIssueUpdate(BaseModel):
+    status: str = Field(pattern="^(open|in_progress|done)$")
+
+
 class BlockerCreate(BaseModel):
     section_number: int | None = None
     description: str = Field(min_length=1)
     severity: str = Field(default="medium", pattern="^(low|medium|high|critical)$")
+
+
+class BlockerRead(BlockerCreate):
+    id: int
+    project_slug: str
+    user_id: int
+    username: str
+    display_name: str
+    status: str
+    created_at: datetime
+
+
+class BlockerUpdate(BaseModel):
+    status: str = Field(pattern="^(open|in_progress|done)$")
 
 
 class ReportSummary(BaseModel):

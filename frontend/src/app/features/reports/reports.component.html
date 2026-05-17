@@ -1,0 +1,18 @@
+<section class="view">
+  <div class="panel">
+    <div class="panel-head">
+      <div>
+        <p class="panel-kicker">Projekt {{ slug }}</p>
+        <h2>Berichte</h2>
+      </div>
+      <a class="button-link secondary" [routerLink]="['/projects', slug]">Zurueck zum Projekt</a>
+    </div>
+
+    <nav class="sub-tabs">
+      <a [routerLink]="['/projects', slug, 'reports', 'daily']" routerLinkActive="active">Tagesberichte</a>
+      <a [routerLink]="['/projects', slug, 'reports', 'weekly']" routerLinkActive="active">Wochenberichte</a>
+    </nav>
+
+    <router-outlet></router-outlet>
+  </div>
+</section>

@@ -1,0 +1,78 @@
+<section class="view">
+  <form class="panel form-panel" (ngSubmit)="submit()">
+    <div class="panel-head">
+      <div>
+        <p class="panel-kicker">Stammdaten</p>
+        <h2>{{ isEditMode ? 'Projekt bearbeiten' : 'Neues Projekt' }}</h2>
+      </div>
+      <button type="submit">{{ isEditMode ? 'Speichern' : 'Projekt anlegen' }}</button>
+    </div>
+
+    <div class="mode-switch">
+      <label [class.active]="form.project_type === 'standard'">
+        <input type="radio" name="project_type" value="standard" [(ngModel)]="form.project_type">
+        Standardprojekt
+        <span>Mehr Unterlagen, Abschnittsordner und vollstaendige Struktur.</span>
+      </label>
+      <label [class.active]="form.project_type === 'small'">
+        <input type="radio" name="project_type" value="small" [(ngModel)]="form.project_type">
+        Kleinprojekt
+        <span>Wochenbaustelle mit kompakter Ausgabe und optionalen Uploads.</span>
+      </label>
+    </div>
+
+    <div class="template-row" *ngIf="form.project_type === 'small'">
+      <button type="button" class="secondary" (click)="applySmallProjectTemplate('bathroom')">Badsanierung</button>
+      <button type="button" class="secondary" (click)="applySmallProjectTemplate('gas_floor')">Gasetagenheizung</button>
+      <button type="button" class="secondary" (click)="applySmallProjectTemplate('custom')">Freies Kleinprojekt</button>
+    </div>
+
+    <div class="form-grid">
+      <label>
+        Projektname
+        <input name="name" [(ngModel)]="form.name" (input)="onNameInput()" required>
+      </label>
+      <label>
+        Slug
+        <input name="slug" [(ngModel)]="form.slug" (input)="onSlugInput()" required
+               pattern="[a-z0-9](?:[a-z0-9\-]{0,61}[a-z0-9])?">
+        <small class="hint">Nur Kleinbuchstaben, Ziffern, Bindestriche — wird automatisch aus dem Projektnamen abgeleitet.</small>
+      </label>
+      <label class="wide">Adresse<input name="address" [(ngModel)]="form.address"></label>
+      <label>Auftraggeber / Bauherr<input name="client_name" [(ngModel)]="form.client_name" placeholder="Kunde / Eigentümer"></label>
+      <label>Projektverantwortlicher (intern)<input name="responsible" [(ngModel)]="form.responsible"></label>
+      <label>Bauleitung<input name="construction_manager" [(ngModel)]="form.construction_manager"></label>
+      <label>Obermonteur<input name="foreman" [(ngModel)]="form.foreman"></label>
+      <label>Startdatum<input name="planned_start" type="date" [(ngModel)]="form.planned_start"></label>
+      <label>Zieltermin<input name="planned_end" type="date" [(ngModel)]="form.planned_end"></label>
+      <label class="wide">Notizen<textarea name="notes" rows="3" [(ngModel)]="form.notes"></textarea></label>
+    </div>
+
+    <div class="output-plan" *ngIf="form.project_type === 'small'">
+      <strong>Kompakte Ausgabe</strong>
+      <span *ngFor="let output of smallProjectOutputs">{{ output }}</span>
+    </div>
+
+    <div class="section-toolbar">
+      <div>
+        <p class="panel-kicker">Abschnitte</p>
+        <h2>Bauabschnitte</h2>
+      </div>
+      <button type="button" class="secondary" (click)="addSection()">Abschnitt hinzufuegen</button>
+    </div>
+
+    <article class="section-card" *ngFor="let section of form.sections; let i = index">
+      <div class="section-title">
+        <strong>Abschnitt {{ section.number }}</strong>
+        <button type="button" class="text-button" (click)="removeSection(i)">Entfernen</button>
+      </div>
+      <div class="form-grid compact">
+        <label>Name<input name="section_name_{{ i }}" [(ngModel)]="section.name" required></label>
+        <label>Geplante Stunden<input name="section_hours_{{ i }}" type="number" min="0" step="0.5" [(ngModel)]="section.planned_hours"></label>
+        <label>Verantwortlich<input name="section_responsible_{{ i }}" [(ngModel)]="section.responsible"></label>
+        <label>Mitarbeiter<input name="section_staff_{{ i }}" [(ngModel)]="section.staff"></label>
+        <label class="wide">Ziel<textarea name="section_goal_{{ i }}" rows="3" [(ngModel)]="section.goal"></textarea></label>
+      </div>
+    </article>
+  </form>
+</section>

@@ -1,0 +1,135 @@
+.push-settings {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  padding: 1.5rem;
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(20, 30, 60, 0.06);
+
+  header {
+    .eyebrow {
+      text-transform: uppercase;
+      font-size: 0.75rem;
+      letter-spacing: 0.08em;
+      color: #6b7791;
+      margin: 0;
+    }
+
+    h2 {
+      margin: 0.25rem 0 0.5rem;
+      font-size: 1.5rem;
+    }
+
+    .hint {
+      margin: 0;
+      color: #4a566f;
+      max-width: 50rem;
+    }
+  }
+
+  .status-row {
+    background: #fff7e6;
+    border: 1px solid #ffd591;
+    color: #874d00;
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .actions {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+
+    button {
+      padding: 0.6rem 1.1rem;
+      border-radius: 8px;
+      border: none;
+      background: #1f6feb;
+      color: #ffffff;
+      cursor: pointer;
+      font-weight: 600;
+
+      &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      &.secondary {
+        background: #eef2fa;
+        color: #1f3766;
+      }
+    }
+
+    .status-text {
+      color: #4a566f;
+      font-size: 0.9rem;
+    }
+  }
+
+  .subs {
+    h3 {
+      margin: 0 0 0.5rem;
+      font-size: 1.05rem;
+    }
+
+    ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    li {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 1rem;
+      padding: 0.75rem 1rem;
+      border: 1px solid #e5e9f2;
+      border-radius: 8px;
+      background: #fafbfd;
+    }
+
+    .sub-meta {
+      display: flex;
+      flex-direction: column;
+      gap: 0.15rem;
+
+      .endpoint {
+        font-family: ui-monospace, "SFMono-Regular", Menlo, monospace;
+        font-size: 0.8rem;
+        color: #4a566f;
+      }
+
+      .meta-line {
+        font-size: 0.8rem;
+        color: #6b7791;
+      }
+    }
+
+    button.ghost {
+      background: transparent;
+      border: 1px solid #d9def0;
+      color: #1f3766;
+      padding: 0.4rem 0.85rem;
+      border-radius: 6px;
+      cursor: pointer;
+
+      &:disabled {
+        opacity: 0.5;
+      }
+    }
+
+    &.empty p {
+      color: #6b7791;
+      margin: 0;
+    }
+  }
+}

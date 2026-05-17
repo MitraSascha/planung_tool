@@ -1,0 +1,56 @@
+<div class="list-head">
+  <div>
+    <p class="panel-kicker">Liste</p>
+    <h3>{{ allReports().length }} Wochenberichte</h3>
+  </div>
+  <a class="button-link" [routerLink]="['/projects', slug, 'reports', 'weekly', 'new']">Neuer Wochenbericht</a>
+</div>
+
+<p class="empty" *ngIf="loading()">Wochenberichte werden geladen...</p>
+<app-empty-state
+  *ngIf="!loading() && allReports().length === 0"
+  icon="📅"
+  title="Noch keine Wochenberichte"
+  description="Halte den Wochenstand für die Bauleitung in einem kurzen Bericht fest."
+  actionLabel="Neuen Wochenbericht starten"
+  (action)="createReport()">
+</app-empty-state>
+
+<ul class="report-list">
+  <li *ngFor="let report of allReports()" class="report-item" [class.expanded]="expandedId() === report.id">
+    <button type="button" class="report-summary" (click)="toggleExpanded(report.id)">
+      <span class="status-pill" [class.green]="report.status === 'green'" [class.yellow]="report.status === 'yellow'" [class.red]="report.status === 'red'">
+        {{ reportStatusLabel(report.status) }}
+      </span>
+      <div class="report-info">
+        <strong>KW {{ formatDate(report.week_start) }} bis {{ formatDate(report.week_end) }}</strong>
+        <span>{{ report.display_name }}</span>
+      </div>
+      <span class="open-text">{{ report.summary || '—' }}</span>
+    </button>
+
+    <div class="report-detail" *ngIf="expandedId() === report.id">
+      <section class="info-block" *ngIf="report.summary">
+        <h4>Zusammenfassung</h4>
+        <p>{{ report.summary }}</p>
+      </section>
+      <section class="info-block" *ngIf="report.next_week_plan">
+        <h4>Plan naechste Woche</h4>
+        <p>{{ report.next_week_plan }}</p>
+      </section>
+      <section class="info-block" *ngIf="report.manpower_notes">
+        <h4>Mannschaft</h4>
+        <p>{{ report.manpower_notes }}</p>
+      </section>
+      <section class="info-block" *ngIf="report.material_notes">
+        <h4>Material</h4>
+        <p>{{ report.material_notes }}</p>
+      </section>
+      <section class="info-block" *ngIf="report.risks">
+        <h4>Risiken</h4>
+        <p>{{ report.risks }}</p>
+      </section>
+      <small>Erfasst von {{ report.display_name }} am {{ formatDateTime(report.created_at) }}</small>
+    </div>
+  </li>
+</ul>

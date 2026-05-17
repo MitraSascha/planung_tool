@@ -117,7 +117,11 @@ class PiiTokenizer:
         db.add(run)
         db.flush()
 
+        saved_placeholders: set[str] = set()
         for span, placeholder, original in replacements:
+            if placeholder in saved_placeholders:
+                continue
+            saved_placeholders.add(placeholder)
             db.add(
                 AnonymizationToken(
                     run_id=run.id,
@@ -153,6 +157,86 @@ class PiiTokenizer:
             result, count = re.subn(pattern, token.original_text, result)
             replaced_count += count
 
+        return result, replaced_count
+
+    def reidentify_text_partial(
+        self,
+        db: Session,
+        text: str,
+        allowed_original_values: list[str] | set[str] | tuple[str, ...],
+    ) -> tuple[str, int]:
+        """Reveal only those placeholders whose original maps to a value in
+        the whitelist. Used to selectively un-mask a small set of names
+        (project staff: responsible, construction manager, foreman) for
+        roles that may legitimately know the names but not the rest of the
+        customer PII.
+        """
+        placeholders = set(re.findall(r"\[\[PII:[^\]]+\]\]", text))
+        if not placeholders:
+            return text, 0
+
+        normalized_whitelist = {
+            _normalize(v) for v in allowed_original_values if v and str(v).strip()
+        }
+        if not normalized_whitelist:
+            return text, 0
+
+        rows = (
+            db.query(AnonymizationToken)
+            .filter(
+                AnonymizationToken.placeholder.in_(placeholders),
+                AnonymizationToken.normalized_text.in_(normalized_whitelist),
+            )
+            .all()
+        )
+        if not rows:
+            return text, 0
+
+        rows.sort(key=lambda token: len(token.placeholder), reverse=True)
+        replaced_count = 0
+        result = text
+        for token in rows:
+            pattern = re.escape(token.placeholder)
+            result, count = re.subn(pattern, token.original_text, result)
+            replaced_count += count
+        return result, replaced_count
+
+    def reidentify_text(self, db: Session, text: str) -> tuple[str, int]:
+        """Re-identify every ``[[PII:...]]`` placeholder found in ``text``.
+
+        Unlike :meth:`reidentify`, this doesn't need an explicit run_id —
+        every distinct placeholder string in the input is looked up in
+        ``anonymization_tokens`` (the column is indexed) and replaced with
+        the original value. Placeholders that have no matching token row
+        (e.g. because the run expired and was garbage-collected) are left
+        untouched so the output never silently loses information.
+
+        Used by the role-aware output-file endpoint to render internal
+        documents in clear text for staff roles while keeping the
+        artefacts on disk anonymised.
+        """
+        placeholders = set(re.findall(r"\[\[PII:[^\]]+\]\]", text))
+        if not placeholders:
+            return text, 0
+
+        rows = (
+            db.query(AnonymizationToken)
+            .filter(AnonymizationToken.placeholder.in_(placeholders))
+            .all()
+        )
+        if not rows:
+            return text, 0
+
+        # Longest placeholder first so substring overlaps can't matter
+        # (placeholders all share the same shape, but the sort is cheap).
+        rows.sort(key=lambda token: len(token.placeholder), reverse=True)
+
+        replaced_count = 0
+        result = text
+        for token in rows:
+            pattern = re.escape(token.placeholder)
+            result, count = re.subn(pattern, token.original_text, result)
+            replaced_count += count
         return result, replaced_count
 
     def _detect(self, text: str) -> list[EntitySpan]:

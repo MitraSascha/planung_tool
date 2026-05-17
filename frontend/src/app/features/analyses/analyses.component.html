@@ -1,0 +1,243 @@
+<section class="dashboard">
+  <header class="page-head">
+    <div>
+      <p class="kicker">Analyse</p>
+      <h1>Projekt-Dashboard</h1>
+      <p class="hint">Live-Daten aus Tagesberichten, Wochenberichten, Problemen, Stunden und Angeboten.</p>
+    </div>
+  </header>
+
+  <!-- ───────── PORTFOLIO (Cross-Projekt) ───────── -->
+  <section class="portfolio" *ngIf="portfolio() as pf">
+    <h2>Portfolio-Übersicht</h2>
+    <div class="stats-row">
+      <div class="stat-card">
+        <span class="stat-card__label">Projekte aktiv</span>
+        <span class="stat-card__value">{{ pf.active_project_count }} / {{ pf.project_count }}</span>
+      </div>
+      <div class="stat-card" [class.stat-card--alert]="pf.projects_at_risk.length > 0">
+        <span class="stat-card__label">Gefährdete Projekte</span>
+        <span class="stat-card__value">{{ pf.projects_at_risk.length }}</span>
+      </div>
+      <div class="stat-card" [class.stat-card--alert]="pf.open_blockers_total > 0">
+        <span class="stat-card__label">Offene Blocker</span>
+        <span class="stat-card__value">{{ pf.open_blockers_total }}</span>
+      </div>
+      <div class="stat-card" [class.stat-card--alert]="pf.open_material_total > 0">
+        <span class="stat-card__label">Material-Probleme</span>
+        <span class="stat-card__value">{{ pf.open_material_total }}</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-card__label">Risiken offen</span>
+        <span class="stat-card__value">{{ pf.open_risks_total }}</span>
+      </div>
+      <div class="stat-card stat-card--highlight">
+        <span class="stat-card__label">Angebotsvolumen netto</span>
+        <span class="stat-card__value">{{ formatEur(pf.total_offer_value_net) }}</span>
+      </div>
+    </div>
+
+    <div class="dual-row">
+      <div class="card">
+        <h3>Stunden letzte 7 Tage</h3>
+        <div class="hours-bar">
+          <div class="hours-soll" [style.width.%]="percent(pf.total_hours_ist_last_7d, pf.total_hours_soll_last_7d || 1)">
+            Ist: {{ formatNum(pf.total_hours_ist_last_7d) }} h
+          </div>
+        </div>
+        <p class="hours-meta">
+          Soll: {{ formatNum(pf.total_hours_soll_last_7d) }} h ·
+          <strong [class.over]="pf.total_hours_ist_last_7d > pf.total_hours_soll_last_7d">
+            Differenz: {{ formatNum(pf.total_hours_ist_last_7d - pf.total_hours_soll_last_7d) }} h
+          </strong>
+        </p>
+      </div>
+
+      <div class="card card--alert" *ngIf="pf.projects_at_risk.length > 0">
+        <h3>⚠️ Projekte mit Handlungsbedarf</h3>
+        <ul class="at-risk-list">
+          <li *ngFor="let p of pf.projects_at_risk">
+            <a [routerLink]="['/projects', p.slug]">
+              <strong>{{ p.name }}</strong>
+              <span class="risk-flags">
+                <span *ngIf="p.recent_red_reports > 0" class="risk-flag red">
+                  {{ p.recent_red_reports }} rote Tagesberichte
+                </span>
+                <span *ngIf="p.critical_blockers > 0" class="risk-flag warn">
+                  {{ p.critical_blockers }} kritische Blocker
+                </span>
+              </span>
+            </a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ───────── PROJEKT-DETAIL-DRILL ───────── -->
+  <section class="project-drill">
+    <header class="drill-head">
+      <h2>Projekt-Detail</h2>
+      <div class="drill-controls">
+        <label>
+          Projekt:
+          <select [ngModel]="selectedProjectSlug()" (ngModelChange)="onProjectChange($event)">
+            <option *ngFor="let p of projects()" [value]="p.slug">{{ p.name }} ({{ p.slug }})</option>
+          </select>
+        </label>
+        <label>
+          Zeitraum:
+          <select [ngModel]="weeksBack()" (ngModelChange)="onWeeksChange(+$event)">
+            <option [ngValue]="1">letzte Woche</option>
+            <option [ngValue]="4">letzte 4 Wochen</option>
+            <option [ngValue]="12">letzte 12 Wochen</option>
+            <option [ngValue]="52">letztes Jahr</option>
+          </select>
+        </label>
+      </div>
+    </header>
+
+    <ng-container *ngIf="projectAnalytics() as pa">
+      <p class="period">
+        Daten vom <strong>{{ pa.period_start | date: 'dd.MM.yyyy' }}</strong>
+        bis <strong>{{ pa.period_end | date: 'dd.MM.yyyy' }}</strong>
+      </p>
+
+      <div class="card">
+        <h3>Tagesbericht-Status ({{ pa.daily_status.total }} Berichte)</h3>
+        <div class="status-bar" *ngIf="statusRatio() as r; else noStatus">
+          <div class="status-bar__green"  [style.width.%]="r.green"  *ngIf="r.green">{{ r.green }}%</div>
+          <div class="status-bar__yellow" [style.width.%]="r.yellow" *ngIf="r.yellow">{{ r.yellow }}%</div>
+          <div class="status-bar__red"    [style.width.%]="r.red"    *ngIf="r.red">{{ r.red }}%</div>
+        </div>
+        <ng-template #noStatus>
+          <p class="empty-line">Keine Tagesberichte in diesem Zeitraum.</p>
+        </ng-template>
+        <div class="status-legend">
+          <span class="legend green">✓ Grün: {{ pa.daily_status.green }}</span>
+          <span class="legend yellow">! Gelb: {{ pa.daily_status.yellow }}</span>
+          <span class="legend red">✗ Rot: {{ pa.daily_status.red }}</span>
+        </div>
+      </div>
+
+      <div class="stats-row">
+        <div class="stat-card">
+          <span class="stat-card__label">Blocker offen</span>
+          <span class="stat-card__value">{{ pa.blockers_open }}<small> / {{ pa.blockers_total }}</small></span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-card__label">Material offen</span>
+          <span class="stat-card__value">{{ pa.material_open }}<small> / {{ pa.material_total }}</small></span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-card__label">Risiken offen</span>
+          <span class="stat-card__value">{{ pa.risks_open }}<small> / {{ pa.risks_total }}</small></span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-card__label">Stunden Ist</span>
+          <span class="stat-card__value">{{ formatNum(pa.hours_total_ist) }} h</span>
+        </div>
+        <div class="stat-card" [class.stat-card--alert]="hoursDelta() > 0">
+          <span class="stat-card__label">Differenz Soll/Ist</span>
+          <span class="stat-card__value">
+            {{ hoursDelta() > 0 ? '+' : '' }}{{ formatNum(hoursDelta()) }} h
+          </span>
+        </div>
+        <div class="stat-card stat-card--highlight" *ngIf="pa.offer_count > 0">
+          <span class="stat-card__label">Angebotsvolumen</span>
+          <span class="stat-card__value">{{ formatEur(pa.offer_total_net) }}</span>
+        </div>
+      </div>
+
+      <div class="card" *ngIf="pa.hours_by_user.length > 0">
+        <h3>Stunden pro Mitarbeiter</h3>
+        <div class="data-table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Mitarbeiter</th>
+                <th class="num">Tage</th>
+                <th class="num">Soll-Stunden</th>
+                <th class="num">Ist-Stunden</th>
+                <th class="num">Differenz</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let h of pa.hours_by_user">
+                <td>{{ h.display_name }}</td>
+                <td class="num">{{ h.days }}</td>
+                <td class="num">{{ formatNum(h.soll_hours) }}</td>
+                <td class="num"><strong>{{ formatNum(h.ist_hours) }}</strong></td>
+                <td class="num" [class.over]="h.ist_hours > h.soll_hours">
+                  {{ h.ist_hours - h.soll_hours > 0 ? '+' : '' }}{{ formatNum(h.ist_hours - h.soll_hours) }}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="dual-row">
+        <div class="card" *ngIf="(pa.blockers_by_severity | keyvalue).length > 0">
+          <h3>Blocker nach Schwere</h3>
+          <ul class="severity-list">
+            <li *ngFor="let entry of pa.blockers_by_severity | keyvalue">
+              <span class="dot" [style.background]="severityColor(entry.key)"></span>
+              <strong>{{ entry.key }}</strong>: {{ entry.value }}
+            </li>
+          </ul>
+        </div>
+
+        <div class="card" *ngIf="(pa.materials_by_status | keyvalue).length > 0">
+          <h3>Material-Inventar nach Status</h3>
+          <ul class="severity-list">
+            <li *ngFor="let entry of pa.materials_by_status | keyvalue">
+              <strong>{{ entry.key }}</strong>: {{ entry.value }}
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="dual-row" *ngIf="pa.top_blockers.length > 0 || pa.top_material_issues.length > 0">
+        <div class="card" *ngIf="pa.top_blockers.length > 0">
+          <h3>Häufigste Blocker</h3>
+          <ol class="top-list">
+            <li *ngFor="let item of pa.top_blockers">
+              <span class="top-count">{{ item.count }}×</span>
+              <span class="top-label">{{ item.label }}</span>
+            </li>
+          </ol>
+        </div>
+        <div class="card" *ngIf="pa.top_material_issues.length > 0">
+          <h3>Häufigste Material-Probleme</h3>
+          <ol class="top-list">
+            <li *ngFor="let item of pa.top_material_issues">
+              <span class="top-count">{{ item.count }}×</span>
+              <span class="top-label">{{ item.label }}</span>
+            </li>
+          </ol>
+        </div>
+      </div>
+
+      <div class="card" *ngIf="pa.daily_status_series.length > 0">
+        <h3>Status-Verlauf</h3>
+        <div class="series-bar">
+          <div
+            *ngFor="let p of pa.daily_status_series"
+            class="series-cell"
+            [class.series-cell--green]="p.label === 'green'"
+            [class.series-cell--yellow]="p.label === 'yellow'"
+            [class.series-cell--red]="p.label === 'red'"
+            [title]="(p.date | date: 'dd.MM.yyyy') + ': ' + (p.label || 'kein Bericht')"
+          ></div>
+        </div>
+        <p class="series-legend">{{ pa.daily_status_series.length }} Tage mit Berichten</p>
+      </div>
+
+      <p class="empty-line" *ngIf="pa.daily_status.total === 0 && pa.blockers_total === 0 && pa.hours_total_ist === 0">
+        Noch keine ausgewerteten Daten für dieses Projekt im gewählten Zeitraum.
+        Sobald Tagesberichte, Blocker oder Stunden-Erfassungen vorhanden sind, erscheinen hier KPIs.
+      </p>
+    </ng-container>
+  </section>
+</section>

@@ -1,0 +1,113 @@
+<section class="view" *ngIf="project() as p">
+  <div class="panel">
+    <div class="panel-head">
+      <div>
+        <p class="panel-kicker">Projekt</p>
+        <h2>{{ p.name }}</h2>
+      </div>
+      <div class="button-row">
+        <a class="button-link secondary" [routerLink]="['/projects', p.slug, 'edit']">Bearbeiten</a>
+        <a class="button-link" [routerLink]="['/projects', p.slug, 'generate']">Generator</a>
+      </div>
+    </div>
+
+    <dl class="project-meta">
+      <div><dt>Slug</dt><dd>{{ p.slug }}</dd></div>
+      <div><dt>Typ</dt><dd>{{ projectTypeLabel(p.project_type) }}</dd></div>
+      <div><dt>Status</dt><dd>{{ statusLabel(p.status) }}</dd></div>
+      <div><dt>Abschnitte</dt><dd>{{ p.sections.length }}</dd></div>
+      <div><dt>Unterlagen</dt><dd>{{ p.upload_count }}</dd></div>
+      <div><dt>Bereit</dt><dd>{{ p.ready_for_generation ? 'Ja' : 'Nein' }}</dd></div>
+    </dl>
+
+    <div class="readiness" [class.ready]="p.ready_for_generation">
+      <strong>{{ p.ready_for_generation ? 'Bereit fuer Generatorlauf' : 'Vor Generatorlauf pruefen' }}</strong>
+      <ul *ngIf="!p.ready_for_generation">
+        <li *ngFor="let issue of p.readiness_issues">{{ issue }}</li>
+      </ul>
+    </div>
+
+    <section class="info-block">
+      <h3>Schnellzugriff</h3>
+      <div class="quick-access">
+        <a class="quick-card" [routerLink]="['/projects', p.slug, 'reports', 'daily']">
+          <span class="quick-kicker">Berichte</span>
+          <strong>Tages- und Wochenberichte</strong>
+          <span class="quick-hint">Liste, Erfassung, Detailansicht</span>
+        </a>
+        <a class="quick-card" [routerLink]="['/projects', p.slug, 'open-points']">
+          <span class="quick-kicker">Offene Punkte</span>
+          <strong>Material und Blocker</strong>
+          <span class="quick-hint">Meldungen erfassen und uebersicht</span>
+        </a>
+        <a class="quick-card" [routerLink]="['/projects', p.slug, 'voice-notes']">
+          <span class="quick-kicker">Sprachnotizen</span>
+          <strong>Audio-Notizen und Transkripte</strong>
+          <span class="quick-hint">Aufnehmen, transkribieren, in Generator einfliessen lassen</span>
+        </a>
+      </div>
+    </section>
+
+    <section class="info-block">
+      <h3>Stammdaten</h3>
+      <dl class="key-list">
+        <div><dt>Adresse</dt><dd>{{ p.address || '—' }}</dd></div>
+        <div><dt>Projektverantwortlicher</dt><dd>{{ p.responsible || '—' }}</dd></div>
+        <div><dt>Bauleitung</dt><dd>{{ p.construction_manager || '—' }}</dd></div>
+        <div><dt>Obermonteur</dt><dd>{{ p.foreman || '—' }}</dd></div>
+        <div><dt>Start</dt><dd>{{ p.planned_start || '—' }}</dd></div>
+        <div><dt>Ziel</dt><dd>{{ p.planned_end || '—' }}</dd></div>
+      </dl>
+      <p *ngIf="p.notes">{{ p.notes }}</p>
+    </section>
+
+    <section class="info-block">
+      <h3>Bauabschnitte</h3>
+      <article class="section-card" *ngFor="let section of p.sections">
+        <strong>Abschnitt {{ section.number }} &middot; {{ section.name }}</strong>
+        <p *ngIf="section.goal">{{ section.goal }}</p>
+        <small *ngIf="section.planned_hours != null">{{ section.planned_hours }} geplante Stunden</small>
+      </article>
+    </section>
+
+    <section class="info-block">
+      <h3>Heizlast pro Wohneinheit</h3>
+      <p style="margin: 0 0 10px; color: #5a6b78; font-size: 13px;">
+        Aggregat-Tabellen aus Heizlast-Berechnungen (DIN-EN 12831) — pro Wohnung Etage, Fläche, Heizlast (W), Volumenstrom (l/h).
+        Mehrere Tabs einer XLSX werden automatisch zusammengeführt; Bauphysik-Detail- und visuelle Strang-Schemen werden klar als solche erkannt.
+      </p>
+      <app-heating-design [slug]="p.slug"></app-heating-design>
+    </section>
+
+    <section class="info-block">
+      <h3>Angebote</h3>
+      <p style="margin: 0 0 10px; color: #5a6b78; font-size: 13px;">
+        Stücklisten und PDF-Angebote von Lieferanten und Wettbewerbern.
+      </p>
+      <a
+        [routerLink]="['/projects', p.slug, 'offers']"
+        style="display: inline-block; padding: 9px 16px; background: #1c3244; color: #fff; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 13.5px;"
+      >📑 Angebote öffnen / hochladen</a>
+    </section>
+
+    <section class="info-block">
+      <h3>Unterlagen ({{ p.upload_count }})</h3>
+      <app-empty-state
+        *ngIf="p.uploads.length === 0"
+        icon="📤"
+        title="Noch keine Unterlagen"
+        description="Lade Heizlastberechnung, Aufmaß und Pläne hoch, um den Generator füttern zu können.">
+      </app-empty-state>
+      <ul class="upload-list" *ngIf="p.uploads.length > 0">
+        <li *ngFor="let upload of p.uploads">
+          <strong>{{ upload.filename }}</strong>
+          <small>{{ formatFileSize(upload.size_bytes) }} &middot; {{ formatDateTime(upload.created_at) }}</small>
+        </li>
+      </ul>
+    </section>
+  </div>
+</section>
+
+<section class="view" *ngIf="!project()">
+  <div class="panel"><p class="empty">Projekt wird geladen...</p></div>
+</section>
