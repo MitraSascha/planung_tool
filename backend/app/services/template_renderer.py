@@ -324,9 +324,6 @@ BRAND_BAR_TEMPLATE = """
 <div class="brand-bar">
   <div class="brand-inner">
     <div class="brand-logo">
-      <!-- TODO: Logo-Asset einsetzen. Solange Datei nicht da:
-           <img src="/api/templates/_assets/logo.png" alt="Mitra Sanitär" style="height:48px;">
-      -->
       <div class="brand-mark">M</div>
       <div class="brand-text">
         <div class="brand-name">MITRA SANITÄR GmbH</div>
@@ -334,11 +331,6 @@ BRAND_BAR_TEMPLATE = """
       </div>
     </div>
     <div class="brand-meta">
-      <!-- Firmen-Anschrift / Kontakt — sobald Daten geliefert, hier einsetzen:
-           <div><strong>Mitra Sanitär GmbH</strong></div>
-           <div>Musterstraße 12 · 12345 Berlin</div>
-           <div>Tel. +49 (0)30 ... · info&#64;mitra-sanitaer.de</div>
-      -->
       <div><strong>Projekt-Nr.</strong> {{ project.slug }}</div>
       <div>Stand: {{ today | de_date }}</div>
     </div>
@@ -350,9 +342,7 @@ BRAND_BAR_TEMPLATE = """
 PAGE_FOOTER_TEMPLATE = """
 <div class="page-footer">
   <div>
-    <strong>Mitra Sanitär GmbH</strong> ·
-    <!-- TODO: Adresse + Kontakt + Steuer-Nr. nach Liefer-Logo eintragen -->
-    Tradition trifft Innovation
+    <strong>Mitra Sanitär GmbH</strong> · Tradition trifft Innovation
   </div>
   <div>Projekt {{ project.slug }} · Erstellt {{ today | de_date }}</div>
 </div>

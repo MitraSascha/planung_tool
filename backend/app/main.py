@@ -1,3 +1,5 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 
 from app.api.analytics import router as analytics_router
@@ -19,21 +21,24 @@ from app.services.audit_log import (
     AuditContextMiddleware,
     register_listeners as register_audit_listeners,
 )
+from app.services.auto_sync import register_listeners as register_auto_sync_listeners
 from app.services.push_hooks import register_listeners as register_push_listeners
 from app.services.whisper_pipeline import register_listeners as register_whisper_listeners
 
-app = FastAPI(title="HEZ Tool API", version="0.1.0")
-
-if AuditContextMiddleware is not None:
-    app.add_middleware(AuditContextMiddleware)
-
-
-@app.on_event("startup")
-def on_startup() -> None:
+@asynccontextmanager
+async def lifespan(app: FastAPI):
     init_db()
     register_whisper_listeners()
     register_push_listeners()
     register_audit_listeners()
+    register_auto_sync_listeners()
+    yield
+
+
+app = FastAPI(title="HEZ Tool API", version="0.1.0", lifespan=lifespan)
+
+if AuditContextMiddleware is not None:
+    app.add_middleware(AuditContextMiddleware)
 
 
 @app.get("/health")

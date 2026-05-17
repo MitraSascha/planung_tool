@@ -80,10 +80,40 @@ export interface MaterialIssueCreate {
   priority: MaterialPriority;
 }
 
+export interface MaterialIssueRead {
+  id: number;
+  project_slug: string;
+  user_id: number;
+  username: string;
+  display_name: string;
+  section_number?: number | null;
+  description: string;
+  priority: MaterialPriority;
+  status: IssueStatus;
+  created_at: string;
+}
+
 export interface BlockerCreate {
   section_number: number | null;
   description: string;
   severity: BlockerSeverity;
+}
+
+export interface BlockerRead {
+  id: number;
+  project_slug: string;
+  user_id: number;
+  username: string;
+  display_name: string;
+  section_number?: number | null;
+  description: string;
+  severity: BlockerSeverity;
+  status: IssueStatus;
+  created_at: string;
+}
+
+export interface IssueStatusUpdate {
+  status: 'open' | 'in_progress' | 'done';
 }
 
 export interface ReportSummary {

@@ -32,7 +32,31 @@
         </div>
         <a class="button-link" [routerLink]="['/projects', slug, 'open-points', 'material', 'new']">Neue Materialmeldung</a>
       </div>
-      <p class="info-note">Aktuell offen: <strong>{{ summary()?.material_issues_open ?? 0 }}</strong>. Eine Detailansicht je Eintrag steht erst zur Verfuegung, sobald das Backend einen Listen-Endpoint fuer Materialmeldungen bereitstellt.</p>
+
+      <p *ngIf="loading()" class="info-note">Lade…</p>
+      <p *ngIf="!loading() && materialIssues().length === 0" class="info-note">Noch keine Materialmeldungen.</p>
+
+      <ul class="issue-list" *ngIf="materialIssues().length > 0">
+        <li *ngFor="let issue of materialIssues(); trackBy: trackById" class="issue-row" [class.is-pending]="pendingId() === issue.id">
+          <div class="issue-main">
+            <div class="issue-head">
+              <span class="badge" [attr.data-priority]="issue.priority">{{ issue.priority }}</span>
+              <span *ngIf="issue.section_number" class="abschnitt-pill">Abschnitt {{ issue.section_number }}</span>
+              <span class="issue-meta">{{ issue.display_name || issue.username }} · {{ issue.created_at | date:'shortDate' }}</span>
+            </div>
+            <p class="issue-text">{{ issue.description }}</p>
+          </div>
+          <div class="issue-actions">
+            <select
+              [value]="issue.status"
+              (change)="onMaterialStatusChange(issue, $any($event.target).value)"
+              [disabled]="pendingId() === issue.id"
+            >
+              <option *ngFor="let opt of statusOptions" [value]="opt.value">{{ opt.label }}</option>
+            </select>
+          </div>
+        </li>
+      </ul>
     </section>
 
     <section *ngIf="activeTab() === 'blocker'">
@@ -43,7 +67,31 @@
         </div>
         <a class="button-link" [routerLink]="['/projects', slug, 'open-points', 'blocker', 'new']">Neuen Blocker melden</a>
       </div>
-      <p class="info-note">Aktuell offen: <strong>{{ summary()?.blockers_open ?? 0 }}</strong>. Eine Detailansicht je Eintrag steht erst zur Verfuegung, sobald das Backend einen Listen-Endpoint fuer Blocker bereitstellt.</p>
+
+      <p *ngIf="loading()" class="info-note">Lade…</p>
+      <p *ngIf="!loading() && blockers().length === 0" class="info-note">Noch keine Blocker.</p>
+
+      <ul class="issue-list" *ngIf="blockers().length > 0">
+        <li *ngFor="let blocker of blockers(); trackBy: trackById" class="issue-row" [class.is-pending]="pendingId() === blocker.id">
+          <div class="issue-main">
+            <div class="issue-head">
+              <span class="badge" [attr.data-severity]="blocker.severity">{{ blocker.severity }}</span>
+              <span *ngIf="blocker.section_number" class="abschnitt-pill">Abschnitt {{ blocker.section_number }}</span>
+              <span class="issue-meta">{{ blocker.display_name || blocker.username }} · {{ blocker.created_at | date:'shortDate' }}</span>
+            </div>
+            <p class="issue-text">{{ blocker.description }}</p>
+          </div>
+          <div class="issue-actions">
+            <select
+              [value]="blocker.status"
+              (change)="onBlockerStatusChange(blocker, $any($event.target).value)"
+              [disabled]="pendingId() === blocker.id"
+            >
+              <option *ngFor="let opt of statusOptions" [value]="opt.value">{{ opt.label }}</option>
+            </select>
+          </div>
+        </li>
+      </ul>
     </section>
   </div>
 </section>

@@ -14,7 +14,7 @@ from __future__ import annotations
 from datetime import date as _date
 
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from app.db.database import get_db
@@ -201,7 +201,7 @@ def list_material_items(slug: str, current_user: User = Depends(get_current_user
 def create_material_item(slug: str, payload: MaterialItemIn, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     project = _load_project(db, slug)
     require_project_role(db, current_user, project, SITE_LEAD_ROLES)
-    row = MaterialItem(project_id=project.id, **payload.dict())
+    row = MaterialItem(project_id=project.id, user_id=current_user.id, **payload.dict())
     db.add(row)
     db.commit()
     db.refresh(row)
@@ -268,7 +268,7 @@ def list_risk_issues(slug: str, current_user: User = Depends(get_current_user), 
 def create_risk_issue(slug: str, payload: RiskIssueIn, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     project = _load_project(db, slug)
     require_project_role(db, current_user, project, SITE_LEAD_ROLES)
-    row = RiskIssue(project_id=project.id, **payload.dict())
+    row = RiskIssue(project_id=project.id, user_id=current_user.id, **payload.dict())
     db.add(row)
     db.commit()
     db.refresh(row)
@@ -306,9 +306,9 @@ def delete_risk_issue(slug: str, issue_id: int, current_user: User = Depends(get
 # ───────────────────────────────────────────────────────────────────────────
 class BlockerIn(BaseModel):
     section_number: int | None = None
-    description: str
-    severity: str = "medium"
-    status: str = "open"
+    description: str = Field(min_length=1)
+    severity: str = Field(default="medium", pattern="^(low|medium|high|critical)$")
+    status: str = Field(default="open", pattern="^(open|in_progress|done)$")
 
 
 class BlockerOut(BlockerIn):

@@ -88,3 +88,113 @@
   background: rgba(255, 248, 229, .72);
   color: #6f4b00;
 }
+
+.issue-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.issue-row {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, .82);
+  transition: opacity .15s ease;
+}
+
+.issue-row.is-pending {
+  opacity: .55;
+  pointer-events: none;
+}
+
+.issue-main {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.issue-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 6px;
+  font-size: 12px;
+}
+
+.issue-meta {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.issue-text {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.4;
+  word-wrap: break-word;
+}
+
+.issue-actions select {
+  min-height: 36px;
+  padding: 4px 28px 4px 10px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 9px;
+  border-radius: 999px;
+  font-weight: 850;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  background: #eef2f5;
+  color: #34495d;
+}
+
+.badge[data-priority="high"], .badge[data-priority="urgent"],
+.badge[data-severity="high"], .badge[data-severity="critical"] {
+  background: #fdecec;
+  color: #8a2424;
+}
+
+.badge[data-priority="normal"], .badge[data-severity="medium"] {
+  background: #eef5fb;
+  color: #114c70;
+}
+
+.badge[data-priority="low"], .badge[data-severity="low"] {
+  background: #e8f5ed;
+  color: #146835;
+}
+
+.abschnitt-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 9px;
+  border-radius: 999px;
+  background: rgba(13, 107, 143, .08);
+  color: var(--brand-strong);
+  font-weight: 850;
+  font-size: 11px;
+}
+
+@media (max-width: 540px) {
+  .issue-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .issue-actions select {
+    width: 100%;
+  }
+}

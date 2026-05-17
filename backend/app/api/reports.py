@@ -157,28 +157,6 @@ def create_daily_report(
     require_project_role(db, current_user, project, PROJECT_READ_ROLES)
     report = DailyReport(project_id=project.id, user_id=current_user.id, **request.model_dump())
     db.add(report)
-
-    if request.material_missing:
-        db.add(
-            MaterialIssue(
-                project_id=project.id,
-                user_id=current_user.id,
-                section_number=request.section_number,
-                description=request.material_missing,
-                priority="normal",
-            )
-        )
-    if request.blockers:
-        db.add(
-            Blocker(
-                project_id=project.id,
-                user_id=current_user.id,
-                section_number=request.section_number,
-                description=request.blockers,
-                severity="medium",
-            )
-        )
-
     db.commit()
     db.refresh(report)
     return _daily_read(report)
