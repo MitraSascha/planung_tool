@@ -6,6 +6,7 @@ import { forkJoin, of, Observable } from 'rxjs';
 import { catchError, switchMap } from 'rxjs/operators';
 
 import { DailyReportForm, DailyReportRead, MaterialItem, ProjectMemberRead, ProjectRead, ReportStatus } from '../../../core/models';
+import { AuthService } from '../../../core/services/auth.service';
 import { MaterialService } from '../../../core/services/material.service';
 import { NotificationService } from '../../../core/services/notification.service';
 import { PhotoService } from '../../../core/services/photo.service';
@@ -79,6 +80,7 @@ export class DailyReportFormComponent implements OnInit {
   private readonly photos = inject(PhotoService);
   private readonly materials = inject(MaterialService);
   private readonly notifications = inject(NotificationService);
+  private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
 
   @Input() slug!: string;
@@ -165,6 +167,10 @@ export class DailyReportFormComponent implements OnInit {
       this.loadReportForEdit(editId);
     } else {
       this.restoreDraft();
+      // Ersteller automatisch als anwesend vorbelegen (Frage 1, 2026-05-19).
+      // Nur wenn der Wizard frisch startet — bei einem restoreten Draft hat
+      // der User schon selbst gewählt, das respektieren wir.
+      this.preselectCurrentUserAsAttendee();
     }
     this.projects.get(this.slug).subscribe({
       next: (project) => {
@@ -180,11 +186,34 @@ export class DailyReportFormComponent implements OnInit {
     });
     this.reloadMaterialItems();
     this.reports.loadMembers(this.slug).subscribe({
-      next: (rows) => this.members.set(rows),
+      next: (rows) => {
+        this.members.set(rows);
+        // Members-Liste kommt async — Pre-Select erst hier nochmal versuchen,
+        // falls der User vorher nicht im Roster gefunden wurde.
+        this.preselectCurrentUserAsAttendee();
+      },
       error: () => {
         // Falls keine Mitglieder zugeordnet — Multi-Select bleibt leer, Freitext bleibt nutzbar.
       },
     });
+  }
+
+  /** Setzt den eingeloggten User als attendee, falls er Projekt-Mitglied ist
+   *  und noch nicht in der Liste steht. Im Edit-Modus passiert nichts —
+   *  dort gilt was im Bericht steht. */
+  private preselectCurrentUserAsAttendee(): void {
+    if (this.isEditing()) return;
+    const me = this.auth.currentUser();
+    if (!me) return;
+    // Wenn die Members-Liste bereits geladen ist, prüfen wir Mitgliedschaft.
+    // Sonst legen wir erstmal trotzdem rein (Backend lehnt Nicht-Member eh ab).
+    const members = this.members();
+    const isMember = members.length === 0 || members.some((m) => m.user_id === me.id);
+    if (!isMember) return;
+    if (!this.form.attendee_user_ids.includes(me.id)) {
+      this.form.attendee_user_ids = [...this.form.attendee_user_ids, me.id];
+      this.persistDraft();
+    }
   }
 
   /** Material-Stamm vom Server neu laden — nach Anlegen eines Artikelstamm-

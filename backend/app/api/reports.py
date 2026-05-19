@@ -277,6 +277,15 @@ def create_daily_report(
     require_project_role(db, current_user, project, PROJECT_READ_ROLES)
     payload = request.model_dump()
     attendee_ids = payload.pop("attendee_user_ids", []) or []
+    # Ersteller automatisch als anwesend dazunehmen, sofern attendees gepflegt
+    # werden (= moderner Wizard-Flow). Override: wenn der User sich explizit
+    # raus genommen hat und keine attendees sendet, lassen wir die Liste leer
+    # (Edge-Case: Büro schreibt stellvertretend — dann muss er aber wenigstens
+    # einen anderen User angeben, sonst fällt der Bericht aus der
+    # Teamstatus-Matrix raus). Wenn attendee_ids leer kommt, ergänzen wir nicht
+    # — der User nutzt vermutlich noch das Freitext-Team-Feld.
+    if attendee_ids and current_user.id not in attendee_ids:
+        attendee_ids = [*attendee_ids, current_user.id]
     # Arbeitstagerfassung: wenn der Monteur das Roh-Feld benutzt hat, splittet
     # ein LLM in Erledigt/Offen. Roh-Text bleibt persistent. Bei Bestands-
     # Workflow (separate Felder) wird der Service gar nicht erst gerufen.
