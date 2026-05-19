@@ -167,6 +167,7 @@ def _daily_read(report: DailyReport, editable: bool = False) -> DailyReportRead:
         display_name=report.user.display_name,
         section_number=report.section_number,
         report_date=report.report_date,
+        start_time=report.start_time,
         status=report.status,
         team=report.team,
         attendee_user_ids=[a.user_id for a in report.attendees],

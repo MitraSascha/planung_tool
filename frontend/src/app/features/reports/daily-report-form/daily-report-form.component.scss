@@ -135,6 +135,18 @@
   }
 }
 
+.hint--warn {
+  color: #b45309;
+  background: #fffbeb;
+  border-left: 3px solid #f59e0b;
+  padding: 6px 10px;
+  border-radius: 4px;
+  font-weight: 500;
+  font-size: 12px;
+  display: block;
+  margin-top: 4px;
+}
+
 .material-section {
   display: flex;
   flex-direction: column;

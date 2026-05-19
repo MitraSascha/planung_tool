@@ -14,6 +14,8 @@ export interface DailyReportRead {
   display_name: string;
   section_number?: number | null;
   report_date: string;
+  /** Schichtbeginn als "HH:MM" oder "HH:MM:SS" (Berlin-Lokalzeit). */
+  start_time?: string | null;
   status: ReportStatus;
   team?: string | null;
   attendee_user_ids?: number[];
@@ -42,6 +44,8 @@ export interface DailyReportRead {
 export interface DailyReportForm {
   section_number: number | null;
   report_date: string;
+  /** Schichtbeginn "HH:MM". Optional — Default kommt aus Backend-Setting. */
+  start_time?: string | null;
   status: ReportStatus;
   team: string;
   attendee_user_ids: number[];

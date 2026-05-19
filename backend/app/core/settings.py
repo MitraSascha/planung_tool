@@ -71,6 +71,9 @@ class Settings(BaseSettings):
     # aber nicht ans CRM gepusht).
     hero_api_token: str | None = None
     hero_graphql_url: str | None = "https://login.hero-software.de/api/external/v7/graphql"
+    # Default-Schichtbeginn für HERO-Tracking-Time-Push, wenn der Report kein
+    # explizites start_time gesetzt hat. Format: "HH:MM".
+    default_shift_start: str = "07:00"
 
     @property
     def workspaces_path(self) -> Path:

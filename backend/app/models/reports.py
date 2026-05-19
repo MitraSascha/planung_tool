@@ -1,4 +1,4 @@
-from datetime import date, datetime
+from datetime import date, datetime, time
 
 from pydantic import BaseModel, Field
 
@@ -6,6 +6,9 @@ from pydantic import BaseModel, Field
 class DailyReportCreate(BaseModel):
     section_number: int | None = None
     report_date: date
+    # Schichtbeginn (Berlin-Lokalzeit). Optional — wenn None, greift der
+    # Setting-Default beim HERO-Push.
+    start_time: time | None = None
     status: str = Field(default="green", pattern="^(green|yellow|red)$")
     team: str | None = None  # Freitext-Fallback
     attendee_user_ids: list[int] = Field(default_factory=list)
@@ -47,6 +50,7 @@ class DailyReportUpdate(BaseModel):
     sind absichtlich nicht enthalten — die Identität des Berichts bleibt
     fest, nur der Inhalt kann nachgetragen werden."""
     section_number: int | None = None
+    start_time: time | None = None
     status: str | None = Field(default=None, pattern="^(green|yellow|red)$")
     team: str | None = None
     attendee_user_ids: list[int] | None = None

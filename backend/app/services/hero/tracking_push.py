@@ -39,8 +39,9 @@ from .service import get_tracking_time_categories, push_tracking_time
 logger = logging.getLogger(__name__)
 
 BERLIN_TZ = ZoneInfo("Europe/Berlin")
-DEFAULT_START_TIME = time(hour=7, minute=0)
-DEFAULT_HOURS = 8.0
+# Hard-coded last-resort fallback. Der richtige Default kommt aus
+# ``settings.default_shift_start`` — parsen wir on demand in ``_resolve_start_time``.
+_FALLBACK_START_TIME = time(hour=7, minute=0)
 
 # Cache für die Default-Kategorie (erste mit is_working_time=true). Wird beim
 # ersten Push gelookuped und dann gehalten — HERO ändert seine Stamm-Kategorien
@@ -70,9 +71,33 @@ def _default_working_category_id() -> int | None:
     return None
 
 
+def _resolve_start_time(report: DailyReport) -> time:
+    """Bestimmt die Startzeit für den HERO-Push:
+
+    1. ``report.start_time`` wenn explizit gesetzt.
+    2. Sonst ``settings.default_shift_start`` (Format "HH:MM").
+    3. Letzter Fallback: 07:00 (sollte nie greifen, aber crashsicher).
+    """
+    if report.start_time is not None:
+        return report.start_time
+    raw = (settings.default_shift_start or "").strip()
+    if raw and ":" in raw:
+        try:
+            hh, mm = raw.split(":", 1)
+            return time(hour=int(hh), minute=int(mm))
+        except (ValueError, IndexError):
+            logger.warning(
+                "settings.default_shift_start unparsbar: %r — nutze 07:00",
+                raw,
+            )
+    return _FALLBACK_START_TIME
+
+
 def _start_end_for(report: DailyReport, hours: float) -> tuple[str, str]:
-    """Konstruiert ISO-Strings für start/end in Berlin-Zeit."""
-    start_local = datetime.combine(report.report_date, DEFAULT_START_TIME, tzinfo=BERLIN_TZ)
+    """Konstruiert ISO-Strings für start/end in Berlin-Zeit. Start kommt aus
+    ``report.start_time`` oder dem Setting-Default."""
+    start_t = _resolve_start_time(report)
+    start_local = datetime.combine(report.report_date, start_t, tzinfo=BERLIN_TZ)
     end_local = start_local + timedelta(hours=hours)
     return start_local.isoformat(), end_local.isoformat()
 
@@ -157,10 +182,8 @@ def _push_for_attendee(
 
 def dry_run_daily_report(report_id: int) -> list[dict]:
     """Wie :func:`push_daily_report`, aber **kein** HERO-Call — nur Compute
-    der Payloads. Liefert was beim Live-Push gesendet würde, für jeden
-    Attendee einen Eintrag. Damit kann der Admin verifizieren, ob das
-    Mapping (partner_id, project_match_id, Start/End, Kategorie, Kommentar)
-    korrekt ist, bevor er den Echt-Push freigibt.
+    der Payloads. Liefert was beim Live-Push gesendet würde.
+    Bei fehlenden ``ist_hours`` wird ein einzelner Hinweis-Eintrag geliefert.
     """
     if not is_configured():
         return [{"error": "hero_api_token nicht konfiguriert"}]
@@ -170,6 +193,11 @@ def dry_run_daily_report(report_id: int) -> list[dict]:
         report = db.query(DailyReport).filter(DailyReport.id == report_id).one_or_none()
         if report is None:
             return [{"error": f"DailyReport {report_id} nicht gefunden"}]
+        if report.ist_hours is None or float(report.ist_hours) <= 0:
+            return [{
+                "error": "ist_hours nicht gesetzt — kein Push.",
+                "report_id": report.id,
+            }]
         project = db.query(Project).filter(Project.id == report.project_id).one()
         attendees = (
             db.query(DailyReportAttendee, User)
@@ -177,7 +205,7 @@ def dry_run_daily_report(report_id: int) -> list[dict]:
             .filter(DailyReportAttendee.daily_report_id == report.id)
             .all()
         )
-        hours = float(report.ist_hours) if report.ist_hours is not None else DEFAULT_HOURS
+        hours = float(report.ist_hours)
         start_iso, end_iso = _start_end_for(report, hours)
         for _, user in attendees:
             existing = (
@@ -205,6 +233,8 @@ def push_daily_report(report_id: int) -> dict[str, int]:
     """Synchron-Variante (für Tests/Manuell): für alle Attendees pushen.
 
     Returns: Counter ``{pushed, skipped, errors}``.
+    Skip-Bedingung: ``ist_hours`` nicht gesetzt → KEIN Push (User-Wunsch
+    2026-05-19). Vermeidet sinnlose 0h-Buchungen im CRM.
     """
     counters = {"pushed": 0, "skipped": 0, "errors": 0}
     if not is_configured():
@@ -215,6 +245,12 @@ def push_daily_report(report_id: int) -> dict[str, int]:
         report = db.query(DailyReport).filter(DailyReport.id == report_id).one_or_none()
         if report is None:
             return counters
+        if report.ist_hours is None or float(report.ist_hours) <= 0:
+            logger.info(
+                "HERO-Push übersprungen für report=%s: ist_hours nicht gesetzt",
+                report_id,
+            )
+            return counters
         project = db.query(Project).filter(Project.id == report.project_id).one()
         attendees = (
             db.query(DailyReportAttendee, User)
@@ -222,7 +258,7 @@ def push_daily_report(report_id: int) -> dict[str, int]:
             .filter(DailyReportAttendee.daily_report_id == report.id)
             .all()
         )
-        hours = float(report.ist_hours) if report.ist_hours is not None else DEFAULT_HOURS
+        hours = float(report.ist_hours)
         for _, user in attendees:
             if user.hero_partner_id is None:
                 counters["skipped"] += 1

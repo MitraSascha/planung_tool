@@ -1,6 +1,6 @@
-from datetime import date, datetime
+from datetime import date, datetime, time
 
-from sqlalchemy import Boolean, Date, DateTime, Float, ForeignKey, Integer, String, Text, UniqueConstraint, func, text
+from sqlalchemy import Boolean, Date, DateTime, Float, ForeignKey, Integer, String, Text, Time, UniqueConstraint, func, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.database import Base
@@ -172,6 +172,9 @@ class DailyReport(Base):
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
     section_number: Mapped[int | None] = mapped_column(Integer, nullable=True)
     report_date: Mapped[date] = mapped_column(Date)
+    # Optionaler Schichtbeginn (lokale Zeit, Berlin). Wenn None: Setting-Default.
+    # Wird vom HERO-Tracking-Push als Startzeit verwendet.
+    start_time: Mapped[time | None] = mapped_column(Time, nullable=True)
     status: Mapped[str] = mapped_column(String(16), default="green")
     team: Mapped[str | None] = mapped_column(String(255), nullable=True)
     completed_work: Mapped[str | None] = mapped_column(Text, nullable=True)

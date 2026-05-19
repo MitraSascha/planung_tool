@@ -104,6 +104,9 @@ export class DailyReportFormComponent implements OnInit {
    * Damit entstehen keine Duplikat-Reports bei Retry.
    */
   private savedReportId: number | null = null;
+  /** Wenn der User die „keine Stunden"-Warnung schon bestätigt hat, nicht
+   *  beim nächsten Submit (z.B. Retry für gescheiterte Anhänge) erneut fragen. */
+  private confirmedNoHours = false;
   protected readonly draftPhotos = signal<DraftPhoto[]>([]);
   protected readonly photoCount = computed(() => this.draftPhotos().length);
 
@@ -259,6 +262,8 @@ export class DailyReportFormComponent implements OnInit {
           status: target.status,
           team: target.team ?? '',
           attendee_user_ids: target.attendee_user_ids ?? [],
+          // Backend liefert "HH:MM:SS" → für <input type=time> auf "HH:MM" kürzen.
+          start_time: target.start_time ? target.start_time.slice(0, 5) : null,
           raw_work_log: target.raw_work_log ?? '',
           raw_work_log_language: target.raw_work_log_language ?? null,
           completed_work: target.completed_work ?? '',
@@ -487,6 +492,21 @@ export class DailyReportFormComponent implements OnInit {
     if (this.submitting()) {
       return;
     }
+    // Warnung wenn keine Stunden eingetragen wurden — Bericht wird trotzdem
+    // gespeichert, aber NICHT ans CRM gepusht (User-Wunsch 2026-05-19).
+    // Nur einmal pro Submit-Versuch fragen — bei "Speichern" weiter geht's,
+    // bei "Abbrechen" landet der User wieder im Form.
+    const ist = this.form.ist_hours;
+    if ((ist == null || Number(ist) <= 0) && !this.confirmedNoHours) {
+      const ok = window.confirm(
+        'Du hast keine Stunden (ist_hours) eingetragen.\n\n' +
+          'Der Tagesbericht wird gespeichert, aber NICHT ans CRM übertragen — ' +
+          'es kommt keine Zeitbuchung für dich oder dein Team an.\n\n' +
+          'Trotzdem speichern?',
+      );
+      if (!ok) return;
+      this.confirmedNoHours = true;
+    }
     this.notifications.clear();
     this.submitting.set(true);
 
@@ -631,6 +651,7 @@ export class DailyReportFormComponent implements OnInit {
     return {
       section_number: null,
       report_date: todayIso(),
+      start_time: '07:00',
       status: 'green',
       team: '',
       attendee_user_ids: [],
@@ -641,6 +662,7 @@ export class DailyReportFormComponent implements OnInit {
       material_missing: '',
       blockers: '',
       notes: '',
+      ist_hours: null,
     };
   }
 

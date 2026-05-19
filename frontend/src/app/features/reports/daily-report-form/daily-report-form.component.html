@@ -37,6 +37,17 @@
             required>
         </label>
         <label>
+          <span>Schichtbeginn</span>
+          <input
+            name="start_time"
+            type="time"
+            step="900"
+            [(ngModel)]="form.start_time"
+            (ngModelChange)="persistDraft()"
+            placeholder="07:00">
+          <small class="hint">Default 07:00 — anpassen wenn anders begonnen.</small>
+        </label>
+        <label>
           <span>Bauabschnitt</span>
           <select
             name="section_number"
@@ -340,6 +351,10 @@
             [(ngModel)]="form.ist_hours"
             (ngModelChange)="persistDraft()"
             placeholder="z.B. 7.5">
+          <small class="hint hint--warn" *ngIf="form.ist_hours == null || form.ist_hours <= 0">
+            ⚠️ Ohne Stunden wird der Bericht <strong>nicht ans CRM gepusht</strong>.
+            Beim Speichern wirst du nochmal gefragt.
+          </small>
         </label>
       </div>
 
