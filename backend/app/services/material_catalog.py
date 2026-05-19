@@ -74,6 +74,11 @@ _TYP_PATTERNS: tuple[tuple[str, tuple[str, ...]], ...] = (
             r"thermostatkopf",
             r"\bhahn\b",
             r"absperr",         # Absperrhahn, Absperrventil
+            # Heizkörper-Anschluss-Set: Radiator-Verschraubung gehört funktional
+            # zum Ventil (mit Ventilunterteil + Thermostat) und wird vom Monteur
+            # zusammen gesucht. Andere „Verschraub"-Treffer (z.B. Temponox
+            # Anschl.-Verschraub.) bleiben formstueck.
+            r"radiator[-\s]?verschraub",
         ),
     ),
     (
