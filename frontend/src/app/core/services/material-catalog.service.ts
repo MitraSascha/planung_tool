@@ -11,6 +11,7 @@ export interface MaterialCatalogEntry {
   nettowert_eur: number | null;
   einheit: string | null;
   kategorie: string | null;
+  typ: string | null;
 }
 
 /**
@@ -25,6 +26,7 @@ export class MaterialCatalogService {
   list(
     q?: string,
     kategorie?: string | null,
+    typ?: string | null,
     limit = 200,
   ): Observable<MaterialCatalogEntry[]> {
     let params = new HttpParams().set('limit', String(limit));
@@ -32,10 +34,20 @@ export class MaterialCatalogService {
     if (trimmed) params = params.set('q', trimmed);
     const kat = (kategorie ?? '').trim();
     if (kat) params = params.set('kategorie', kat);
+    const t = (typ ?? '').trim();
+    if (t) params = params.set('typ', t);
     return this.http.get<MaterialCatalogEntry[]>('/api/material-catalog', { params });
   }
 
   listCategories(): Observable<string[]> {
     return this.http.get<string[]>('/api/material-catalog/categories');
+  }
+
+  /** Mit kategorie eingeschränkt: nur Typen die in dieser Kategorie Treffer haben. */
+  listTypes(kategorie?: string | null): Observable<string[]> {
+    let params = new HttpParams();
+    const kat = (kategorie ?? '').trim();
+    if (kat) params = params.set('kategorie', kat);
+    return this.http.get<string[]>('/api/material-catalog/types', { params });
   }
 }

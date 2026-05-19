@@ -926,6 +926,9 @@ class MaterialCatalogItem(Base):
     # Kategorie aus dem Dateinamen abgeleitet: standard | brandschutz | isolierung.
     # NULL nur bei vor-Migrations-Daten — der Import füllt das immer.
     kategorie: Mapped[str | None] = mapped_column(String(32), nullable=True, index=True)
+    # Material-Typ aus den Beschreibungs-Texten abgeleitet:
+    # rohr | ventil | formstueck | sonstiges. Auto-Klassifikation beim Import.
+    typ: Mapped[str | None] = mapped_column(String(32), nullable=True, index=True)
     sort_key: Mapped[str] = mapped_column(String(512), default="", server_default="")
     active: Mapped[bool] = mapped_column(default=True, server_default=text("true"))
     created_at: Mapped[datetime] = mapped_column(

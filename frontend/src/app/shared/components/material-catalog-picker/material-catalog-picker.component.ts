@@ -23,6 +23,17 @@ const CATEGORY_LABELS: Record<string, string> = {
   isolierung: 'Isolierung',
 };
 
+const TYPE_LABELS: Record<string, string> = {
+  rohr: 'Rohre',
+  ventil: 'Ventile',
+  formstueck: 'Formstücke',
+  sonstiges: 'Sonstiges',
+};
+
+// Anzeige-Reihenfolge der Typ-Chips — explizit, weil alphabetisch
+// (formstueck/rohr/sonstiges/ventil) keinen Sinn macht.
+const TYPE_ORDER = ['rohr', 'ventil', 'formstueck', 'sonstiges'];
+
 /**
  * Bottom-Sheet zur Auswahl aus dem kuratierten Materialkatalog
  * (siehe ``backend/app/services/material_catalog.py``).
@@ -56,9 +67,14 @@ export class MaterialCatalogPickerComponent {
   protected readonly categories = signal<string[]>([]);
   /** Aktive Filter-Kategorie. `null` = „Alle anzeigen". */
   protected readonly activeCategory = signal<string | null>(null);
+  /** Typen die in der aktuell gewählten Kategorie Treffer haben. */
+  protected readonly types = signal<string[]>([]);
+  /** Aktiver Typ-Filter. `null` = „Alle Typen". */
+  protected readonly activeType = signal<string | null>(null);
 
   private readonly query$ = new BehaviorSubject<string>('');
   private readonly category$ = new BehaviorSubject<string | null>(null);
+  private readonly type$ = new BehaviorSubject<string | null>(null);
 
   constructor() {
     // Body-Scroll-Lock wenn Sheet offen ist
@@ -67,17 +83,18 @@ export class MaterialCatalogPickerComponent {
       document.body.style.overflow = this.open() ? 'hidden' : '';
     });
 
-    // Such-Stream: kombiniert Volltext-Query (debounced) mit Kategorie-Filter
-    // (sofort wirksam). Kategorie-Switches sollen nicht 250ms warten.
+    // Such-Stream: kombiniert Volltext-Query (debounced) mit Kategorie- und
+    // Typ-Filter (sofort wirksam). Chip-Switches sollen nicht 250ms warten.
     combineLatest([
       this.query$.pipe(debounceTime(250), distinctUntilChanged()),
       this.category$.pipe(distinctUntilChanged()),
+      this.type$.pipe(distinctUntilChanged()),
     ])
       .pipe(
-        switchMap(([q, cat]) => {
+        switchMap(([q, cat, typ]) => {
           this.busy.set(true);
           this.error.set(null);
-          return this.catalog.list(q, cat, 200).pipe(
+          return this.catalog.list(q, cat, typ, 200).pipe(
             catchError(() => {
               this.error.set('Liste konnte nicht geladen werden.');
               return of([] as MaterialCatalogEntry[]);
@@ -91,10 +108,31 @@ export class MaterialCatalogPickerComponent {
       });
   }
 
+  /** Lädt die verfügbaren Typen für die aktive Kategorie. So zeigt der
+   *  Picker für „Isolierung" nicht „Ventile"-Chips, weil dort keiner ist. */
+  private refreshTypes(): void {
+    this.catalog.listTypes(this.activeCategory()).subscribe({
+      next: (rows) => {
+        const ordered = TYPE_ORDER.filter((t) => rows.includes(t));
+        this.types.set(ordered);
+        // Wenn der aktive Typ in der neuen Kategorie nicht mehr existiert,
+        // zurücksetzen.
+        const at = this.activeType();
+        if (at && !rows.includes(at)) {
+          this.activeType.set(null);
+          this.type$.next(null);
+        }
+      },
+      error: () => this.types.set([]),
+    });
+  }
+
   protected openSheet(): void {
     this.query.set('');
     this.activeCategory.set(null);
+    this.activeType.set(null);
     this.category$.next(null);
+    this.type$.next(null);
     this.open.set(true);
     this.query$.next(''); // Initial-Laden alphabetisch
     if (this.categories().length === 0) {
@@ -104,6 +142,7 @@ export class MaterialCatalogPickerComponent {
         error: () => this.categories.set([]),
       });
     }
+    this.refreshTypes();
   }
 
   protected closeSheet(): void {
@@ -118,10 +157,21 @@ export class MaterialCatalogPickerComponent {
   protected setCategory(cat: string | null): void {
     this.activeCategory.set(cat);
     this.category$.next(cat);
+    // Nach Kategorie-Wechsel die verfügbaren Typen neu laden.
+    this.refreshTypes();
+  }
+
+  protected setType(t: string | null): void {
+    this.activeType.set(t);
+    this.type$.next(t);
   }
 
   protected categoryLabel(cat: string): string {
     return CATEGORY_LABELS[cat] ?? cat;
+  }
+
+  protected typeLabel(t: string): string {
+    return TYPE_LABELS[t] ?? t;
   }
 
   protected pick(entry: MaterialCatalogEntry): void {

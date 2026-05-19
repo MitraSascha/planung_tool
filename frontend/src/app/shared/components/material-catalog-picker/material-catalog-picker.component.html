@@ -48,6 +48,31 @@
         </div>
       }
 
+      @if (types().length > 1) {
+        <div class="catalog-sheet__chips catalog-sheet__chips--types" role="tablist" aria-label="Typ">
+          <button
+            type="button"
+            class="catalog-chip catalog-chip--type"
+            [class.catalog-chip--active]="activeType() === null"
+            role="tab"
+            [attr.aria-selected]="activeType() === null"
+            (click)="setType(null)">
+            Alle Typen
+          </button>
+          @for (t of types(); track t) {
+            <button
+              type="button"
+              class="catalog-chip catalog-chip--type"
+              [class.catalog-chip--active]="activeType() === t"
+              role="tab"
+              [attr.aria-selected]="activeType() === t"
+              (click)="setType(t)">
+              {{ typeLabel(t) }}
+            </button>
+          }
+        </div>
+      }
+
       @if (busy()) {
         <p class="catalog-sheet__status">Suche läuft …</p>
       } @else if (error(); as err) {

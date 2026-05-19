@@ -21,6 +21,7 @@ from __future__ import annotations
 import csv
 import io
 import logging
+import re
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -55,6 +56,67 @@ def _kategorie_from_filename(name: str) -> str:
     return "standard"
 
 
+# Material-Typ-Klassifikation. Reihenfolge wichtig: erstes Pattern, das matcht,
+# gewinnt. Daher zuerst die spezifischeren Sub-Typen, dann Sammeltypen.
+# Patterns sind case-insensitive Regex. Werden auf beschreibung_1 +
+# beschreibung_2 zusammen ausgewertet.
+_TYP_PATTERNS: tuple[tuple[str, tuple[str, ...]], ...] = (
+    # Ventile zuerst — würden sonst von "verschraub" als formstueck eingefangen
+    # werden („Strangabsperrventil" enthält kein „verschraub", aber
+    # „Radiator-Verschraubung" enthält „verschraub" — diese ist aber ein
+    # Formteil, nicht ein Ventil → muss explizit dort landen). Trotzdem zuerst
+    # Ventil, weil das eindeutigste Signal.
+    (
+        "ventil",
+        (
+            r"ventil",          # Strangabsperrventil, Ventilunterteil
+            r"\bvent\b",        # „Strangreg.Vent." — \b matched zwischen t und Punkt
+            r"thermostatkopf",
+            r"\bhahn\b",
+            r"absperr",         # Absperrhahn, Absperrventil
+        ),
+    ),
+    (
+        "rohr",
+        (
+            r"-rohr\b",         # Temponox-Rohr
+            r"\brohr\b(?!schale)",  # „Rohr 22mm", aber nicht „Rohrschale"
+        ),
+    ),
+    (
+        "formstueck",
+        (
+            r"\bbogen\b",
+            r"übergangsstück",
+            r"reduzier",        # Reduzierstück
+            r"\bmuffe\b",
+            r"schiebemuffe",
+            r"t-stück",
+            r"kreuzstück",
+            r"verschraub",      # Anschl.-Verschraub., Radiator-Verschraubung
+            r"verschlusskappe",
+            r"endkappe",
+            r"anschluss?-?stück",
+        ),
+    ),
+)
+
+
+def _typ_from_beschreibung(b1: str, b2: str | None) -> str:
+    """Klassifiziert den Material-Typ anhand der Beschreibungen.
+
+    Reihenfolge der Patterns ist relevant — siehe Kommentar bei ``_TYP_PATTERNS``.
+    Fallback ``sonstiges`` deckt Brandschutz-Schalen, Rohrschalen (Isolierung),
+    Stopfen, Stanzer etc.
+    """
+    haystack = f"{b1 or ''} {b2 or ''}".lower()
+    for typ, patterns in _TYP_PATTERNS:
+        for pat in patterns:
+            if re.search(pat, haystack):
+                return typ
+    return "sonstiges"
+
+
 @dataclass
 class CatalogRow:
     artikelnummer: str
@@ -63,6 +125,7 @@ class CatalogRow:
     listenpreis_eur: float | None
     nettowert_eur: float | None
     kategorie: str = "standard"
+    typ: str = "sonstiges"
 
 
 def _find_csvs() -> list[Path]:
@@ -143,6 +206,7 @@ def parse_csv(csv_text: str, kategorie: str = "standard") -> list[CatalogRow]:
             listenpreis_eur=lp,
             nettowert_eur=nw,
             kategorie=kategorie,
+            typ=_typ_from_beschreibung(b1, b2),
         ))
     return rows
 
@@ -212,6 +276,7 @@ def import_from_csv(
                     listenpreis_eur=row.listenpreis_eur,
                     nettowert_eur=row.nettowert_eur,
                     kategorie=row.kategorie,
+                    typ=row.typ,
                     sort_key=_make_sort_key(row.beschreibung_1, row.beschreibung_2),
                     active=True,
                 )
@@ -233,6 +298,9 @@ def import_from_csv(
                 changed = True
             if item.kategorie != row.kategorie:
                 item.kategorie = row.kategorie
+                changed = True
+            if item.typ != row.typ:
+                item.typ = row.typ
                 changed = True
             new_sort = _make_sort_key(row.beschreibung_1, row.beschreibung_2)
             if item.sort_key != new_sort:
@@ -268,6 +336,7 @@ def search(
     db: Session,
     query: str | None = None,
     kategorie: str | None = None,
+    typ: str | None = None,
     limit: int = 200,
 ) -> list[MaterialCatalogItem]:
     """Such-Helper für den API-Endpoint.
@@ -275,6 +344,7 @@ def search(
     Filter:
       * aktive Artikel
       * optional ``kategorie`` (standard | brandschutz | isolierung)
+      * optional ``typ`` (rohr | ventil | formstueck | sonstiges)
       * **Token-Match** (alle Tokens müssen irgendwo in Beschreibung_1,
         Beschreibung_2 oder Artikelnummer vorkommen — UND-Verknüpfung).
         Damit findet „bogen 22" auch „Temponox Bogen 90 Grad, 22mm".
@@ -287,6 +357,10 @@ def search(
         kat = kategorie.strip().lower()
         if kat:
             stmt = stmt.filter(MaterialCatalogItem.kategorie == kat)
+    if typ:
+        t = typ.strip().lower()
+        if t:
+            stmt = stmt.filter(MaterialCatalogItem.typ == t)
     if q:
         # Tokenize: jeder Whitespace-separierte Begriff muss irgendwo matchen.
         tokens = [t for t in q.split() if t]
@@ -311,4 +385,22 @@ def available_categories(db: Session) -> list[str]:
         .order_by(MaterialCatalogItem.kategorie.asc())
         .all()
     )
+    return [r[0] for r in rows if r[0]]
+
+
+def available_types(db: Session, kategorie: str | None = None) -> list[str]:
+    """Distinct-Liste der Material-Typen, optional eingeschränkt auf eine
+    Kategorie. So zeigen die Filter-Chips nur die Typen die in der aktuellen
+    Kategorie auch Treffer haben (z.B. in Isolierung gibt's nur „sonstiges"
+    weil das alles Rohrschalen sind)."""
+    stmt = (
+        db.query(MaterialCatalogItem.typ)
+        .filter(MaterialCatalogItem.active.is_(True))
+        .filter(MaterialCatalogItem.typ.is_not(None))
+    )
+    if kategorie:
+        kat = kategorie.strip().lower()
+        if kat:
+            stmt = stmt.filter(MaterialCatalogItem.kategorie == kat)
+    rows = stmt.distinct().order_by(MaterialCatalogItem.typ.asc()).all()
     return [r[0] for r in rows if r[0]]
