@@ -35,7 +35,7 @@
           <p class="panel-kicker">Verzeichnis</p>
           <h2>Benutzer</h2>
         </div>
-        <button type="button" class="secondary" (click)="refreshUsers()">Aktualisieren</button>
+        <button type="button" class="btn btn--secondary" (click)="refreshUsers()">Aktualisieren</button>
       </div>
       <div class="admin-list">
         <article class="admin-row" *ngFor="let user of users()">
@@ -85,7 +85,7 @@
           <p class="panel-kicker">Zugriffe</p>
           <h2>Projektrollen</h2>
         </div>
-        <button type="button" class="secondary" (click)="refreshMembers()">Aktualisieren</button>
+        <button type="button" class="btn btn--secondary" (click)="refreshMembers()">Aktualisieren</button>
       </div>
       <details class="member-project" *ngFor="let project of projects()" open>
         <summary>

@@ -54,9 +54,10 @@
       "name": "outputs",
       "urls": ["/api/projects/*/outputs", "/api/projects/*/outputs/**"],
       "cacheConfig": {
-        "strategy": "performance",
+        "strategy": "freshness",
         "maxSize": 100,
-        "maxAge": "7d"
+        "maxAge": "7d",
+        "timeout": "3s"
       }
     },
     {

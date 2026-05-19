@@ -1,38 +1,111 @@
-<section class="view">
-  <div class="metric-grid">
-    <div class="metric"><span>Projekte</span><strong>{{ projects().length }}</strong></div>
-    <div class="metric"><span>Bereit</span><strong>{{ readyCount() }}</strong></div>
-    <div class="metric"><span>Publiziert</span><strong>{{ publishedCount() }}</strong></div>
-    <div class="metric"><span>Ausgabedateien</span><strong>{{ totalOutputs() }}</strong></div>
+<section class="view overview-view">
+
+  <!-- ───── Welcome-Hero ───── -->
+  <header class="overview-hero">
+    <div class="overview-hero__content">
+      <p class="overview-hero__kicker">Start</p>
+      <h1>
+        Willkommen<ng-container *ngIf="currentUser() as user">, {{ user.display_name }}</ng-container>
+      </h1>
+      <p class="overview-hero__lead" *ngIf="currentUser()">
+        {{ projects().length }} Projekte, davon {{ readyCount() }} bereit zum Generieren.
+      </p>
+      <p class="overview-hero__lead" *ngIf="!currentUser()">
+        Bitte anmelden, um Projekte und Tagesberichte zu sehen.
+      </p>
+      <span class="overview-hero__role-badge" *ngIf="currentUser()">{{ roleLabel() }}</span>
+    </div>
+    <div class="overview-hero__icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 12l9-9 9 9"/><path d="M5 10v10h14V10"/>
+      </svg>
+    </div>
+  </header>
+
+  <!-- ───── Rollen-abhaengige Quick-CTAs ───── -->
+  <div class="quick-actions" *ngIf="isFieldRole()">
+    <a class="quick-action" [routerLink]="['/landing']">
+      <span class="quick-action__icon" aria-hidden="true">🏗</span>
+      <div class="quick-action__body">
+        <strong>Zu meiner Baustelle</strong>
+        <small>Heutige Projekte und Aufgaben</small>
+      </div>
+    </a>
+    <a class="quick-action quick-action--accent" [routerLink]="[dailyReportRoute()]">
+      <span class="quick-action__icon" aria-hidden="true">📝</span>
+      <div class="quick-action__body">
+        <strong>Tagesbericht starten</strong>
+        <small>Stunden, Material und Fortschritt erfassen</small>
+      </div>
+    </a>
   </div>
-  <div class="dashboard-grid">
-    <section class="panel">
-      <div class="panel-head"><div><p class="panel-kicker">Live</p><h2>Projektstatus</h2></div></div>
-      <article class="compact-row" *ngFor="let project of projects()">
-        <div><strong>{{ project.slug }}</strong><span>{{ project.name }}</span></div>
-        <span class="status-pill" [class.published]="project.status === 'published'" [class.failed]="project.status.includes('failed')">{{ statusLabel(project.status) }}</span>
-      </article>
-      <app-empty-state
-        *ngIf="projects().length === 0"
-        icon="🏗"
-        title="Noch keine Projekte"
-        description="Sobald Projekte angelegt sind, erscheinen sie hier in der Statusübersicht.">
-      </app-empty-state>
-    </section>
-    <section class="panel">
-      <div class="panel-head"><div><p class="panel-kicker">Baustelle</p><h2>Erfassungsstand</h2></div></div>
-      <article class="compact-row" *ngFor="let project of projects()">
-        <div><strong>{{ project.slug }}</strong><span>{{ summaries()[project.slug]?.daily_reports ?? 0 }} Tagesberichte &middot; {{ summaries()[project.slug]?.weekly_reports ?? 0 }} Wochenberichte</span></div>
-        <span class="status-dot red" *ngIf="(summaries()[project.slug]?.status_red ?? 0) > 0">Rot</span>
-        <span class="status-dot yellow" *ngIf="(summaries()[project.slug]?.status_red ?? 0) === 0 && (summaries()[project.slug]?.status_yellow ?? 0) > 0">Gelb</span>
-        <span class="status-dot green" *ngIf="(summaries()[project.slug]?.status_red ?? 0) === 0 && (summaries()[project.slug]?.status_yellow ?? 0) === 0">Gruen</span>
-      </article>
-      <app-empty-state
-        *ngIf="projects().length === 0"
-        icon="📋"
-        title="Noch keine Erfassung"
-        description="Sobald die ersten Tages- und Wochenberichte einlaufen, siehst du hier den Stand pro Projekt.">
-      </app-empty-state>
-    </section>
+
+  <div class="quick-actions" *ngIf="isManager()">
+    <a class="quick-action" [routerLink]="['/landing']">
+      <span class="quick-action__icon" aria-hidden="true">🏗</span>
+      <div class="quick-action__body">
+        <strong>Zu meinen Baustellen</strong>
+        <small>Heute zugeordnete Projekte</small>
+      </div>
+    </a>
+    <a class="quick-action quick-action--accent" [routerLink]="['/analyses']">
+      <span class="quick-action__icon" aria-hidden="true">📈</span>
+      <div class="quick-action__body">
+        <strong>Projekt-Dashboard</strong>
+        <small>Portfolio, Risiken und Stundenanalyse</small>
+      </div>
+    </a>
+    <a class="quick-action" [routerLink]="['/projects']">
+      <span class="quick-action__icon" aria-hidden="true">📁</span>
+      <div class="quick-action__body">
+        <strong>Alle Projekte</strong>
+        <small>Kartenansicht und Tabelle</small>
+      </div>
+    </a>
   </div>
+
+  <!-- ───── Meine aktuellen Projekte (kompakt, klickbar) ───── -->
+  <section class="dashboard-card" *ngIf="currentUser()">
+    <div class="dashboard-card__head">
+      <div class="dashboard-card__icon dashboard-card__icon--info" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V8l7-5 7 5v13"/><path d="M9 21v-6h6v6"/></svg>
+      </div>
+      <div>
+        <p class="panel-kicker">Meine</p>
+        <h2>Aktuelle Projekte</h2>
+      </div>
+    </div>
+
+    <ul class="compact-list" *ngIf="projects().length > 0">
+      <li class="compact-list__item" *ngFor="let project of projects()">
+        <a class="compact-list__link" [routerLink]="['/projects', project.slug, 'role']">
+          <span class="status-dot"
+                [class.status-dot--red]="projectStatusColor(project.slug) === 'red'"
+                [class.status-dot--yellow]="projectStatusColor(project.slug) === 'yellow'"
+                [class.status-dot--green]="projectStatusColor(project.slug) === 'green'"
+                [attr.title]="'Status: ' + projectStatusColor(project.slug)"
+                aria-hidden="true"></span>
+          <div class="compact-list__main">
+            <strong>{{ project.slug }}</strong>
+            <span>{{ project.name }}</span>
+          </div>
+          <span class="compact-list__chevron" aria-hidden="true">›</span>
+        </a>
+      </li>
+    </ul>
+
+    <div class="empty-block" *ngIf="projects().length === 0 && isManager()">
+      <div class="empty-block__icon" aria-hidden="true">🏗</div>
+      <h3>Noch keine Projekte zugeordnet</h3>
+      <p>Lege ein neues Projekt an, um loszulegen.</p>
+      <a class="empty-block__btn" [routerLink]="['/projects', 'new']">Neues Projekt anlegen</a>
+    </div>
+
+    <app-empty-state
+      *ngIf="projects().length === 0 && !isManager()"
+      icon="🏗"
+      title="Noch keine Projekte zugeordnet"
+      description="Wende dich an die Projektleitung, um einer Baustelle zugeordnet zu werden.">
+    </app-empty-state>
+  </section>
 </section>

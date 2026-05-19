@@ -174,29 +174,8 @@
   &.src-pdf { background: rgba(239, 128, 78, 0.18); color: #c44a1c; }
 }
 
-.btn-icon {
-  background: transparent;
-  border: 1px solid var(--line-medium);
-  border-radius: var(--r-sm);
-  padding: var(--s-1) var(--s-2);
-  font-size: var(--fs-md);
-  cursor: pointer;
-  text-decoration: none;
-  color: var(--mitra-primary);
-  margin: 0 2px;
-  min-width: 32px;
-  min-height: 32px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-
-  &:hover { background: var(--bg-soft); border-bottom-color: transparent; }
-  &.btn-danger:hover {
-    background: var(--status-err-bg);
-    color: var(--status-err);
-    border-color: var(--status-err);
-  }
-}
+/* .btn-icon Block entfernt 2026-05-18 — Templates nutzen jetzt
+ * .btn .btn--icon (+ .btn--danger-ghost für Lösch-Icon) global. */
 
 /* ───── Preview / Detail Card ───── */
 .preview-card,
@@ -243,33 +222,8 @@
   }
 }
 
-.btn-primary,
-.btn-secondary {
-  min-height: var(--touch-target);
-  padding: 10px var(--s-4);
-  border-radius: var(--r);
-  font-size: var(--fs-base);
-  font-weight: var(--fw-semi);
-  cursor: pointer;
-  border: 1px solid transparent;
-  transition: background var(--transition-fast), transform 80ms ease;
-  text-decoration: none;
-  display: inline-flex;
-  align-items: center;
-  gap: var(--s-1);
-}
-.btn-primary {
-  background: var(--mitra-primary);
-  color: var(--text-on-dark);
-  &:hover:not(:disabled) { background: var(--mitra-primary-dark); transform: translateY(-1px); border-bottom-color: transparent; }
-  &:disabled { opacity: .5; cursor: not-allowed; }
-}
-.btn-secondary {
-  background: var(--bg-panel);
-  color: var(--text-ink);
-  border-color: var(--line-medium);
-  &:hover { background: var(--bg-soft); border-bottom-color: transparent; }
-}
+/* .btn-primary/.btn-secondary lokale Overrides entfernt 2026-05-18 —
+ * Templates nutzen jetzt .btn .btn--primary / .btn .btn--secondary global. */
 
 /* ───── Meta-Grid ───── */
 .meta-grid {

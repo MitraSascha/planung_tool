@@ -186,7 +186,7 @@
   display: grid;
   gap: var(--s-2);
 
-  li a {
+  .at-risk-row {
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -195,16 +195,19 @@
     padding: var(--s-3) var(--s-4);
     background: var(--bg-soft);
     border-radius: var(--r);
+    border-left: 4px solid var(--status-err);
+  }
+  .at-risk-name {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
     text-decoration: none;
     color: var(--text-ink);
     border-bottom: none;
-    transition: background var(--transition-fast);
 
-    &:hover {
-      background: var(--status-warn-bg);
-      border-bottom: none;
-    }
     strong { color: var(--mitra-primary); }
+    small { color: var(--text-muted); font-size: var(--fs-xs); }
+    &:hover strong { text-decoration: underline; }
   }
   .risk-flags {
     display: flex;
@@ -212,7 +215,7 @@
     flex-wrap: wrap;
   }
   .risk-flag {
-    padding: 3px var(--s-2);
+    padding: 4px var(--s-3);
     border-radius: var(--r-pill);
     font-size: var(--fs-xs);
     font-weight: var(--fw-bold);
@@ -220,6 +223,67 @@
     &.red { background: var(--status-err-bg); color: var(--status-err); }
     &.warn { background: var(--status-warn-bg); color: var(--status-warn); }
   }
+  /* Klickbare Flag-Pills mit echtem Affordance. */
+  .risk-flag--link {
+    text-decoration: none;
+    border-bottom: none;
+    transition: filter .12s, transform .08s;
+    min-height: 28px;
+    display: inline-flex;
+    align-items: center;
+
+    &:hover { filter: brightness(0.92); transform: translateX(2px); }
+    &:focus-visible {
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(239, 128, 78, 0.30);
+    }
+  }
+}
+
+.hours-progress-card {
+  &__total {
+    padding: var(--s-3, 12px) 0;
+    margin-bottom: var(--s-3, 12px);
+    border-bottom: 1px solid var(--line-soft, rgba(28,50,68,.08));
+  }
+  &__sections {
+    display: grid;
+    gap: var(--s-4, 16px);
+    margin-top: var(--s-2, 8px);
+  }
+  &__row {
+    display: grid;
+    gap: 4px;
+  }
+  &__meta {
+    color: var(--text-faint, #94a3b3);
+    font-size: var(--fs-xs, 11px);
+    padding-left: 2px;
+  }
+}
+
+.big-number {
+  margin: var(--s-2, 8px) 0;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+
+  strong {
+    font-size: clamp(40px, 8vw, 56px);
+    font-weight: var(--fw-black, 800);
+    color: var(--mitra-primary, #1c3244);
+  }
+  &__unit {
+    margin-left: 6px;
+    color: var(--text-muted, #5b6b7c);
+    font-size: var(--fs-xl, 20px);
+    font-weight: var(--fw-bold, 700);
+  }
+}
+
+.muted-line {
+  color: var(--text-muted);
+  font-size: var(--fs-sm);
+  margin: 0 0 var(--s-3);
 }
 
 .severity-list {

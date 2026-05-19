@@ -1,7 +1,7 @@
 """Title/Body-Generatoren fuer Push-Benachrichtigungen (Phase 14.4)."""
 from __future__ import annotations
 
-from app.db.orm_models import Blocker, DailyReport, Project
+from app.db.orm_models import Blocker, DailyReport, MaterialIssue, Project
 
 
 _DEFAULT_BODY_LIMIT = 140
@@ -47,4 +47,22 @@ def repeated_red_message(project: Project, count: int) -> tuple[str, str]:
     """Title/Body, wenn mehrere rote Tagesberichte in Folge auftreten."""
     title = f"Haeufung roter Tagesberichte: {project.name}"
     body = f"{count} rote Tagesberichte innerhalb der letzten 7 Tage."
+    return title, body
+
+
+def material_issue_message(issue: MaterialIssue, project: Project) -> tuple[str, str]:
+    """Title/Body für eine neu gemeldete Materialfehlmeldung.
+
+    Der Monteur meldet fehlendes Material — die Bauleitung muss das
+    sofort sehen, damit Beschaffung anlaufen kann.
+    """
+    priority_label = {
+        "low": "niedrig",
+        "normal": "",
+        "high": "hoch",
+        "urgent": "dringend",
+    }.get(issue.priority, issue.priority or "")
+    suffix = f" ({priority_label})" if priority_label else ""
+    title = f"Material fehlt{suffix}: {project.name}"
+    body = _trim(issue.description) or "Neue Materialmeldung eingetragen."
     return title, body

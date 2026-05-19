@@ -24,7 +24,7 @@
       <span *ngIf="enabled()">Push deaktivieren</span>
       <span *ngIf="!enabled()">Push-Benachrichtigungen aktivieren</span>
     </button>
-    <button type="button" (click)="sendTest()" [disabled]="busy() || !enabled()" class="secondary">
+    <button type="button" (click)="sendTest()" [disabled]="busy() || !enabled()" class="btn btn--secondary">
       Test-Notification senden
     </button>
     <span class="status-text" *ngIf="statusText()">{{ statusText() }}</span>

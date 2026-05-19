@@ -8,10 +8,14 @@ import { NotificationService } from '../../../core/services/notification.service
 import { ProjectService } from '../../../core/services/project.service';
 import { ReportsService } from '../../../core/services/reports.service';
 import { formatHttpError } from '../../../core/services/error-format';
+import {
+  PttButtonComponent,
+  PttTranscriptionEvent,
+} from '../../../shared/components/ptt-button/ptt-button.component';
 
 @Component({
   selector: 'app-blocker-form',
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink, PttButtonComponent],
   templateUrl: './blocker-form.component.html',
   styleUrl: './blocker-form.component.scss',
 })
@@ -44,6 +48,13 @@ export class BlockerFormComponent implements OnInit {
 
   protected setSeverity(severity: BlockerSeverity): void {
     this.form.severity = severity;
+  }
+
+  /** Push-to-Talk diktiert in die Beschreibung — bestehender Text bleibt erhalten. */
+  protected appendDictation(event: PttTranscriptionEvent): void {
+    const existing = (this.form.description || '').trim();
+    const incoming = event.text.trim();
+    this.form.description = existing ? `${existing}\n${incoming}` : incoming;
   }
 
   protected submit(): void {

@@ -22,9 +22,9 @@
     </div>
 
     <div class="template-row" *ngIf="form.project_type === 'small'">
-      <button type="button" class="secondary" (click)="applySmallProjectTemplate('bathroom')">Badsanierung</button>
-      <button type="button" class="secondary" (click)="applySmallProjectTemplate('gas_floor')">Gasetagenheizung</button>
-      <button type="button" class="secondary" (click)="applySmallProjectTemplate('custom')">Freies Kleinprojekt</button>
+      <button type="button" class="btn btn--secondary" (click)="applySmallProjectTemplate('bathroom')">Badsanierung</button>
+      <button type="button" class="btn btn--secondary" (click)="applySmallProjectTemplate('gas_floor')">Gasetagenheizung</button>
+      <button type="button" class="btn btn--secondary" (click)="applySmallProjectTemplate('custom')">Freies Kleinprojekt</button>
     </div>
 
     <div class="form-grid">
@@ -58,7 +58,7 @@
         <p class="panel-kicker">Abschnitte</p>
         <h2>Bauabschnitte</h2>
       </div>
-      <button type="button" class="secondary" (click)="addSection()">Abschnitt hinzufuegen</button>
+      <button type="button" class="btn btn--secondary" (click)="addSection()">Abschnitt hinzufuegen</button>
     </div>
 
     <article class="section-card" *ngFor="let section of form.sections; let i = index">

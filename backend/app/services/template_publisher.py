@@ -26,25 +26,18 @@ SLUG_TO_FILENAME: dict[str, str] = {
     # 00_Start
     "start_index":              "index.html",
     "projekt_navigation":       "Projekt_Navigation.html",
-    # 01_Monteur
-    "ablaufplan_abschnitte":    "MONTEUR_Ablaufplan_Abschnitte.html",
-    "wochenplan":               "MONTEUR_Wochenplan.html",
+    # 01_Monteur — operative Doku läuft im Tagesbericht-Formular der App
     "baustellenhinweise":       "MONTEUR_Baustellenhinweise.html",
-    "tagescheckliste":          "MONTEUR_Tagescheckliste.html",
     # 02_Obermonteur
     "checklisten":              "OBERMONTEUR_Checklisten.html",
     "teamstatus":               "OBERMONTEUR_Teamstatus.html",
-    "abschnittsplanung":        "OBERMONTEUR_Abschnittsplanung.html",
     # 03_Bauleitung
     "detaillierter_ablaufplan": "BAULEITUNG_Detaillierter_Ablaufplan.html",
     "gefaehrdungsbeurteilung":  "BAULEITUNG_Gefaehrdungsbeurteilung.html",
-    "blocker_offene_punkte":    "BAULEITUNG_Blocker_und_Offene_Punkte.html",
     "material_werkzeug":        "BAULEITUNG_Material_und_Werkzeug.html",
-    "risiken_maengel":          "BAULEITUNG_Risiken_und_Maengel.html",
     "hydraulischer_abgleich":   "BAULEITUNG_Hydraulischer_Abgleich.html",
     # 04_Projektleitung
     "projektuebersicht":              "PROJEKTLEITUNG_Projektuebersicht.html",
-    "statusuebersicht":               "PROJEKTLEITUNG_Statusuebersicht.html",
     "meilensteinplan":                "PROJEKTLEITUNG_Meilensteinplan.html",
     "gantt_uebersicht":               "PROJEKTLEITUNG_Gantt_Uebersicht.html",
     "inbetriebnahmeprotokoll":        "PROJEKTLEITUNG_Inbetriebnahmeprotokoll.html",
@@ -53,7 +46,6 @@ SLUG_TO_FILENAME: dict[str, str] = {
     "kontakte":                 "ALLGEMEIN_Kontakte.html",
     "uebergabeprotokoll":       "ALLGEMEIN_Uebergabeprotokoll.html",
     "dokumentenindex":          "ALLGEMEIN_Dokumentenindex.html",
-    "projektunterlagen":        "ALLGEMEIN_Projektunterlagen.html",
 }
 
 

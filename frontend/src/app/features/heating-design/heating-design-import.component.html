@@ -5,7 +5,7 @@
         <p class="panel-kicker">Strangberechnung</p>
         <h2>Import aus Excel/CSV</h2>
       </div>
-      <a class="button-link secondary" [routerLink]="['/projects', slug]">Zurück zum Projekt</a>
+      <a class="btn btn--secondary" [routerLink]="['/projects', slug]">Zurück zum Projekt</a>
     </div>
 
     <ol class="wizard-steps">
@@ -166,7 +166,7 @@
             <h3>{{ detectedFieldsCount() }} von {{ knownFields.length }} Feldern automatisch gemappt</h3>
           </div>
           <div class="button-row">
-            <button type="button" class="secondary" (click)="toggleManualMapping()">
+            <button type="button" class="btn btn--secondary" (click)="toggleManualMapping()">
               {{ showManualMapping ? '▴ Manuelle Anpassung schließen' : '▾ Manuell anpassen' }}
             </button>
           </div>
@@ -205,20 +205,26 @@
 
         <p class="hint-line">
           Weitere Felder (Heizkörper-Typ, Druckverlust, kv, Voreinstellung, Rohrlänge, …)
-          sind <strong>nur in echten Hydraulik-Strang-Berechnungen</strong> (VIPtool/ETU)
-          enthalten. In einer Heizlast-Aggregat-Datei wie dieser gehören sie nicht
-          rein — Heizkörper-Typ und Material kommen später aus den Angeboten.
+          sind <strong>optional</strong> — wenn deine Datei sie enthält
+          (z.B. in eigenen Strang-Sheets oder im Datenblatt), kannst du sie
+          unten unter „Manuell anpassen" zuordnen.
         </p>
 
         <!-- Manual mapping editor (collapsed by default) -->
         <div *ngIf="showManualMapping" class="manual-mapping">
           <p class="manual-hint">
             Hier kannst du die Zuordnung von Hand korrigieren. Im Dropdown stehen
-            <strong>alle Spalten der Original-Datei</strong> mit Beispieldaten.
+            <strong>alle Spalten der Original-Datei</strong>
+            <ng-container *ngIf="sourceColumnGroups.length > 0">
+              — gruppiert nach Sheet (Daten, Pumpe, Strang 1-N, …)
+            </ng-container>
+            mit Beispieldaten.
             <br>
             <em>Strang</em> wird automatisch aus den 'Strang 1-N' Sheet-Namen abgeleitet
             — keine Spalten-Zuordnung nötig.
           </p>
+
+          <h4 class="mapping-subhead">Primäre Felder</h4>
           <table class="mapping-table">
             <thead>
               <tr>
@@ -238,29 +244,40 @@
                     [name]="'map_' + field"
                   >
                     <option value="">(nicht zuordnen)</option>
-                    <option *ngFor="let col of sourceColumns" [value]="col">
-                      {{ sourceColumnLabel(col) }}
-                    </option>
+                    <ng-container *ngIf="sourceColumnGroups.length > 0; else flatPrimaryOpts">
+                      <optgroup
+                        *ngFor="let group of sourceColumnGroups"
+                        [label]="group.sheet"
+                      >
+                        <option *ngFor="let col of group.columns" [value]="col.header">
+                          {{ col.label }}
+                        </option>
+                      </optgroup>
+                    </ng-container>
+                    <ng-template #flatPrimaryOpts>
+                      <option *ngFor="let col of sourceColumns" [value]="col">
+                        {{ sourceColumnLabel(col) }}
+                      </option>
+                    </ng-template>
                   </select>
                 </td>
               </tr>
             </tbody>
           </table>
 
-          <!-- Hydraulic fields are off-topic for aggregate sheets; only
-               show them if the user really insists. -->
-          <button
-            type="button"
-            class="secondary-fields-toggle"
-            (click)="toggleSecondaryFields()"
-          >
-            {{ showSecondaryFields ? '▴ Hydraulik-Felder ausblenden' : '▾ Hydraulik-Felder einblenden (Druckverlust, kv, …)' }}
-          </button>
-
-          <table class="mapping-table" *ngIf="showSecondaryFields">
+          <h4 class="mapping-subhead">
+            Optionale Felder
+            <small>(Druckverlust, kv, Voreinstellung, Rohrlänge, Heizkörper-Typ, Ventil, Notiz)</small>
+          </h4>
+          <p class="manual-hint subtle">
+            Wenn deine Datei diese Werte enthält (z.B. Rohrlänge im Daten-Sheet
+            oder Druckverlust in den Strang-Sheets), kannst du sie hier
+            zuordnen. Andernfalls einfach leer lassen.
+          </p>
+          <table class="mapping-table">
             <thead>
               <tr>
-                <th>Zielspalte (Hydraulik)</th>
+                <th>Zielspalte</th>
                 <th>Aktuelle Zuordnung</th>
                 <th>Manuell wählen</th>
               </tr>
@@ -276,9 +293,21 @@
                     [name]="'map_' + field"
                   >
                     <option value="">(nicht zuordnen)</option>
-                    <option *ngFor="let col of sourceColumns" [value]="col">
-                      {{ sourceColumnLabel(col) }}
-                    </option>
+                    <ng-container *ngIf="sourceColumnGroups.length > 0; else flatSecondaryOpts">
+                      <optgroup
+                        *ngFor="let group of sourceColumnGroups"
+                        [label]="group.sheet"
+                      >
+                        <option *ngFor="let col of group.columns" [value]="col.header">
+                          {{ col.label }}
+                        </option>
+                      </optgroup>
+                    </ng-container>
+                    <ng-template #flatSecondaryOpts>
+                      <option *ngFor="let col of sourceColumns" [value]="col">
+                        {{ sourceColumnLabel(col) }}
+                      </option>
+                    </ng-template>
                   </select>
                 </td>
               </tr>
@@ -286,7 +315,7 @@
           </table>
 
           <div class="button-row right">
-            <button type="button" class="secondary" (click)="openSaveMappingModal()">
+            <button type="button" class="btn btn--secondary" (click)="openSaveMappingModal()">
               Mapping speichern als…
             </button>
             <button type="button" (click)="reapplyMapping()" [disabled]="busy()">
@@ -333,7 +362,7 @@
       </section>
 
       <div class="button-row right">
-        <button type="button" class="secondary" (click)="backToSelect()" [disabled]="busy()">
+        <button type="button" class="btn btn--secondary" (click)="backToSelect()" [disabled]="busy()">
           Andere Datei wählen
         </button>
         <button type="button" (click)="confirmImport()" [disabled]="busy() || p.circuits.length === 0">
@@ -357,7 +386,7 @@
       <input type="text" [(ngModel)]="saveMappingDescription" name="save_mapping_description">
     </label>
     <div class="button-row right">
-      <button type="button" class="secondary" (click)="cancelSaveMapping()">Abbrechen</button>
+      <button type="button" class="btn btn--secondary" (click)="cancelSaveMapping()">Abbrechen</button>
       <button type="button" (click)="confirmSaveMapping()" [disabled]="busy()">Speichern</button>
     </div>
   </div>

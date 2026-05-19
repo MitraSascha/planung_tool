@@ -63,6 +63,8 @@
   border: 1px solid var(--line);
   border-radius: 12px;
   background: #fff;
+  text-decoration: none;
+  color: inherit;
 }
 
 .metric-card span {
@@ -75,6 +77,70 @@
 
 .metric-card strong {
   font-size: 22px;
+}
+
+/* Klickbare Variante: visuelles Affordance + Hover/Focus-States. */
+.metric-card--link {
+  cursor: pointer;
+  transition: background .12s, border-color .12s, transform .08s, box-shadow .12s;
+
+  &:hover {
+    background: #f6f8fb;
+    border-color: #c2d0dc;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(28, 50, 68, 0.06);
+  }
+  &:focus-visible {
+    outline: none;
+    border-color: var(--mitra-accent, #ef804e);
+    box-shadow: 0 0 0 3px rgba(239, 128, 78, 0.30);
+  }
+  &::after {
+    content: '→';
+    position: absolute;
+    right: 12px; top: 12px;
+    font-size: 14px;
+    color: var(--muted);
+    opacity: 0;
+    transition: opacity .12s, transform .12s;
+  }
+  position: relative;
+  &:hover::after { opacity: 1; transform: translateX(2px); }
+}
+
+.metric-card--alert {
+  border-color: #b14040;
+  background: linear-gradient(180deg, #fff 0%, #fbe6e6 100%);
+  strong { color: #9b2129; }
+}
+.metric-card--warn {
+  border-color: #d99919;
+  background: linear-gradient(180deg, #fff 0%, #fff3cd 100%);
+  strong { color: #8a6500; }
+}
+
+/* Kritisch-Highlight für das ganze Panel + pulsierender Status-Pill. */
+.panel--critical {
+  border: 2px solid #b14040;
+  box-shadow: 0 0 0 4px rgba(177, 64, 64, 0.15);
+}
+.status-pill--critical-flash {
+  background: #b14040 !important;
+  color: #fff !important;
+  font-weight: 800;
+  padding: 6px 14px;
+  border-radius: 999px;
+  animation: critical-pulse 1.6s ease-in-out infinite;
+
+  .status-pill__icon { margin-right: 4px; font-size: 1.1em; }
+}
+@keyframes critical-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(177, 64, 64, 0.55); }
+  50%      { box-shadow: 0 0 0 10px rgba(177, 64, 64, 0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .status-pill--critical-flash { animation: none; box-shadow: 0 0 0 4px rgba(177, 64, 64, 0.35); }
+  .metric-card--link:hover { transform: none; }
 }
 
 .link-list,
@@ -153,4 +219,22 @@
 .report-list li small {
   color: var(--muted);
   font-size: 12px;
+}
+
+.report-list__main {
+  display: grid;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+  text-decoration: none;
+  color: inherit;
+  border-bottom: none;
+
+  strong { color: var(--mitra-primary, #1c3244); }
+  &:hover strong { text-decoration: underline; }
+  &:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(239, 128, 78, 0.30);
+    border-radius: 4px;
+  }
 }

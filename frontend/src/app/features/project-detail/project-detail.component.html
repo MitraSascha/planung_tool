@@ -6,8 +6,8 @@
         <h2>{{ p.name }}</h2>
       </div>
       <div class="button-row">
-        <a class="button-link secondary" [routerLink]="['/projects', p.slug, 'edit']">Bearbeiten</a>
-        <a class="button-link" [routerLink]="['/projects', p.slug, 'generate']">Generator</a>
+        <a class="btn btn--secondary" [routerLink]="['/projects', p.slug, 'edit']">Bearbeiten</a>
+        <a class="btn btn--primary" [routerLink]="['/projects', p.slug, 'generate']">Generator</a>
       </div>
     </div>
 
@@ -72,7 +72,7 @@
 
     <section class="info-block">
       <h3>Heizlast pro Wohneinheit</h3>
-      <p style="margin: 0 0 10px; color: #5a6b78; font-size: 13px;">
+      <p class="info-block__lead">
         Aggregat-Tabellen aus Heizlast-Berechnungen (DIN-EN 12831) — pro Wohnung Etage, Fläche, Heizlast (W), Volumenstrom (l/h).
         Mehrere Tabs einer XLSX werden automatisch zusammengeführt; Bauphysik-Detail- und visuelle Strang-Schemen werden klar als solche erkannt.
       </p>
@@ -81,13 +81,12 @@
 
     <section class="info-block">
       <h3>Angebote</h3>
-      <p style="margin: 0 0 10px; color: #5a6b78; font-size: 13px;">
+      <p class="info-block__lead">
         Stücklisten und PDF-Angebote von Lieferanten und Wettbewerbern.
       </p>
-      <a
-        [routerLink]="['/projects', p.slug, 'offers']"
-        style="display: inline-block; padding: 9px 16px; background: #1c3244; color: #fff; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 13.5px;"
-      >📑 Angebote öffnen / hochladen</a>
+      <a class="btn btn--primary" [routerLink]="['/projects', p.slug, 'offers']">
+        📑 Angebote öffnen / hochladen
+      </a>
     </section>
 
     <section class="info-block">

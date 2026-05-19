@@ -1,44 +1,229 @@
-<section class="view">
-  <div class="panel">
-    <div class="panel-head">
-      <div>
-        <p class="panel-kicker">Projekte</p>
-        <h2>Projektliste</h2>
+<section class="view projects-view">
+
+  <!-- ───── Hero ───── -->
+  <header class="projects-hero">
+    <div>
+      <p class="projects-hero__kicker">Übersicht</p>
+      <h1>Projekte</h1>
+      <p class="projects-hero__lead">
+        {{ totalCount() }}
+        {{ totalCount() === 1 ? 'Projekt' : 'Projekte' }}
+        in der Verwaltung
+      </p>
+    </div>
+    <div class="projects-hero__actions">
+      <nav class="view-switch" role="tablist" aria-label="Ansicht wechseln">
+        <button
+          type="button"
+          role="tab"
+          [class.active]="viewMode() === 'table'"
+          [attr.aria-selected]="viewMode() === 'table'"
+          (click)="setViewMode('table')">
+          <span aria-hidden="true">📋</span> Tabelle
+        </button>
+        <button
+          type="button"
+          role="tab"
+          [class.active]="viewMode() === 'cards'"
+          [attr.aria-selected]="viewMode() === 'cards'"
+          (click)="setViewMode('cards')">
+          <span aria-hidden="true">🃏</span> Karten
+        </button>
+      </nav>
+      <a class="btn btn--primary" routerLink="/projects/new">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+        Neues Projekt
+      </a>
+    </div>
+  </header>
+
+  <!-- ───── Stat-Cards (immer sichtbar) ───── -->
+  <div class="metric-grid" *ngIf="totalCount() > 0">
+    <div class="metric"><span>Projekte</span><strong>{{ totalCount() }}</strong></div>
+    <div class="metric"><span>Status rot</span><strong>{{ redCount() }}</strong></div>
+    <div class="metric"><span>Status gelb</span><strong>{{ yellowCount() }}</strong></div>
+    <div class="metric"><span>Offene Blocker</span><strong>{{ blockerSum() }}</strong></div>
+  </div>
+
+  <!-- ───── Filter-Bar ───── -->
+  <div class="filters" *ngIf="totalCount() > 0">
+    <label class="filter-search">
+      <span>Suche</span>
+      <input
+        type="search"
+        [ngModel]="search"
+        (ngModelChange)="onSearch($event)"
+        placeholder="Name, Slug, Adresse"
+      >
+    </label>
+    <label class="filter-select">
+      <span>Status</span>
+      <select [ngModel]="statusFilter" (ngModelChange)="onStatusFilter($event)">
+        <option value="all">Alle</option>
+        <option value="draft">Entwurf</option>
+        <option value="generating">Dokumente werden erzeugt</option>
+        <option value="generated">Dokumente erstellt</option>
+        <option value="published">Veröffentlicht</option>
+        <option value="generation_failed">Erzeugung fehlgeschlagen</option>
+        <option value="generation_failed_partial">Erzeugung teilweise fehlgeschlagen</option>
+        <option value="publish_failed">Veröffentlichen fehlgeschlagen</option>
+      </select>
+    </label>
+    <label class="filter-check">
+      <input type="checkbox" [ngModel]="onlyBlockers" (ngModelChange)="onBlockersToggle($event)">
+      <span>Nur Projekte mit offenen Blockern</span>
+    </label>
+    <label class="filter-check">
+      <input type="checkbox" [ngModel]="onlyAtRisk" (ngModelChange)="onAtRiskToggle($event)">
+      <span>Nur rot oder gelb</span>
+    </label>
+  </div>
+
+  <!-- ───── Empty: keine Projekte ───── -->
+  <app-empty-state
+    *ngIf="totalCount() === 0"
+    icon="🏗"
+    title="Noch keine Projekte"
+    description="Lege das erste Projekt an, um Abschnitte, Unterlagen und Mitglieder zu pflegen."
+    actionLabel="Neues Projekt anlegen"
+    (action)="createProject()">
+  </app-empty-state>
+
+  <!-- ───── Empty: Filter ohne Treffer ───── -->
+  <p class="empty-hint" *ngIf="totalCount() > 0 && loadingSummaries() && filteredRows().length === 0">
+    Lade Auswertung ...
+  </p>
+  <app-empty-state
+    *ngIf="totalCount() > 0 && !loadingSummaries() && filteredRows().length === 0"
+    icon="🔍"
+    title="Keine Treffer"
+    description="Mit den aktuellen Filtern bleibt nichts übrig — passe Suche oder Status an.">
+  </app-empty-state>
+
+  <!-- ───── Tabellen-View ───── -->
+  <div
+    class="overview-table"
+    *ngIf="viewMode() === 'table' && filteredRows().length > 0">
+    <div class="table-head">
+      <span>Projekt</span>
+      <span>Status</span>
+      <span>Ampel</span>
+      <span>Tagesb.</span>
+      <span>Blocker</span>
+      <span>Material</span>
+    </div>
+    <a
+      class="table-row"
+      *ngFor="let row of filteredRows()"
+      [routerLink]="['/projects', row.project.slug, 'role']"
+      [attr.title]="'Projekt ' + row.project.name + ' öffnen'">
+      <span class="cell-project">
+        <strong>{{ row.project.name }}</strong>
+        <small>{{ row.project.slug }}<ng-container *ngIf="row.project.address"> &middot; {{ row.project.address }}</ng-container></small>
+      </span>
+      <span class="status-pill" [class.published]="row.project.status === 'published'" [class.failed]="row.project.status.includes('failed')">
+        {{ statusLabel(row.project.status) }}
+      </span>
+      <span class="status-dot"
+        [class.green]="row.trafficLight === 'green'"
+        [class.yellow]="row.trafficLight === 'yellow'"
+        [class.red]="row.trafficLight === 'red'">
+        {{ row.trafficLight === 'green' ? 'Gruen' : row.trafficLight === 'yellow' ? 'Gelb' : row.trafficLight === 'red' ? 'Rot' : '-' }}
+      </span>
+      <span class="cell-num">{{ row.summary?.daily_reports ?? 0 }}</span>
+      <span class="cell-num" [class.warn-num]="(row.summary?.blockers_open ?? 0) > 0">{{ row.summary?.blockers_open ?? 0 }}</span>
+      <span class="cell-num" [class.warn-num]="(row.summary?.material_issues_open ?? 0) > 0">{{ row.summary?.material_issues_open ?? 0 }}</span>
+      <span class="anomaly-badge" *ngIf="row.anomalyCount > 0" title="Anomalien">
+        ⚠ {{ row.anomalyCount }}
+      </span>
+    </a>
+  </div>
+
+  <!-- ───── Karten-View ───── -->
+  <div
+    class="projects-grid"
+    *ngIf="viewMode() === 'cards' && filteredRows().length > 0">
+    <article class="project-card"
+             *ngFor="let row of filteredRows()"
+             [class.project-card--published]="row.project.status === 'published'"
+             [class.project-card--ready]="row.project.ready_for_generation && row.project.status !== 'published'"
+             [class.project-card--failed]="row.project.status.includes('failed')">
+
+      <div class="project-card__head">
+        <div class="project-card__title">
+          <span class="project-card__slug">{{ row.project.slug }}</span>
+          <h3 class="project-card__name">{{ row.project.name }}</h3>
+          <span class="project-card__type">{{ projectTypeLabel(row.project.project_type) }}</span>
+        </div>
+        <span class="badge"
+              [class.badge--ok]="row.project.status === 'published'"
+              [class.badge--err]="row.project.status.includes('failed')"
+              [class.badge--info]="row.project.status !== 'published' && !row.project.status.includes('failed')">
+          {{ statusLabel(row.project.status) }}
+        </span>
       </div>
-      <a class="button-link" routerLink="/projects/new">Neues Projekt</a>
-    </div>
 
-    <app-empty-state
-      *ngIf="projects().length === 0"
-      icon="🏗"
-      title="Noch keine Projekte"
-      description="Lege das erste Projekt an, um Abschnitte, Unterlagen und Mitglieder zu pflegen."
-      actionLabel="Neues Projekt anlegen"
-      (action)="createProject()">
-    </app-empty-state>
+      <dl class="project-card__meta">
+        <div>
+          <dt>
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m17 8-5-5-5 5M12 3v12"/></svg>
+            Unterlagen
+          </dt>
+          <dd>{{ row.project.upload_count }}</dd>
+        </div>
+        <div>
+          <dt>
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+            Abschnitte
+          </dt>
+          <dd>{{ row.project.sections.length }}</dd>
+        </div>
+        <div>
+          <dt>
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
+            Bereit
+          </dt>
+          <dd>
+            <span class="ready-marker" [class.ready-marker--yes]="row.project.ready_for_generation">
+              {{ row.project.ready_for_generation ? 'Ja' : 'Nein' }}
+            </span>
+          </dd>
+        </div>
+      </dl>
 
-    <div class="projects-grid" *ngIf="projects().length > 0">
-      <article class="project-card" *ngFor="let project of projects()">
-        <div class="project-card-head">
-          <div>
-            <strong>{{ project.slug }}</strong>
-            <p>{{ project.name }} &middot; {{ projectTypeLabel(project.project_type) }}</p>
-          </div>
-          <span class="status-pill" [class.published]="project.status === 'published'" [class.failed]="project.status.includes('failed')">
-            {{ statusLabel(project.status) }}
-          </span>
-        </div>
-        <dl class="project-meta">
-          <div><dt>Unterlagen</dt><dd>{{ project.upload_count }}</dd></div>
-          <div><dt>Abschnitte</dt><dd>{{ project.sections.length }}</dd></div>
-          <div><dt>Bereit</dt><dd>{{ project.ready_for_generation ? 'Ja' : 'Nein' }}</dd></div>
-        </dl>
-        <div class="button-row">
-          <a class="button-link" [routerLink]="['/projects', project.slug]">Oeffnen</a>
-          <a class="button-link secondary" [routerLink]="['/projects', project.slug, 'edit']">Bearbeiten</a>
-          <a class="button-link secondary" [routerLink]="['/projects', project.slug, 'generate']">Generator</a>
-        </div>
-      </article>
-    </div>
+      <div class="project-card__signals" *ngIf="row.summary || row.anomalyCount > 0">
+        <span class="status-dot"
+          [class.green]="row.trafficLight === 'green'"
+          [class.yellow]="row.trafficLight === 'yellow'"
+          [class.red]="row.trafficLight === 'red'"
+          [title]="'Ampel: ' + (row.trafficLight === 'green' ? 'Grün' : row.trafficLight === 'yellow' ? 'Gelb' : row.trafficLight === 'red' ? 'Rot' : 'unbekannt')">
+          {{ row.trafficLight === 'green' ? 'Grün' : row.trafficLight === 'yellow' ? 'Gelb' : row.trafficLight === 'red' ? 'Rot' : '–' }}
+        </span>
+        <span class="signal" *ngIf="(row.summary?.blockers_open ?? 0) > 0">
+          🚧 {{ row.summary?.blockers_open }} Blocker
+        </span>
+        <span class="signal" *ngIf="(row.summary?.material_issues_open ?? 0) > 0">
+          📦 {{ row.summary?.material_issues_open }} Material
+        </span>
+        <span class="signal" *ngIf="row.anomalyCount > 0">
+          ⚠ {{ row.anomalyCount }} Anomalien
+        </span>
+      </div>
+
+      <div class="project-card__actions">
+        <a class="btn btn--primary btn--sm" [routerLink]="['/projects', row.project.slug]">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><path d="m10 17 5-5-5-5M15 12H3"/></svg>
+          Öffnen
+        </a>
+        <a class="btn btn--secondary btn--sm" [routerLink]="['/projects', row.project.slug, 'edit']">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          Bearbeiten
+        </a>
+        <a class="btn btn--secondary btn--sm" [routerLink]="['/projects', row.project.slug, 'generate']">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3L12 3z"/></svg>
+          Generator
+        </a>
+      </div>
+    </article>
   </div>
 </section>

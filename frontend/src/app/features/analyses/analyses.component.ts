@@ -11,6 +11,7 @@ import { AnalyticsService } from '../../core/services/analytics.service';
 import { ProjectService } from '../../core/services/project.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { formatHttpError } from '../../core/services/error-format';
+import { HoursProgressComponent } from '../../shared/components/hours-progress/hours-progress.component';
 
 interface ProjectListItem {
   slug: string;
@@ -21,7 +22,7 @@ interface ProjectListItem {
 @Component({
   selector: 'app-analyses',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink, HoursProgressComponent],
   templateUrl: './analyses.component.html',
   styleUrl: './analyses.component.scss',
 })
@@ -47,10 +48,13 @@ export class AnalysesComponent implements OnInit {
     };
   });
 
+  /** Beibehalten für Rückwärts-Templates: jetzt gegen den Sektions-Plan
+   *  gerechnet, nicht gegen die irreführende `hours_total_soll`-Summe
+   *  aus manuellen TeamStatus-Einträgen (die in der Praxis leer bleibt). */
   protected readonly hoursDelta = computed(() => {
     const pa = this.projectAnalytics();
-    if (!pa) return 0;
-    return Math.round((pa.hours_total_ist - pa.hours_total_soll) * 10) / 10;
+    if (!pa || pa.hours_total_planned <= 0) return 0;
+    return Math.round((pa.hours_total_ist - pa.hours_total_planned) * 10) / 10;
   });
 
   ngOnInit(): void {

@@ -111,9 +111,11 @@ class LocalFasterWhisperProvider(WhisperProvider):
         language_hint: str | None = "de",
     ) -> TranscriptionResult:
         model = self._ensure_model()
+        # language=None lässt faster-whisper die Sprache auto-detecten — wichtig
+        # für mehrsprachige Eingaben (Türkisch, Russisch, Kurdisch etc.).
         segments, info = model.transcribe(
             str(audio_path),
-            language=language_hint,
+            language=language_hint,  # None = auto-detect
             beam_size=5,
             vad_filter=True,
         )
@@ -171,13 +173,18 @@ class OpenAIWhisperApiProvider(WhisperProvider):
         language_hint: str | None = "de",
     ) -> TranscriptionResult:
         client = self._ensure_client()
+        # language_hint=None => kein language-Parameter senden, Whisper macht
+        # dann Auto-Detect. Bei gesetztem Hint biast Whisper auf diese Sprache
+        # (was bei nicht-deutsch sprechenden Monteuren ein Problem wäre).
+        call_kwargs: dict[str, Any] = {
+            "model": self.model_name,
+            "response_format": "verbose_json",
+        }
+        if language_hint:
+            call_kwargs["language"] = language_hint
         with audio_path.open("rb") as fh:
-            response = client.audio.transcriptions.create(
-                model=self.model_name,
-                file=fh,
-                language=language_hint or "de",
-                response_format="verbose_json",
-            )
+            call_kwargs["file"] = fh
+            response = client.audio.transcriptions.create(**call_kwargs)
         # `response` ist ein typisiertes Pydantic-Model bzw. Dict — beides robust
         # auslesen, damit SDK-Versionen den Code nicht brechen.
         text = getattr(response, "text", None) or (

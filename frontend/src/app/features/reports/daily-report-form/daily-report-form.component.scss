@@ -39,7 +39,7 @@
     color: var(--mitra-accent);
     margin-bottom: var(--s-1);
   }
-  .button-link.secondary,
+  .btn--secondary,
   a.secondary {
     background: rgba(255, 255, 255, 0.10);
     color: var(--text-on-dark);
@@ -112,6 +112,40 @@
     font-size: var(--fs-sm);
     line-height: var(--lh-relax);
   }
+}
+
+.ptt-field {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+
+  textarea {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  app-ptt-button {
+    flex-shrink: 0;
+    margin-top: 4px;
+  }
+
+  @media (max-width: 480px) {
+    flex-wrap: wrap;
+    app-ptt-button { align-self: flex-end; }
+  }
+}
+
+.lang-badge {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #fef3c7;
+  color: #78350f;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: uppercase;
 }
 
 .wizard-step .form-grid {
@@ -388,5 +422,178 @@
     padding: var(--s-3);
     gap: var(--s-2);
     & > button { flex: 1; padding: 10px var(--s-3); font-size: var(--fs-sm); max-width: none; }
+  }
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════════
+ * Member-Picker (Step 2 Multi-Select)
+ * ═══════════════════════════════════════════════════════════════════════ */
+.member-picker {
+  margin-bottom: var(--s-4);
+
+  &__chips {
+    margin-top: var(--s-2);
+  }
+  &__role {
+    opacity: 0.6;
+    font-weight: var(--fw-normal);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+ * Usage-Editor (Step 4 Material verbaut)
+ * ═══════════════════════════════════════════════════════════════════════ */
+.usage-editor {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-4);
+}
+
+.usage-form {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--s-3);
+  padding: var(--s-4);
+  background: var(--bg-soft-2);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--r-md);
+
+  &__field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-1);
+
+    > span {
+      font-size: var(--fs-sm);
+      font-weight: var(--fw-semi);
+      color: var(--text-muted);
+    }
+  }
+  &__add {
+    align-self: end;
+  }
+
+  @media (min-width: 640px) {
+    grid-template-columns: 2fr 1fr auto;
+    align-items: end;
+
+    .usage-form__field--wide:first-child { grid-column: 1 / -1; }
+    .material-selected { grid-column: 1 / -1; }
+    .usage-form__field--wide:nth-child(4) {
+      grid-column: 1 / span 2;
+      @media (min-width: 900px) { grid-column: auto; }
+    }
+  }
+  @media (min-width: 900px) {
+    grid-template-columns: 2fr 1fr 2fr auto;
+  }
+}
+
+/* Auswahl-Detailbox unter dem Material-Dropdown: zeigt vollständigen
+ * Artikelnamen + Soll/Ist/Einheit/Lagerort, weil die Option im Select
+ * für die Lesbarkeit auf ~48 Zeichen gekürzt wird. */
+.material-selected {
+  margin-top: calc(var(--s-1) * -1);
+  padding: var(--s-3) var(--s-4);
+  background: var(--bg-panel);
+  border: 1px solid var(--line-medium);
+  border-radius: var(--r);
+  border-left: 3px solid var(--mitra-accent);
+  font-size: var(--fs-sm);
+  line-height: 1.45;
+
+  &__name {
+    font-weight: var(--fw-semi);
+    color: var(--text-default);
+    margin-bottom: var(--s-2);
+    word-break: break-word;
+  }
+  &__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--s-1) var(--s-4);
+    color: var(--text-muted);
+
+    span { white-space: nowrap; }
+    strong { color: var(--text-default); font-weight: var(--fw-semi); margin-left: 4px; }
+  }
+  &__warn {
+    color: var(--state-warn, #8a6500);
+    font-weight: var(--fw-semi);
+  }
+}
+
+.usage-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+
+  &__item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--s-3);
+    padding: var(--s-3) var(--s-4);
+    background: var(--bg-panel);
+    border: 1px solid var(--line-soft);
+    border-radius: var(--r);
+    min-height: var(--touch-target);
+  }
+  &__text {
+    flex: 1;
+    min-width: 0;
+    font-size: var(--fs-base);
+
+    strong { color: var(--mitra-primary); margin-right: var(--s-1); }
+  }
+  &__note {
+    color: var(--text-muted);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+ * Inline-Empty-State (kleiner, kein eigener Block)
+ * ═══════════════════════════════════════════════════════════════════════ */
+.empty-state-inline {
+  padding: var(--s-4);
+  background: var(--bg-soft-2);
+  border: 1px dashed var(--line-medium);
+  border-radius: var(--r);
+  color: var(--text-muted);
+  font-size: var(--fs-sm);
+  text-align: center;
+}
+
+/* Lade-Hinweis im Form */
+.hint--loading {
+  display: block;
+  margin-top: var(--s-1);
+  color: var(--text-muted);
+  font-size: var(--fs-xs);
+}
+
+
+/* Material-Filter-Bar (Schritt 4) — Hinweis welche Items gefiltert sind */
+.material-filter-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-3);
+  padding: var(--s-2) var(--s-4);
+  margin-bottom: var(--s-3);
+  background: var(--bg-soft);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--r);
+  flex-wrap: wrap;
+
+  &__label {
+    font-size: var(--fs-sm);
+    color: var(--text-muted);
+
+    strong { color: var(--mitra-primary); }
   }
 }

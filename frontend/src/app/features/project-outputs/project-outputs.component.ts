@@ -41,6 +41,15 @@ export class ProjectOutputsComponent {
   protected readonly formatDateTime = formatDateTime;
   protected readonly formatFileSize = formatFileSize;
 
+  protected uploadIcon(filename: string): string {
+    const ext = (filename.split('.').pop() ?? '').toLowerCase();
+    if (ext === 'pdf') return '📄';
+    if (['xlsx', 'xls', 'csv'].includes(ext)) return '📊';
+    if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext)) return '🖼️';
+    if (['doc', 'docx', 'txt', 'md'].includes(ext)) return '📝';
+    return '📎';
+  }
+
   protected readonly selectedUploadNames = signal<Record<string, string[]>>({});
   protected readonly uploadingSlug = signal<string | null>(null);
   protected readonly generatingSlug = signal<string | null>(null);
@@ -95,17 +104,16 @@ export class ProjectOutputsComponent {
   }
 
   protected openOutputFile(file: ProjectOutputFile): void {
-    this.projectService.fetchOutputFile(file.view_url).subscribe({
-      next: (blob) => {
-        const url = URL.createObjectURL(blob);
-        window.open(url, '_blank', 'noopener');
-        window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
-      },
-      error: (response) =>
-        this.notifications.showError(
-          formatHttpError(response, 'Ausgabedatei konnte nicht geoeffnet werden.'),
-        ),
-    });
+    // Direkter Aufruf der URL mit ?token=... im selben Tab.
+    // Vorteile gegenüber Blob+window.open:
+    //   - Browser-Back funktioniert (nicht aus Blob-Origin "verloren")
+    //   - data-api-post Forms im Sheet kriegen den Token aus window.location.search
+    //   - Sheet kann sich selbst per location.reload() neu laden nach Mutation
+    //   - PWA-Vollbild-Modus: kein "Tab geöffnet"-Stuck mehr
+    const token = this.auth.token();
+    const sep = file.view_url.indexOf('?') >= 0 ? '&' : '?';
+    const url = file.view_url + (token ? sep + 'token=' + encodeURIComponent(token) : '');
+    window.location.href = url;
   }
 
   protected onUploadSelection(slug: string, event: Event): void {

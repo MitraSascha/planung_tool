@@ -9,6 +9,31 @@
   margin-inline: auto;
 }
 
+.reports-view { animation: fade-rise .35s ease both; }
+@keyframes fade-rise {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.reports-panel__title {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+
+  h2 { margin: 0; font-size: var(--fs-xl); line-height: 1.2; }
+}
+
+.reports-panel__icon {
+  width: 40px; height: 40px;
+  border-radius: var(--r);
+  background: rgba(239, 128, 78, 0.12);
+  color: var(--mitra-accent);
+  display: grid; place-items: center;
+  flex-shrink: 0;
+
+  svg { width: 22px; height: 22px; }
+}
+
 .sub-tabs {
   display: flex;
   flex-wrap: wrap;
@@ -26,6 +51,7 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    gap: 6px;
     min-height: 38px;
     padding: 0 var(--s-4);
     border-radius: var(--r-pill);
@@ -36,15 +62,19 @@
     transition: background var(--transition-fast), color var(--transition-fast);
     border-bottom: none;
 
+    svg { opacity: 0.7; }
+
     &:hover {
       color: var(--mitra-primary);
       background: var(--bg-soft);
       border-bottom-color: transparent;
+      svg { opacity: 1; }
     }
     &.active {
       color: var(--text-on-dark);
       background: linear-gradient(135deg, var(--mitra-primary), var(--mitra-primary-soft));
       box-shadow: var(--shadow-sm);
+      svg { opacity: 1; color: var(--mitra-accent); }
     }
   }
 }

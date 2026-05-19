@@ -8,10 +8,14 @@ import { NotificationService } from '../../../core/services/notification.service
 import { ProjectService } from '../../../core/services/project.service';
 import { ReportsService } from '../../../core/services/reports.service';
 import { formatHttpError } from '../../../core/services/error-format';
+import {
+  PttButtonComponent,
+  PttTranscriptionEvent,
+} from '../../../shared/components/ptt-button/ptt-button.component';
 
 @Component({
   selector: 'app-material-form',
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink, PttButtonComponent],
   templateUrl: './material-form.component.html',
   styleUrl: './material-form.component.scss',
 })
@@ -44,6 +48,13 @@ export class MaterialFormComponent implements OnInit {
 
   protected setPriority(priority: MaterialPriority): void {
     this.form.priority = priority;
+  }
+
+  /** Push-to-Talk diktiert in die Beschreibung — bestehender Text bleibt erhalten. */
+  protected appendDictation(event: PttTranscriptionEvent): void {
+    const existing = (this.form.description || '').trim();
+    const incoming = event.text.trim();
+    this.form.description = existing ? `${existing}\n${incoming}` : incoming;
   }
 
   protected submit(): void {

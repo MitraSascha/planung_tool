@@ -12,23 +12,33 @@ from dataclasses import dataclass
 from datetime import date, datetime
 from typing import Any
 
+from html import escape as _html_escape
+
 from jinja2 import Environment, StrictUndefined, select_autoescape
+from markupsafe import Markup
 from sqlalchemy.orm import Session, selectinload
 
 from app.db.orm_models import (
     Blocker,
+    DailyReport,
+    DailyReportAttendee,
     DocumentTemplate,
     HeatingDesign,
     MaterialIssue,
     MaterialItem,
+    MaterialUsage,
     Project,
     ProjectMember,
+    ProjectPhoto,
     ProjectSection,
     ProjectUpload,
     RiskIssue,
     SectionSchedule,
     TeamStatusEntry,
     User,
+)
+from app.services.milestones import (
+    list_milestones_for_render as _list_milestones_render,
 )
 
 
@@ -151,17 +161,63 @@ li { margin-bottom: 4px; }
 section { display: block; }
 section.card h2 { margin-top: 0; }
 
-/* ───── Tables ────────────────────────────────────────────────────── */
-.table-wrap { overflow-x: auto; border-radius: var(--radius); box-shadow: var(--card-shadow); background: #fff; margin-top: 10px; }
+/* ───── Tables ────────────────────────────────────────────────────── *
+ * Desktop (>= 768px): Klassische Tabelle mit Sticky-Header.
+ * Mobile (< 768px):   .data-cards Variante = jede Zeile zur Card mit
+ *                     data-label="…" Labels. Standard-Tabellen bleiben
+ *                     scrollbar im .table-wrap.
+ * ─────────────────────────────────────────────────────────────────── */
+.table-wrap {
+  overflow-x: auto; -webkit-overflow-scrolling: touch;
+  border-radius: var(--radius); box-shadow: var(--card-shadow);
+  background: #fff; margin-top: 10px;
+}
+/* Auto-Wrap: jede freistehende <table> in einer Sektion bekommt
+   default-overflow, falls der Autor das table-wrap vergisst. */
+section > table, .card > table, .abschnitt-card > table {
+  display: block; overflow-x: auto; -webkit-overflow-scrolling: touch;
+}
 table { border-collapse: collapse; width: 100%; font-size: 14px; }
 thead th {
   background: var(--brand-primary); color: #fff; font-weight: 600;
   text-align: left; padding: 11px 14px; font-size: 13px;
   text-transform: uppercase; letter-spacing: 0.4px;
+  position: sticky; top: 0; z-index: 1;
 }
 tbody td { padding: 11px 14px; border-top: 1px solid var(--card-border); vertical-align: top; color: var(--text-dark); }
 tbody tr:nth-child(even) td { background: #fafbfc; }
 tbody tr:hover td { background: #f3f6fa; }
+
+/* ───── Mobile: optionale Card-Variante für Datentabellen ─────────── *
+ * <table class="data-cards"> mit <td data-label="…">value</td>
+ * ─────────────────────────────────────────────────────────────────── */
+@media (max-width: 767px) {
+  .data-cards, .data-cards thead, .data-cards tbody, .data-cards tr, .data-cards td { display: block; width: 100%; }
+  .data-cards thead { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+  .data-cards tr {
+    background: #fff; border: 1px solid var(--card-border); border-radius: var(--radius);
+    margin-bottom: 10px; padding: 6px 0; box-shadow: var(--card-shadow);
+  }
+  .data-cards tr:nth-child(even) td, .data-cards tr:hover td { background: transparent; }
+  .data-cards td {
+    padding: 6px 14px; border: none; text-align: right;
+    display: flex; justify-content: space-between; align-items: baseline; gap: 12px;
+  }
+  .data-cards td::before {
+    content: attr(data-label);
+    flex-shrink: 0; font-size: 11px; font-weight: 700;
+    letter-spacing: 0.4px; text-transform: uppercase; color: var(--text-muted);
+    text-align: left;
+  }
+  .data-cards td:first-child {
+    background: #f6f8fb; padding: 10px 14px;
+    border-radius: var(--radius) var(--radius) 0 0;
+    margin: -6px 0 6px;
+    font-weight: 700; color: var(--brand-primary); font-size: 15px;
+    flex-direction: column; align-items: stretch; text-align: left;
+  }
+  .data-cards td:first-child::before { color: var(--brand-accent); margin-bottom: 2px; }
+}
 
 .kv-table { width: 100%; border-collapse: collapse; font-size: 14px; }
 .kv-table th, .kv-table td { padding: 10px 14px; border-bottom: 1px solid var(--card-border); text-align: left; vertical-align: top; }
@@ -262,15 +318,61 @@ tbody tr:hover td { background: #f3f6fa; }
 
 /* ───── Inputs / Form ─────────────────────────────────────────────── */
 input[type="text"], input[type="date"], input[type="time"], input[type="week"], input[type="number"], select, textarea {
-  font-family: inherit; font-size: 14px;
-  padding: 9px 12px; border: 1px solid var(--card-border); border-radius: var(--radius-sm);
-  width: 100%; background: #fff; color: var(--text-dark); transition: border-color 0.12s, box-shadow 0.12s;
+  font-family: inherit; font-size: 16px;            /* 16px verhindert iOS-Zoom */
+  min-height: 48px;                                  /* Mobile Touch-Target */
+  padding: 11px 14px;
+  border: 1.5px solid var(--card-border); border-radius: var(--radius);
+  width: 100%; background: #fff; color: var(--text-dark);
+  transition: border-color 0.12s, box-shadow 0.12s;
+  appearance: none;
 }
-input:focus, select:focus, textarea:focus { outline: none; border-color: var(--brand-accent); box-shadow: 0 0 0 3px rgba(239, 128, 78, 0.18); }
-textarea { min-height: 84px; resize: vertical; }
-input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--brand-accent); margin-right: 8px; vertical-align: middle; }
-label { font-size: 13.5px; color: var(--brand-primary); font-weight: 500; display: block; margin-bottom: 4px; }
-.field-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; margin: 12px 0; }
+input:hover:not(:disabled):not(:focus), select:hover:not(:disabled):not(:focus), textarea:hover:not(:disabled):not(:focus) { border-color: #b7c4cf; }
+input:focus, select:focus, textarea:focus { outline: none; border-color: var(--brand-accent); box-shadow: 0 0 0 3px rgba(239, 128, 78, 0.30); }
+input:disabled, select:disabled, textarea:disabled { background: #f6f7f9; color: var(--text-muted); cursor: not-allowed; }
+textarea { min-height: 96px; resize: vertical; line-height: 1.5; }
+input[type="checkbox"], input[type="radio"] {
+  width: 20px; height: 20px; min-height: 0; padding: 0;
+  accent-color: var(--brand-accent); cursor: pointer; vertical-align: middle;
+}
+label { font-size: 13.5px; color: var(--brand-primary); font-weight: 600; display: block; margin-bottom: 6px; }
+select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8' fill='none'%3E%3Cpath d='M1 1.5L6 6.5L11 1.5' stroke='%235b6b7c' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  padding-right: 38px;
+}
+.field-row { display: grid; grid-template-columns: 1fr; gap: 14px; margin: 12px 0; }
+@media (min-width: 640px) { .field-row { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); } }
+
+/* ───── Buttons — einheitliches System, kein Inline-Style ──────────── */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  min-height: 48px; padding: 0 18px;
+  font-family: inherit; font-size: 14px; font-weight: 600; line-height: 1;
+  border: 1.5px solid transparent; border-radius: var(--radius);
+  background: transparent; color: var(--text-dark);
+  cursor: pointer; text-decoration: none;
+  transition: background 0.12s, border-color 0.12s, color 0.12s;
+  white-space: nowrap; user-select: none;
+}
+.btn:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(239, 128, 78, 0.35); }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn--primary { background: var(--brand-primary); color: #fff; border-color: var(--brand-primary); }
+.btn--primary:hover:not(:disabled) { background: var(--brand-primary-dark); border-color: var(--brand-primary-dark); }
+.btn--accent  { background: var(--brand-accent);  color: #fff; border-color: var(--brand-accent); }
+.btn--accent:hover:not(:disabled)  { filter: brightness(0.92); }
+.btn--secondary { background: #fff; color: var(--text-dark); border-color: var(--card-border); }
+.btn--secondary:hover:not(:disabled) { background: #f6f7f9; border-color: #b7c4cf; }
+.btn--ghost   { background: transparent; color: var(--text-dark); }
+.btn--ghost:hover:not(:disabled) { background: #f0f3f6; }
+.btn--danger  { background: var(--status-red-fg); color: #fff; border-color: var(--status-red-fg); }
+.btn--danger-ghost { background: transparent; color: var(--status-red-fg); }
+.btn--danger-ghost:hover:not(:disabled) { background: var(--status-red-bg); }
+.btn--icon    { min-width: 48px; padding: 0; }
+.btn--sm      { min-height: 36px; padding: 0 12px; font-size: 13px; }
+.btn--sm.btn--icon { min-width: 36px; }
+.btn-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.btn-row--right { justify-content: flex-end; }
 
 /* ───── Briefkopf-Box (Auftragnehmer-Platzhalter) ─────────────────── */
 .briefkopf-box { border: 1px dashed var(--text-faint); border-radius: var(--radius); padding: 14px 16px; font-size: 13px; color: var(--text-muted); min-height: 78px; background: #fafbfc; }
@@ -286,33 +388,47 @@ label { font-size: 13.5px; color: var(--brand-primary); font-weight: 500; displa
   .brand-bar { background: var(--brand-primary) !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   .page-wrap { padding: 0; }
   .card, .hero, .abschnitt-card { box-shadow: none; border: 1px solid #ccc; page-break-inside: avoid; }
-  thead th { background: #1c3244 !important; color: #fff !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  thead th { background: #1c3244 !important; color: #fff !important; -webkit-print-color-adjust: exact; print-color-adjust: exact;
+             position: static !important; /* sticky-header bricht beim Drucken */ }
+  table { page-break-inside: auto; }
+  tr { page-break-inside: avoid; page-break-after: auto; }
+  thead { display: table-header-group; }                  /* Header auf jeder Seite wiederholen */
+  tfoot { display: table-footer-group; }
   .doc-badge.formular, .kpi-card { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   h1, h2, h3 { page-break-after: avoid; }
   a { color: var(--brand-primary); border: none; }
+  .btn { display: none; }                                  /* Buttons nicht drucken */
+  .data-cards { /* Card-Variante zurück auf normale Tabelle für Druck */
+    display: table !important;
+    thead { display: table-header-group !important; position: static !important; left: auto; width: auto; height: auto; }
+    tr { display: table-row !important; }
+    td { display: table-cell !important; text-align: left !important; }
+    td::before { display: none !important; }
+  }
 }
 
 /* ───── Mobile ────────────────────────────────────────────────────── */
 @media (max-width: 720px) {
   body { font-size: 15px; }
   .page-wrap { padding: 0 12px 40px; }
-  .brand-bar { padding: 18px 0; margin-bottom: 18px; }
+  .brand-bar { padding: 16px 0; margin-bottom: 18px; }
   .brand-bar .brand-inner { gap: 12px; }
   .brand-logo .brand-mark { width: 40px; height: 40px; font-size: 17px; }
   .brand-meta { text-align: left; }
-  .hero { padding: 20px 18px; }
+  .hero { padding: 18px 16px; }
   .hero h1 { font-size: 21px; }
   .hero-row { flex-direction: column; }
-  .card, .abschnitt-card { padding: 16px 16px; }
+  .card, .abschnitt-card { padding: 16px 14px; }
   h2 { font-size: 17px; margin-top: 22px; }
-  table { font-size: 13.5px; }
-  thead th, tbody td { padding: 9px 10px; }
+  table:not(.data-cards) { font-size: 13.5px; }
+  table:not(.data-cards) thead th, table:not(.data-cards) tbody td { padding: 9px 10px; }
   .signature-row { grid-template-columns: 1fr; }
   .kpi-row { grid-template-columns: repeat(2, 1fr); }
   .role-grid { grid-template-columns: 1fr; }
 }
 @media (max-width: 420px) {
   .kpi-row { grid-template-columns: 1fr; }
+  .hero-grid { grid-template-columns: 1fr 1fr; }
 }
 """
 
@@ -378,10 +494,87 @@ _TOKEN_PROPAGATION_SCRIPT = """<script>
 </script>"""
 
 
-def _inject_token_script(html: str) -> str:
+_BACK_BUTTON_HTML = """
+<style>
+.sheet-back-bar {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 9998;
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 18px;
+  background: rgba(28, 50, 68, 0.95);
+  color: #fff;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 14px; font-weight: 600;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+.sheet-back-bar button, .sheet-back-bar a {
+  display: inline-flex; align-items: center; gap: 6px;
+  min-height: 36px; padding: 0 14px;
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 8px;
+  font: inherit; cursor: pointer; text-decoration: none;
+  transition: background 0.12s;
+}
+.sheet-back-bar button:hover, .sheet-back-bar a:hover {
+  background: rgba(255, 255, 255, 0.24);
+}
+.sheet-back-bar .sheet-title {
+  flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  opacity: 0.85; font-weight: 500; font-size: 13px;
+}
+body { padding-top: 56px !important; }
+@media (max-width: 480px) {
+  .sheet-back-bar { padding: 8px 12px; font-size: 13px; }
+  .sheet-back-bar button, .sheet-back-bar a { padding: 0 10px; min-height: 32px; }
+  .sheet-back-bar .sheet-title { display: none; }
+  body { padding-top: 48px !important; }
+}
+@media print {
+  .sheet-back-bar { display: none !important; }
+  body { padding-top: 0 !important; }
+}
+</style>
+<div class="sheet-back-bar" role="banner">
+  <button type="button" onclick="(function(){
+    var ref = document.referrer;
+    var t = new URLSearchParams(window.location.search).get('token');
+    var origin = window.location.origin;
+    // Wenn die Referrer-URL aus unserer App kommt: history.back()
+    if (ref && ref.indexOf(origin) === 0) { window.history.back(); return; }
+    // Sonst: zurück zur Projekt-Detail-View (Slug aus URL extrahieren)
+    var m = window.location.pathname.match(/\\/projects\\/([^/]+)/);
+    if (m) { window.location.href = origin + '/projects/' + m[1] + (t ? '?token=' + encodeURIComponent(t) : ''); return; }
+    window.location.href = origin + (t ? '/?token=' + encodeURIComponent(t) : '/');
+  })();" aria-label="Zurück zur App">← Zurück</button>
+  <span class="sheet-title" id="sheet-back-bar-title"></span>
+  <button type="button" onclick="window.print()" title="Drucken" aria-label="Drucken">🖨</button>
+</div>
+<script>(function(){ var t = document.getElementById('sheet-back-bar-title'); if (t) t.textContent = document.title || ''; })();</script>
+"""
+
+
+def _inject_back_bar_and_scripts(html: str) -> str:
+    """Inject Back-Button (oben fixiert) + Token-Propagation + AJAX-Form-Handler.
+
+    Reihenfolge im HTML:
+      <body>[INSERTED: back-bar] ... [INSERTED before </body>: scripts] </body>
+    """
     if "</body>" not in html:
         return html
+    # Back-Bar nach <body> einsetzen
+    body_open_idx = html.lower().find("<body")
+    if body_open_idx >= 0:
+        body_tag_end = html.find(">", body_open_idx) + 1
+        html = html[:body_tag_end] + _BACK_BUTTON_HTML + html[body_tag_end:]
     return html.replace("</body>", _TOKEN_PROPAGATION_SCRIPT + _INLINE_FORM_SCRIPT + "</body>", 1)
+
+
+def _inject_token_script(html: str) -> str:
+    """Legacy-Alias — ruft die neue Funktion auf."""
+    return _inject_back_bar_and_scripts(html)
 
 
 # Generic AJAX form-submit handler — any <form data-api-post="…"> or
@@ -496,8 +689,35 @@ def _missing(value: Any) -> bool:
     return False
 
 
+def _fmt_bullets(value: str | None) -> Markup:
+    """Wandelt Mehrzeilen-Text mit ``- ``-Bindestrichen in eine HTML-Liste.
+
+    - Wenn mindestens eine Zeile mit ``- `` oder ``* `` beginnt: ``<ul><li>…</li></ul>``
+    - Sonst: jede Zeile mit ``<br>`` getrennt
+    - Leer/None → ``—``
+    Auto-escape sicher: alle Werte werden zuerst escaped.
+    """
+    if value is None:
+        return Markup("—")
+    text = str(value).strip()
+    if not text:
+        return Markup("—")
+    lines = [ln.rstrip() for ln in text.splitlines() if ln.strip()]
+    bullet_lines = [ln for ln in lines if ln.lstrip().startswith(("-", "*", "•"))]
+    if bullet_lines and len(bullet_lines) >= max(2, len(lines) // 2):
+        items = []
+        for ln in lines:
+            stripped = ln.lstrip()
+            if stripped.startswith(("-", "*", "•")):
+                stripped = stripped[1:].lstrip()
+            items.append(f"<li>{_html_escape(stripped)}</li>")
+        return Markup("<ul class=\"goal-list\">" + "".join(items) + "</ul>")
+    return Markup("<br>".join(_html_escape(ln) for ln in lines))
+
+
 _env.filters["de_date"] = _fmt_de_date
 _env.filters["hours"] = _fmt_hours
+_env.filters["bullets"] = _fmt_bullets
 _env.tests["missing"] = _missing
 
 
@@ -722,8 +942,89 @@ def _build_project_context(db: Session, project_slug: str) -> dict[str, Any]:
         for t, u in team_status_rows
     ]
 
-    material_items = [
-        {
+    # Automatischer Teamstatus aus Tagesberichten + Attendees.
+    # Jeder Anwesende erbt für seinen Tag den Bericht-Status.
+    # Mehrere Berichte pro User/Tag (z.B. unterschiedliche Sections):
+    # Worst-Case-Status gewinnt (red > yellow > green).
+    status_rank = {"red": 3, "yellow": 2, "green": 1}
+    auto_matrix: dict[tuple[int, date], dict] = {}
+    auto_rows = (
+        db.query(DailyReport, DailyReportAttendee, User)
+        .join(DailyReportAttendee, DailyReportAttendee.daily_report_id == DailyReport.id)
+        .join(User, DailyReportAttendee.user_id == User.id)
+        .filter(DailyReport.project_id == project.id)
+        .all()
+    )
+    for rep, att, usr in auto_rows:
+        key = (att.user_id, rep.report_date)
+        prev = auto_matrix.get(key)
+        if prev is None or status_rank.get(rep.status, 0) > status_rank.get(prev["status"], 0):
+            auto_matrix[key] = {
+                "user_id": att.user_id,
+                "display_name": usr.display_name or usr.username,
+                "day": rep.report_date,
+                "status": rep.status,
+                "report_id": rep.id,
+                "section_number": rep.section_number,
+                "ist_hours": rep.ist_hours,
+                "note": None,
+                "soll_hours": None,
+                "manual": False,
+            }
+
+    # Manuelle TeamStatusEntries überschreiben den Auto-Status.
+    for t in team_status_list:
+        auto_matrix[(t["user_id"], t["day"])] = {
+            "user_id": t["user_id"],
+            "display_name": t["display_name"],
+            "day": t["day"],
+            "status": t["status"],
+            "ist_hours": t["ist_hours"],
+            "soll_hours": t["soll_hours"],
+            "note": t["note"],
+            "manual": True,
+        }
+
+    # Pivot in Matrix-Form: Liste User + Liste Tage + Lookup-Dict
+    member_rows_for_team = (
+        db.query(ProjectMember, User)
+        .join(User, ProjectMember.user_id == User.id)
+        .filter(ProjectMember.project_id == project.id)
+        .order_by(User.display_name)
+        .all()
+    )
+    team_users = [
+        {"user_id": m.user_id, "display_name": u.display_name or u.username, "project_role": m.project_role}
+        for m, u in member_rows_for_team
+    ]
+    team_days_set = {entry["day"] for entry in auto_matrix.values()}
+    team_days = sorted(team_days_set, reverse=True)[:30]  # letzte 30 Tage mit Daten
+    team_status_matrix = {
+        f"{e['user_id']}|{e['day']}": e for e in auto_matrix.values()
+    }
+
+    material_items_raw = (
+        db.query(MaterialItem)
+        .filter(MaterialItem.project_id == project.id)
+        .order_by(MaterialItem.section_number, MaterialItem.kind, MaterialItem.name)
+        .all()
+    )
+    # Offer-Info pro item_id (für Bulk-Reassign-Filter im Sheet)
+    from app.db.orm_models import Offer as _Offer, OfferItem as _OfferItem
+    _offer_link_rows = (
+        db.query(_OfferItem.id, _Offer.id, _Offer.supplier_name, _Offer.offer_no, _Offer.source_file)
+        .join(_Offer, _Offer.id == _OfferItem.offer_id)
+        .filter(_Offer.project_id == project.id)
+        .all()
+    )
+    _offer_by_item: dict[int, dict] = {
+        oi_id: {"offer_id": o_id, "supplier_name": s, "offer_no": no, "source_file": sf}
+        for oi_id, o_id, s, no, sf in _offer_link_rows
+    }
+    material_items = []
+    for m in material_items_raw:
+        offer_info = _offer_by_item.get(m.offer_item_id) if m.offer_item_id else None
+        material_items.append({
             "id": m.id,
             "section_number": m.section_number,
             "kind": m.kind,
@@ -734,13 +1035,57 @@ def _build_project_context(db: Session, project_slug: str) -> dict[str, Any]:
             "location": m.location,
             "status": m.status,
             "note": m.note,
+            "offer_item_id": m.offer_item_id,
+            "offer_id": offer_info["offer_id"] if offer_info else None,
+            "offer_supplier": offer_info["supplier_name"] if offer_info else None,
+            "offer_no": offer_info["offer_no"] if offer_info else None,
+            "offer_source_file": offer_info["source_file"] if offer_info else None,
+            "percent_done": (
+                round((m.ist_qty or 0) / m.soll_qty * 100.0, 1)
+                if m.soll_qty
+                else None
+            ),
+            "remaining": (m.soll_qty - (m.ist_qty or 0)) if m.soll_qty is not None else None,
+        })
+
+    # Verbrauchs-Aggregate für Material-Status
+    total_soll = sum((m.soll_qty or 0.0) for m in material_items_raw)
+    total_ist = sum((m.ist_qty or 0.0) for m in material_items_raw)
+    items_completed = sum(
+        1 for m in material_items_raw
+        if m.soll_qty is not None and m.ist_qty is not None and m.ist_qty >= m.soll_qty
+    )
+    material_summary = {
+        "total_soll": total_soll,
+        "total_ist": total_ist,
+        "percent_done": round(total_ist / total_soll * 100.0, 1) if total_soll else None,
+        "items_completed": items_completed,
+        "items_total": len(material_items_raw),
+    }
+
+    # Letzte 15 Verbrauchsbuchungen (für Historie im Material-Sheet)
+    usage_rows = (
+        db.query(MaterialUsage, MaterialItem, User)
+        .outerjoin(MaterialItem, MaterialUsage.material_item_id == MaterialItem.id)
+        .outerjoin(User, MaterialUsage.user_id == User.id)
+        .filter(MaterialUsage.project_id == project.id)
+        .order_by(MaterialUsage.used_at.desc(), MaterialUsage.id.desc())
+        .limit(15)
+        .all()
+    )
+    material_usages_recent = [
+        {
+            "id": u.id,
+            "material_item_id": u.material_item_id,
+            "material_name": (mi.name if mi else "(gelöscht)"),
+            "qty_used": u.qty_used,
+            "unit": u.unit,
+            "used_at": u.used_at,
+            "section_number": u.section_number,
+            "username": (usr.display_name or usr.username) if usr else None,
+            "notes": u.notes,
         }
-        for m in (
-            db.query(MaterialItem)
-            .filter(MaterialItem.project_id == project.id)
-            .order_by(MaterialItem.section_number, MaterialItem.kind, MaterialItem.name)
-            .all()
-        )
+        for u, mi, usr in usage_rows
     ]
 
     risk_issues = [
@@ -761,6 +1106,33 @@ def _build_project_context(db: Session, project_slug: str) -> dict[str, Any]:
             .all()
         )
     ]
+
+    # Project-Photos für Foto-Galerien (z.B. Übergabeprotokoll).
+    photo_rows = (
+        db.query(ProjectPhoto)
+        .filter(ProjectPhoto.project_id == project.id)
+        .order_by(ProjectPhoto.section_number.nulls_last(), ProjectPhoto.created_at)
+        .all()
+    )
+    photos = [
+        {
+            "id": p.id,
+            "section_number": p.section_number,
+            "caption": p.caption,
+            "filename": p.filename,
+            "view_url": f"/api/projects/{project.slug}/photos/{p.id}/view",
+            "annotated_url": (
+                f"/api/projects/{project.slug}/photos/{p.id}/annotated"
+                if p.annotated_path else None
+            ),
+            "taken_at": p.taken_at,
+            "created_at": p.created_at,
+        }
+        for p in photo_rows
+    ]
+    photos_by_section: dict[int | None, list[dict[str, Any]]] = {}
+    for ph in photos:
+        photos_by_section.setdefault(ph["section_number"], []).append(ph)
 
     # Full blockers (not just open ones) for the dedicated blocker template.
     all_blockers = [
@@ -801,6 +1173,14 @@ def _build_project_context(db: Session, project_slug: str) -> dict[str, Any]:
         "template_index": template_index,
         "team_status": team_status_list,
         "material_items": material_items,
+        "material_summary": material_summary,
+        "material_usages_recent": material_usages_recent,
+        "team_users": team_users,
+        "team_days": team_days,
+        "team_status_matrix": team_status_matrix,
+        "milestones": _list_milestones_render(db, project.id),
+        "photos": photos,
+        "photos_by_section": photos_by_section,
         "risk_issues": risk_issues,
         "all_blockers": all_blockers,
         "base_css": BASE_CSS,
@@ -915,12 +1295,25 @@ def _build_offers_context(offers: list) -> dict[str, Any]:
                 for it in positions
             ],
         })
+    radiator_keywords = ("heizk", "badheizk", " hk ", "radiator")
+    radiator_positions = []
+    for o in offer_list:
+        for p in o["positions"]:
+            text = f" {(p.get('name') or '')} {(p.get('description') or '')} ".lower()
+            if any(kw in text for kw in radiator_keywords):
+                radiator_positions.append({
+                    "supplier_name": o["supplier_name"],
+                    "offer_no": o["offer_no"],
+                    **p,
+                })
+
     return {
         "entries": offer_list,
         "count": len(offer_list),
         "total_net_eur": sum((o["total_net_eur"] or 0.0) for o in offer_list) or None,
         "total_position_count": sum(o["position_count"] for o in offer_list),
         "suppliers": sorted({o["supplier_name"] for o in offer_list if o["supplier_name"]}),
+        "radiator_positions": radiator_positions,
     }
 
 
@@ -1005,6 +1398,8 @@ def render_preview(db: Session, slug: str) -> RenderResult:
         ],
         "team_status": [],
         "material_items": [],
+        "photos": [],
+        "photos_by_section": {},
         "risk_issues": [],
         "all_blockers": [],
         "base_css": BASE_CSS,

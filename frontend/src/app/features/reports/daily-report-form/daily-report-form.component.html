@@ -5,21 +5,26 @@
         <p class="panel-kicker">Projekt {{ slug }}</p>
         <h2>Neuer Tagesbericht</h2>
       </div>
-      <a class="button-link secondary" [routerLink]="['/projects', slug, 'reports', 'daily']">Abbrechen</a>
+      <a class="btn btn--secondary" [routerLink]="['/projects', slug, 'reports', 'daily']">Abbrechen</a>
     </div>
 
-    <div class="wizard-progress" aria-label="Fortschritt">
+    <div class="wizard-progress"
+         role="progressbar"
+         [attr.aria-valuenow]="currentStep()"
+         [attr.aria-valuemin]="1"
+         [attr.aria-valuemax]="totalSteps"
+         [attr.aria-valuetext]="'Schritt ' + currentStep() + ' von ' + totalSteps">
       <div class="wizard-progress-bar">
         <div class="wizard-progress-fill" [style.width.%]="progressPercent()"></div>
       </div>
       <p class="wizard-progress-text">Schritt {{ currentStep() }} von {{ totalSteps }}</p>
     </div>
 
-    <!-- Schritt 1: Wann? + Sicherheits-Check -->
+    <!-- Schritt 1: Wann & wer? (Datum + Bauabschnitt + Sicherheits-Check + Team) -->
     <section class="wizard-step" *ngIf="currentStep() === 1">
       <header class="wizard-step-head">
-        <h3>1. Wann?</h3>
-        <p>Datum und Bauabschnitt wählen. Sicherheits-Check optional — wenn du auf Papier abgehakt hast, hier leer lassen.</p>
+        <h3>1. Wann &amp; wer?</h3>
+        <p>Datum, Bauabschnitt und Team. Sicherheits-Check optional — wenn du auf Papier abgehakt hast, hier leer lassen.</p>
       </header>
       <div class="form-grid">
         <label>
@@ -42,7 +47,7 @@
               Abschnitt {{ section.number }} · {{ section.name }}
             </option>
           </select>
-          <small *ngIf="sections().length === 0" style="color:var(--text-muted);font-size:12px;margin-top:4px;display:block;">
+          <small *ngIf="sections().length === 0" class="hint hint--loading">
             Lade Bauabschnitte … (Projekt-Slug: {{ slug }})
           </small>
         </label>
@@ -59,87 +64,219 @@
           <label><input type="checkbox" name="safety_approval" [(ngModel)]="form.safety_approval" (ngModelChange)="persistDraft()"> Anlagenstillstand / Freigabe vorhanden</label>
         </div>
       </fieldset>
-    </section>
 
-    <!-- Schritt 2: Wer? -->
-    <section class="wizard-step" *ngIf="currentStep() === 2">
-      <header class="wizard-step-head">
-        <h3>2. Wer war heute auf der Baustelle?</h3>
-        <p>Trage die Namen oder Kürzel der Monteure ein.</p>
-      </header>
+      <div *ngIf="members().length > 0" class="member-picker">
+        <span class="panel-kicker">Wer war heute dabei?</span>
+        <div class="pill-row member-picker__chips">
+          <button
+            type="button"
+            *ngFor="let m of members()"
+            class="pill-toggle"
+            [class.active]="isAttendeeSelected(m.user_id)"
+            (click)="toggleAttendee(m.user_id)">
+            {{ m.display_name || m.username }}
+            <small class="member-picker__role">· {{ m.project_role }}</small>
+          </button>
+        </div>
+      </div>
+
+      <div *ngIf="members().length === 0" class="empty-state-inline">
+        Keine Projekt-Mitglieder hinterlegt — nutze das Freitext-Feld unten oder weise zuerst Mitglieder im Projekt zu.
+      </div>
+
       <div class="form-grid">
         <label class="wide">
-          <span>Team / Mannschaft <em class="required" title="Pflichtfeld">*</em></span>
+          <span>Team / Mannschaft (Freitext als Notiz oder Fallback)</span>
           <input
             name="team"
             [(ngModel)]="form.team"
             (ngModelChange)="persistDraft()"
-            placeholder="z.B. Schmidt, Yilmaz"
-            required>
+            placeholder="z.B. Schmidt, Yilmaz, externer Helfer">
         </label>
       </div>
     </section>
 
-    <!-- Schritt 3: Was? -->
-    <section class="wizard-step" *ngIf="currentStep() === 3">
+    <!-- Schritt 2: Arbeitstagerfassung (Voice oder Text, KI strukturiert) -->
+    <section class="wizard-step" *ngIf="currentStep() === 2">
       <header class="wizard-step-head">
-        <h3>3. Was wurde gemacht?</h3>
-        <p>Erledigtes, Offenes, Material und Probleme — kurze Stichworte reichen.</p>
+        <h3>2. Arbeitstagerfassung</h3>
+        <p>
+          Erzähle, was du heute gemacht hast — und was morgen noch offen ist. Du
+          kannst tippen oder das Mikrofon drücken und einfach reden (auch in
+          deiner Muttersprache). Die KI sortiert das beim Speichern in
+          „Erledigt" und „Offen".
+        </p>
       </header>
       <div class="form-grid">
         <label class="wide">
-          <span>Erledigte Arbeiten <em class="required" title="Pflichtfeld">*</em></span>
-          <textarea
-            name="completed_work"
-            rows="3"
-            [(ngModel)]="form.completed_work"
-            (ngModelChange)="persistDraft()"
-            placeholder="z.B. Heizkörper Wohnung 3 montiert"
-            required></textarea>
+          <span>
+            Arbeitstagerfassung <em class="required" title="Pflichtfeld">*</em>
+            <ng-container *ngIf="form.raw_work_log_language && form.raw_work_log_language !== 'de'">
+              <small class="lang-badge">🌐 Quelle: {{ form.raw_work_log_language }}</small>
+            </ng-container>
+          </span>
+          <div class="ptt-field">
+            <textarea
+              name="raw_work_log"
+              rows="6"
+              [(ngModel)]="form.raw_work_log"
+              (ngModelChange)="persistDraft()"
+              placeholder="z.B. Heute Strang 3 fertig isoliert. Morgen muss Strang 4 noch dran. 3 DN50-Bögen fehlen noch."
+            ></textarea>
+            <app-ptt-button
+              [label]="'Diktieren'"
+              (transcribed)="onPttArbeitstag($event)"
+            ></app-ptt-button>
+          </div>
+          <small class="hint">
+            Die KI splittet beim Speichern in „Erledigte Arbeiten" und „Offene Aufgaben"
+            und übersetzt nach Deutsch, falls du in einer anderen Sprache gesprochen hast.
+          </small>
         </label>
-        <label class="wide">
-          <span>Offene Arbeiten <em class="required" title="Pflichtfeld">*</em></span>
-          <textarea
-            name="open_work"
-            rows="3"
-            [(ngModel)]="form.open_work"
-            (ngModelChange)="persistDraft()"
-            placeholder="z.B. Heizungstausch Wohnung 4 noch offen"
-            required></textarea>
-        </label>
+
+        <!-- Edit-Modus: zeige die abgeleiteten Felder zum Nachjustieren -->
+        <ng-container *ngIf="isEditing() && (form.completed_work || form.open_work)">
+          <label class="wide">
+            <span>Erledigte Arbeiten (KI-Ergebnis, editierbar)</span>
+            <textarea
+              name="completed_work"
+              rows="3"
+              [(ngModel)]="form.completed_work"
+              (ngModelChange)="persistDraft()"></textarea>
+          </label>
+          <label class="wide">
+            <span>Offene Aufgaben (KI-Ergebnis, editierbar)</span>
+            <textarea
+              name="open_work"
+              rows="3"
+              [(ngModel)]="form.open_work"
+              (ngModelChange)="persistDraft()"></textarea>
+          </label>
+        </ng-container>
+
         <label class="wide">
           <span>Fehlendes Material</span>
-          <textarea
-            name="material_missing"
-            rows="2"
-            [(ngModel)]="form.material_missing"
-            (ngModelChange)="persistDraft()"
-            placeholder="Wird automatisch als Materialmeldung übernommen."></textarea>
+          <div class="ptt-field">
+            <textarea
+              name="material_missing"
+              rows="2"
+              [(ngModel)]="form.material_missing"
+              (ngModelChange)="persistDraft()"
+              placeholder="Stichworte — was hat heute gefehlt?"></textarea>
+            <app-ptt-button
+              [label]="'Diktieren'"
+              [compact]="true"
+              (transcribed)="appendPttToField('material_missing', $event)"
+            ></app-ptt-button>
+          </div>
+          <small class="hint">
+            Wird automatisch im Open-Points-System gelistet und der Bauleitung gemeldet.
+            Bauleitungs-eigene Meldungen weiterhin
+            <a [routerLink]="['/projects', slug, 'open-points', 'material', 'new']">separat anlegen</a>.
+          </small>
         </label>
         <label class="wide">
           <span>Blocker / Probleme</span>
-          <textarea
-            name="blockers"
-            rows="2"
-            [(ngModel)]="form.blockers"
-            (ngModelChange)="persistDraft()"
-            placeholder="Wird automatisch als Blocker übernommen."></textarea>
+          <div class="ptt-field">
+            <textarea
+              name="blockers"
+              rows="2"
+              [(ngModel)]="form.blockers"
+              (ngModelChange)="persistDraft()"
+              placeholder="Stichworte — was hat den Tag gebremst?"></textarea>
+            <app-ptt-button
+              [label]="'Diktieren'"
+              [compact]="true"
+              (transcribed)="appendPttToField('blockers', $event)"
+            ></app-ptt-button>
+          </div>
+          <small class="hint">
+            Wird automatisch als verfolgbarer Blocker eingetragen.
+            Bauleitungs-eigene Meldungen weiterhin
+            <a [routerLink]="['/projects', slug, 'open-points', 'blocker', 'new']">separat melden</a>.
+          </small>
         </label>
         <label class="wide">
           <span>Notizen</span>
-          <textarea
-            name="notes"
-            rows="2"
-            [(ngModel)]="form.notes"
-            (ngModelChange)="persistDraft()"></textarea>
+          <div class="ptt-field">
+            <textarea
+              name="notes"
+              rows="2"
+              [(ngModel)]="form.notes"
+              (ngModelChange)="persistDraft()"></textarea>
+            <app-ptt-button
+              [label]="'Diktieren'"
+              [compact]="true"
+              (transcribed)="appendPttToField('notes', $event)"
+            ></app-ptt-button>
+          </div>
         </label>
+      </div>
+    </section>
+
+    <!-- Schritt 3: Material verbaut -->
+    <section class="wizard-step" *ngIf="currentStep() === 3">
+      <header class="wizard-step-head">
+        <h3>3. Material verbaut</h3>
+        <p>Welche Materialien wurden heute eingebaut? Optional — wenn du heute nichts verbaut hast, einfach weiter.</p>
+      </header>
+
+      <div *ngIf="materialItems().length === 0" class="empty-state-inline">
+        Noch keine Material-Positionen für dieses Projekt angelegt.
+        Lege sie zuerst unter „Material & Werkzeug" an, dann kannst du hier Verbrauch buchen.
+      </div>
+
+      <div *ngIf="materialItems().length > 0" class="usage-editor">
+
+        <div class="usage-form">
+          <div class="usage-form__field usage-form__field--wide">
+            <span>Material</span>
+            <app-material-picker
+              [items]="materialItems()"
+              [selected]="usageDraft.material_item_id"
+              [sections]="sections()"
+              [currentSection]="form.section_number"
+              [projectSlug]="slug"
+              placeholder="Material auswählen"
+              (selectionChange)="usageDraft.material_item_id = $event"
+              (materialAdded)="reloadMaterialItems()">
+            </app-material-picker>
+          </div>
+          <label class="usage-form__field">
+            <span>Verbaut</span>
+            <input type="number" step="0.1" min="0" name="usage_qty" [(ngModel)]="usageDraft.qty_used" placeholder="z.B. 12">
+          </label>
+          <label class="usage-form__field usage-form__field--wide">
+            <span>Notiz (optional)</span>
+            <input type="text" name="usage_notes" [(ngModel)]="usageDraft.notes" placeholder="z.B. Strang 3+4">
+          </label>
+          <button
+            type="button"
+            class="btn btn--accent usage-form__add"
+            (click)="addUsageDraft()"
+            [disabled]="usageDraft.material_item_id == null || !usageDraft.qty_used || usageDraft.qty_used <= 0">
+            + Hinzufügen
+          </button>
+        </div>
+
+        <ul *ngIf="draftUsages().length > 0" class="usage-list">
+          <li *ngFor="let u of draftUsages()" class="usage-list__item">
+            <span class="usage-list__text">
+              <strong>{{ u.qty_used }}{{ u.unit ? ' ' + u.unit : '' }}</strong>
+              · {{ u.material_name }}
+              <small *ngIf="u.notes" class="usage-list__note"> — {{ u.notes }}</small>
+            </span>
+            <button type="button" class="btn btn--danger-ghost btn--icon btn--sm" (click)="removeUsageDraft(u.id)" aria-label="Entfernen">×</button>
+          </li>
+        </ul>
+        <p *ngIf="draftUsages().length === 0" class="empty-state-inline">Noch keine Buchung hinzugefügt.</p>
       </div>
     </section>
 
     <!-- Schritt 4: Status & Senden -->
     <section class="wizard-step" *ngIf="currentStep() === 4">
       <header class="wizard-step-head">
-        <h3>4. Status & Senden</h3>
+        <h3>4. Status &amp; Senden</h3>
         <p>Wie lief der Tag? Fotos sind optional.</p>
       </header>
       <div class="status-row">
@@ -188,7 +325,7 @@
           <li *ngFor="let photo of draftPhotos()" class="photo-item">
             <div class="photo-row">
               <div class="photo-preview">
-                <img [src]="photo.previewUrl" alt="">
+                <img [src]="photo.previewUrl" [alt]="photo.caption ? 'Baustellenfoto: ' + photo.caption : 'Baustellenfoto ' + photo.filename">
               </div>
               <div class="photo-meta">
                 <label class="caption-label">Bildunterschrift
@@ -200,10 +337,10 @@
                     placeholder="Was zeigt das Foto?">
                 </label>
                 <div class="photo-actions">
-                  <button type="button" class="secondary" (click)="toggleAnnotator(photo.id)">
-                    {{ photo.annotating ? 'Annotation schließen' : 'Annotieren' }}
+                  <button type="button" class="btn btn--secondary" (click)="toggleAnnotator(photo.id)">
+                    {{ photo.annotating ? 'Annotation schließen' : '✎ Annotieren' }}
                   </button>
-                  <button type="button" class="secondary danger" (click)="removePhoto(photo.id)">Entfernen</button>
+                  <button type="button" class="btn btn--danger-ghost" (click)="removePhoto(photo.id)" [attr.aria-label]="'Foto ' + photo.filename + ' entfernen'">Entfernen</button>
                 </div>
                 <small class="photo-filename">{{ photo.filename }}</small>
               </div>
@@ -224,7 +361,7 @@
     <footer class="wizard-footer">
       <button
         type="button"
-        class="secondary"
+        class="btn btn--secondary"
         (click)="prevStep()"
         [disabled]="currentStep() === 1">
         ← Zurück
@@ -232,6 +369,7 @@
       <button
         *ngIf="currentStep() < totalSteps"
         type="button"
+        class="btn btn--primary"
         (click)="nextStep()"
         [disabled]="!canGoNext()">
         Weiter →

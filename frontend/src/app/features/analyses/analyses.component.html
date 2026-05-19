@@ -40,34 +40,43 @@
     <div class="dual-row">
       <div class="card">
         <h3>Stunden letzte 7 Tage</h3>
-        <div class="hours-bar">
-          <div class="hours-soll" [style.width.%]="percent(pf.total_hours_ist_last_7d, pf.total_hours_soll_last_7d || 1)">
-            Ist: {{ formatNum(pf.total_hours_ist_last_7d) }} h
-          </div>
-        </div>
-        <p class="hours-meta">
-          Soll: {{ formatNum(pf.total_hours_soll_last_7d) }} h ·
-          <strong [class.over]="pf.total_hours_ist_last_7d > pf.total_hours_soll_last_7d">
-            Differenz: {{ formatNum(pf.total_hours_ist_last_7d - pf.total_hours_soll_last_7d) }} h
-          </strong>
+        <p class="big-number">
+          <strong>{{ formatNum(pf.total_hours_ist_last_7d) }}</strong>
+          <span class="big-number__unit">h</span>
+        </p>
+        <p class="muted-line">
+          Summe aller Anwesenheits-Stunden aus Tagesberichten der letzten 7 Tage.
+          Plan-Soll wird nicht wochenweise hinterlegt — vergleiche mit Projekt-Plan unten im Drilldown.
         </p>
       </div>
 
       <div class="card card--alert" *ngIf="pf.projects_at_risk.length > 0">
         <h3>⚠️ Projekte mit Handlungsbedarf</h3>
+        <p class="muted-line">Klick auf den Hinweis öffnet direkt die betroffene Liste.</p>
         <ul class="at-risk-list">
           <li *ngFor="let p of pf.projects_at_risk">
-            <a [routerLink]="['/projects', p.slug]">
-              <strong>{{ p.name }}</strong>
-              <span class="risk-flags">
-                <span *ngIf="p.recent_red_reports > 0" class="risk-flag red">
-                  {{ p.recent_red_reports }} rote Tagesberichte
-                </span>
-                <span *ngIf="p.critical_blockers > 0" class="risk-flag warn">
-                  {{ p.critical_blockers }} kritische Blocker
-                </span>
-              </span>
-            </a>
+            <div class="at-risk-row">
+              <a class="at-risk-name" [routerLink]="['/projects', p.slug, 'details']" title="Projekt-Stammdaten öffnen">
+                <strong>{{ p.name }}</strong>
+                <small>{{ p.slug }}</small>
+              </a>
+              <div class="risk-flags">
+                <a *ngIf="p.recent_red_reports > 0"
+                   class="risk-flag risk-flag--link red"
+                   [routerLink]="['/projects', p.slug, 'reports', 'daily']"
+                   [queryParams]="{ status: 'red' }"
+                   [title]="p.recent_red_reports + ' rote Tagesberichte anzeigen'">
+                  {{ p.recent_red_reports }} rote Tagesberichte →
+                </a>
+                <a *ngIf="p.critical_blockers > 0"
+                   class="risk-flag risk-flag--link warn"
+                   [routerLink]="['/projects', p.slug, 'open-points']"
+                   [queryParams]="{ tab: 'blocker' }"
+                   [title]="p.critical_blockers + ' kritische Blocker bearbeiten'">
+                  {{ p.critical_blockers }} kritische Blocker →
+                </a>
+              </div>
+            </div>
           </li>
         </ul>
       </div>
@@ -134,13 +143,19 @@
           <span class="stat-card__value">{{ pa.risks_open }}<small> / {{ pa.risks_total }}</small></span>
         </div>
         <div class="stat-card">
-          <span class="stat-card__label">Stunden Ist</span>
-          <span class="stat-card__value">{{ formatNum(pa.hours_total_ist) }} h</span>
+          <span class="stat-card__label">Stunden verbucht</span>
+          <span class="stat-card__value">{{ formatNum(pa.hours_total_ist) }} h<small *ngIf="pa.hours_total_planned > 0"> / {{ formatNum(pa.hours_total_planned) }} h Plan</small></span>
         </div>
-        <div class="stat-card" [class.stat-card--alert]="hoursDelta() > 0">
-          <span class="stat-card__label">Differenz Soll/Ist</span>
+        <div class="stat-card"
+             *ngIf="pa.hours_total_planned > 0"
+             [class.stat-card--alert]="pa.hours_total_status === 'over'">
+          <span class="stat-card__label">
+            <ng-container *ngIf="pa.hours_total_status === 'over'">Plan überschritten</ng-container>
+            <ng-container *ngIf="pa.hours_total_status !== 'over'">Noch verfügbar</ng-container>
+          </span>
           <span class="stat-card__value">
-            {{ hoursDelta() > 0 ? '+' : '' }}{{ formatNum(hoursDelta()) }} h
+            {{ pa.hours_total_status === 'over' ? '+' : '' }}{{ formatNum(pa.hours_total_status === 'over' ? pa.hours_total_delta : -pa.hours_total_delta) }} h
+            <small *ngIf="pa.hours_total_percent != null"> ({{ formatNum(pa.hours_total_percent) }}%)</small>
           </span>
         </div>
         <div class="stat-card stat-card--highlight" *ngIf="pa.offer_count > 0">
@@ -151,29 +166,54 @@
 
       <div class="card" *ngIf="pa.hours_by_user.length > 0">
         <h3>Stunden pro Mitarbeiter</h3>
+        <p class="muted-line">Quelle: Tagesberichte — Anwesende erben die Ist-Stunden des Berichts.</p>
         <div class="data-table-wrap">
           <table class="data-table">
             <thead>
               <tr>
                 <th>Mitarbeiter</th>
                 <th class="num">Tage</th>
-                <th class="num">Soll-Stunden</th>
-                <th class="num">Ist-Stunden</th>
-                <th class="num">Differenz</th>
+                <th class="num">Stunden</th>
               </tr>
             </thead>
             <tbody>
               <tr *ngFor="let h of pa.hours_by_user">
                 <td>{{ h.display_name }}</td>
                 <td class="num">{{ h.days }}</td>
-                <td class="num">{{ formatNum(h.soll_hours) }}</td>
-                <td class="num"><strong>{{ formatNum(h.ist_hours) }}</strong></td>
-                <td class="num" [class.over]="h.ist_hours > h.soll_hours">
-                  {{ h.ist_hours - h.soll_hours > 0 ? '+' : '' }}{{ formatNum(h.ist_hours - h.soll_hours) }}
-                </td>
+                <td class="num"><strong>{{ formatNum(h.ist_hours) }}</strong> h</td>
               </tr>
             </tbody>
           </table>
+        </div>
+      </div>
+
+      <div class="card hours-progress-card">
+        <h3>Stunden-Fortschritt</h3>
+        <p class="muted-line">Geplante Stunden je Bauabschnitt vs. tatsächlich verbuchte Zeit. Bei Überschreitung wird rot markiert.</p>
+
+        <div class="hours-progress-card__total">
+          <app-hours-progress
+            label="Projekt gesamt"
+            [planned]="pa.hours_total_planned || null"
+            [ist]="pa.hours_total_ist"
+            [status]="pa.hours_total_status">
+          </app-hours-progress>
+        </div>
+
+        <div class="hours-progress-card__sections" *ngIf="pa.hours_by_section.length > 0">
+          <div class="hours-progress-card__row" *ngFor="let h of pa.hours_by_section">
+            <app-hours-progress
+              [label]="h.section_number != null
+                ? 'Abschnitt ' + h.section_number + (h.section_name ? ' · ' + h.section_name : '')
+                : 'Ohne Zuordnung'"
+              [planned]="h.planned_hours ?? null"
+              [ist]="h.ist_hours"
+              [status]="h.status">
+            </app-hours-progress>
+            <small class="hours-progress-card__meta" *ngIf="h.report_count > 0 || h.user_count > 0">
+              {{ h.user_count }} Mitarbeiter · {{ h.report_count }} Bericht{{ h.report_count === 1 ? '' : 'e' }}
+            </small>
+          </div>
         </div>
       </div>
 

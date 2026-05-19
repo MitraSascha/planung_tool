@@ -3,6 +3,8 @@ export type ReportStatus = 'green' | 'yellow' | 'red' | string;
 export type IssueStatus = 'open' | 'in_progress' | 'done' | string;
 export type MaterialPriority = 'low' | 'normal' | 'high' | 'urgent' | string;
 export type BlockerSeverity = 'low' | 'medium' | 'high' | 'critical' | string;
+/** Beschaffungs-Workflow (Stepper) für Materialmeldungen. */
+export type ProcurementStatus = 'offen' | 'bestellt' | 'unterwegs' | 'angekommen';
 
 export interface DailyReportRead {
   id: number;
@@ -14,8 +16,14 @@ export interface DailyReportRead {
   report_date: string;
   status: ReportStatus;
   team?: string | null;
+  attendee_user_ids?: number[];
   completed_work?: string | null;
   open_work?: string | null;
+  /** Roh-Eingabe der „Arbeitstagerfassung". Backend splittet via LLM in
+   *  completed_work + open_work; dieser Text bleibt persistent als Quelle. */
+  raw_work_log?: string | null;
+  /** ISO 639-1 Sprach-Code der Voice-Aufnahme (falls vorhanden). */
+  raw_work_log_language?: string | null;
   material_missing?: string | null;
   blockers?: string | null;
   notes?: string | null;
@@ -26,6 +34,9 @@ export interface DailyReportRead {
   safety_workarea?: boolean | null;
   safety_approval?: boolean | null;
   created_at: string;
+  /** true: aktueller User darf diesen Bericht noch bearbeiten (Owner im
+   *  Edit-Fenster oder Lead-Rolle). Vom Backend pro Request berechnet. */
+  editable?: boolean;
 }
 
 export interface DailyReportForm {
@@ -33,6 +44,13 @@ export interface DailyReportForm {
   report_date: string;
   status: ReportStatus;
   team: string;
+  attendee_user_ids: number[];
+  /** Roh-Eingabe der „Arbeitstagerfassung" (was wurde gemacht + was bleibt
+   *  offen — in einem Feld, KI strukturiert beim Speichern). */
+  raw_work_log: string;
+  /** ISO 639-1 — wird vom Push-to-Talk-Button gesetzt, wenn die Voice-Quelle
+   *  nicht-deutsch war. Bei reiner Texteingabe leer/undefined. */
+  raw_work_log_language?: string | null;
   completed_work: string;
   open_work: string;
   material_missing: string;
@@ -91,6 +109,18 @@ export interface MaterialIssueRead {
   priority: MaterialPriority;
   status: IssueStatus;
   created_at: string;
+  /** Beschaffungs-Workflow-Stufe (Stepper). */
+  procurement_status: ProcurementStatus;
+  ordered_at?: string | null;
+  ordered_by_username?: string | null;
+  shipped_at?: string | null;
+  shipped_by_username?: string | null;
+  arrived_at?: string | null;
+  arrived_by_username?: string | null;
+}
+
+export interface ProcurementStatusUpdate {
+  procurement_status: ProcurementStatus;
 }
 
 export interface BlockerCreate {

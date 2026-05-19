@@ -5,7 +5,7 @@
         <p class="panel-kicker">Baustelle heute</p>
         <h2>Teamlage</h2>
       </div>
-      <a class="button-link secondary" [routerLink]="['/projects', project().slug, 'open-points']">Offene Punkte</a>
+      <a class="btn btn--secondary" [routerLink]="['/projects', project().slug, 'open-points']">Offene Punkte</a>
     </div>
     <div class="metric-row" *ngIf="summary() as s">
       <div class="metric-card"><span>Tagesberichte</span><strong>{{ s.daily_reports }}</strong></div>
@@ -50,9 +50,17 @@
         <strong>Materialmeldung</strong>
         <small>Bauleitung benachrichtigen</small>
       </a>
+      <a class="action-card" routerLink="/material-issues">
+        <strong>📦 Materialmeldungen</strong>
+        <small>Bündel über alle Projekte · abhaken</small>
+      </a>
       <a class="action-card" [routerLink]="['/projects', project().slug, 'open-points', 'blocker', 'new']">
         <strong>Blocker</strong>
         <small>Stoerung melden</small>
+      </a>
+      <a class="action-card" [routerLink]="['/projects', project().slug, 'voice-notes']">
+        <strong>🎙 Sprachnotiz</strong>
+        <small>Aufnehmen, transkribieren — fließt in Generator ein</small>
       </a>
     </div>
   </section>

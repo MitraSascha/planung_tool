@@ -16,7 +16,7 @@
           <span aria-hidden="true">✨</span>
           {{ drafting() ? 'Entwurf laeuft ...' : 'Entwurf generieren' }}
         </button>
-        <a class="button-link secondary" [routerLink]="['/projects', slug, 'reports', 'weekly']">Abbrechen</a>
+        <a class="btn btn--secondary" [routerLink]="['/projects', slug, 'reports', 'weekly']">Abbrechen</a>
         <button type="submit" [disabled]="submitting()">Speichern</button>
       </div>
     </div>

@@ -95,9 +95,13 @@
   --content-max-width-narrow: 920px;
 
   /* ───── TOUCH ───── */
-  --touch-target: 44px;             /* WCAG-compliant Min */
-  --transition-fast: 120ms cubic-bezier(.4, 0, .2, 1);
-  --transition: 180ms cubic-bezier(.4, 0, .2, 1);
+  --touch-target:     48px;         /* Mobile-First Standard (Material 3) */
+  --touch-target-lg:  56px;         /* Primäre CTAs auf Mobile */
+  --transition-fast:  120ms cubic-bezier(.4, 0, .2, 1);
+  --transition:       180ms cubic-bezier(.4, 0, .2, 1);
+
+  /* ───── FOCUS RING (sichtbar bei Sonneneinstrahlung) ───── */
+  --focus-ring: 0 0 0 3px rgba(239, 128, 78, 0.35);
 
   /* ───── BACKWARDS COMPAT — bestehender Code referenziert diese ───── */
   --ink: var(--text-ink);
@@ -206,93 +210,11 @@ a:focus-visible {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
- * UTILITY — BUTTONS
+ * UTILITY — BUTTONS  (Legacy-Familie A entfernt 2026-05-18,
+ * Migration auf BEM .btn .btn--variant abgeschlossen. Die .btn-Basis
+ * sowie .btn--primary/--secondary/--danger/--ghost/--icon werden weiter
+ * unten im "Modern BEM"-Block definiert.)
  * ═══════════════════════════════════════════════════════════════════════ */
-.btn,
-.btn-primary,
-.btn-secondary,
-.btn-danger,
-.btn-ghost {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--s-2);
-  min-height: var(--touch-target);
-  padding: 10px var(--s-4);
-  border: 1px solid transparent;
-  border-radius: var(--r);
-  font-size: var(--fs-base);
-  font-weight: var(--fw-semi);
-  line-height: 1;
-  cursor: pointer;
-  text-decoration: none;
-  white-space: nowrap;
-  transition: background var(--transition-fast),
-              border-color var(--transition-fast),
-              transform 80ms ease,
-              box-shadow var(--transition-fast);
-}
-.btn-primary { background: var(--mitra-primary); color: var(--text-on-dark); }
-.btn-primary:hover:not(:disabled),
-.btn-primary:focus-visible {
-  background: var(--mitra-primary-dark);
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-sm);
-  color: var(--text-on-dark);
-  border-color: transparent;
-}
-.btn-secondary {
-  background: var(--bg-panel);
-  color: var(--text-ink);
-  border-color: var(--line-medium);
-}
-.btn-secondary:hover:not(:disabled),
-.btn-secondary:focus-visible {
-  background: var(--bg-soft);
-  border-color: var(--line-strong);
-  color: var(--text-ink);
-}
-.btn-danger {
-  background: var(--bg-panel);
-  color: var(--status-err);
-  border-color: rgba(178, 36, 36, 0.25);
-}
-.btn-danger:hover:not(:disabled),
-.btn-danger:focus-visible {
-  background: var(--status-err-bg);
-  border-color: var(--status-err);
-}
-.btn-ghost { background: transparent; color: var(--text-muted); }
-.btn-ghost:hover:not(:disabled),
-.btn-ghost:focus-visible { background: var(--bg-soft); color: var(--text-ink); }
-.btn:disabled,
-.btn-primary:disabled,
-.btn-secondary:disabled,
-.btn-danger:disabled,
-.btn-ghost:disabled {
-  opacity: .5;
-  cursor: not-allowed;
-  transform: none;
-  box-shadow: none;
-}
-.btn-sm { min-height: 36px; padding: 6px var(--s-3); font-size: var(--fs-sm); border-radius: var(--r-sm); }
-.btn-lg { min-height: 52px; padding: 14px var(--s-6); font-size: var(--fs-md); border-radius: var(--r-md); }
-.btn-block { width: 100%; }
-.btn-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: var(--touch-target);
-  height: var(--touch-target);
-  padding: 0;
-  border: 1px solid var(--line-medium);
-  border-radius: var(--r);
-  background: var(--bg-panel);
-  color: var(--text-ink);
-  cursor: pointer;
-  transition: background var(--transition-fast), border-color var(--transition-fast);
-}
-.btn-icon:hover { background: var(--bg-soft); border-color: var(--line-strong); }
 
 /* ═══════════════════════════════════════════════════════════════════════
  * UTILITY — CARDS / PANELS
@@ -334,7 +256,7 @@ a:focus-visible {
   font-weight: var(--fw-semi);
   color: var(--text-muted);
 }
-.form-field .hint { font-size: var(--fs-xs); color: var(--text-faint); }
+.form-field .hint { font-size: var(--fs-xs); color: var(--text-muted); }
 
 input[type="text"],
 input[type="email"],
@@ -347,38 +269,126 @@ input[type="url"],
 input[type="search"],
 select,
 textarea {
+  width: 100%;
   min-height: var(--touch-target);
-  padding: 10px var(--s-3);
-  font-size: var(--fs-base);
+  padding: var(--s-3) var(--s-4);
+  font-family: inherit;
+  font-size: 16px;                  /* 16px verhindert iOS-Zoom on focus */
+  line-height: var(--lh-normal);
   color: var(--text-ink);
   background: var(--bg-panel);
-  border: 1px solid var(--line-medium);
+  border: 1.5px solid var(--line-medium);
   border-radius: var(--r);
-  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast), background var(--transition-fast);
+  appearance: none;
+}
+input:hover:not(:disabled):not(:focus),
+select:hover:not(:disabled):not(:focus),
+textarea:hover:not(:disabled):not(:focus) {
+  border-color: var(--line-strong);
 }
 input:focus, select:focus, textarea:focus {
   outline: none;
   border-color: var(--mitra-accent);
-  box-shadow: 0 0 0 3px rgba(239, 128, 78, 0.18);
+  box-shadow: var(--focus-ring);
 }
-input::placeholder, textarea::placeholder { color: var(--text-faint); }
-textarea { resize: vertical; min-height: 80px; line-height: var(--lh-normal); }
+input:disabled, select:disabled, textarea:disabled {
+  background: var(--bg-soft);
+  color: var(--text-muted);
+  cursor: not-allowed;
+}
+input::placeholder, textarea::placeholder { color: var(--text-muted); opacity: 1; }
+textarea {
+  resize: vertical;
+  min-height: 96px;
+}
+select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8' fill='none'%3E%3Cpath d='M1 1.5L6 6.5L11 1.5' stroke='%235a6b78' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right var(--s-4) center;
+  padding-right: var(--s-10);
+}
+
+/* ───── Error / Invalid State ───── */
+.field--error input,
+.field--error select,
+.field--error textarea,
+input.input--error,
+select.input--error,
+textarea.input--error,
+input[aria-invalid="true"],
+select[aria-invalid="true"],
+textarea[aria-invalid="true"] {
+  border-color: var(--status-err);
+  background: var(--status-err-bg);
+}
+.field--error input:focus,
+.field--error select:focus,
+.field--error textarea:focus,
+input[aria-invalid="true"]:focus,
+select[aria-invalid="true"]:focus,
+textarea[aria-invalid="true"]:focus {
+  box-shadow: 0 0 0 3px rgba(178, 36, 36, 0.25);
+}
+.hint--error,
+.form-field .hint--error {
+  color: var(--status-err);
+  font-weight: var(--fw-semi);
+}
+
+/* ───── Pflichtfeld-Marker ───── */
+.required,
+em.required {
+  color: var(--status-err);
+  font-style: normal;
+  font-weight: var(--fw-bold);
+  margin-left: 2px;
+}
+
+/* ───── Checkbox / Radio mit größerem Touch-Target ───── */
+input[type="checkbox"],
+input[type="radio"] {
+  width: 20px;
+  height: 20px;
+  min-height: auto;
+  margin: 0;
+  cursor: pointer;
+  accent-color: var(--mitra-accent);
+}
+label:has(> input[type="checkbox"]),
+label:has(> input[type="radio"]) {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-3);
+  min-height: var(--touch-target);
+  cursor: pointer;
+  user-select: none;
+}
 
 .form-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: var(--s-3) var(--s-4);
+  grid-template-columns: 1fr;       /* Mobile-First: 1 Spalte */
+  gap: var(--s-4) var(--s-5);
 
   /* Labels mit .wide nehmen volle Breite (für Textareas/lange Eingaben) */
   & > label.wide,
   & > .wide {
     grid-column: 1 / -1;
   }
-  /* Stack-Variante: jede Zeile voll Breite, gut für Tagesbericht-Wizard */
+  /* Stack-Variante: explizit immer 1 Spalte */
   &.stack {
     grid-template-columns: 1fr;
   }
 }
+@media (min-width: 768px) {
+  .form-grid {
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  }
+  .form-grid.stack {
+    grid-template-columns: 1fr;
+  }
+}
+
 .form-row {
   display: flex;
   flex-wrap: wrap;
@@ -386,44 +396,289 @@ textarea { resize: vertical; min-height: 80px; line-height: var(--lh-normal); }
   align-items: flex-end;
 }
 
+/* ───── Form Section — Gruppen visuell trennen ───── */
+.form-section {
+  background: var(--bg-panel);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--r-md);
+  padding: var(--s-5);
+  margin-bottom: var(--s-4);
+}
+.form-section__head {
+  margin: 0 0 var(--s-4);
+  font-size: var(--fs-md);
+  font-weight: var(--fw-bold);
+  color: var(--mitra-primary);
+  display: flex;
+  align-items: baseline;
+  gap: var(--s-2);
+}
+.form-section__head small {
+  font-weight: var(--fw-normal);
+  font-size: var(--fs-xs);
+  color: var(--text-muted);
+}
+
 /* ═══════════════════════════════════════════════════════════════════════
- * UTILITY — TABLES (mobile-first responsive)
+ * UTILITY — TABLES (mobile-first: Card-View < 768px, Tabelle ab Tablet)
+ *
+ * Mobile (<768px): Jede Zeile wird zu einer Card mit Label-Wert-Paaren.
+ * Voraussetzung: jeder <td> hat ein data-label="…" Attribut (Spalten-Header).
+ * Auf Desktop fallback zur klassischen Tabelle mit Sticky-Header.
  * ═══════════════════════════════════════════════════════════════════════ */
 .data-table-wrap {
   width: 100%;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
   border-radius: var(--r-md);
-  border: 1px solid var(--line-soft);
+  background: var(--bg-panel);
 }
 .data-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: var(--fs-sm);
+  font-size: var(--fs-base);
   background: var(--bg-panel);
 }
-.data-table thead th {
+
+/* ───── Mobile: Card-Layout ───── */
+@media (max-width: 767px) {
+  .data-table-wrap {
+    background: transparent;
+    border: none;
+  }
+  .data-table,
+  .data-table thead,
+  .data-table tbody,
+  .data-table tr,
+  .data-table td {
+    display: block;
+    width: 100%;
+  }
+  .data-table thead {
+    /* Visually hidden, aber für Screenreader da */
+    position: absolute;
+    left: -9999px;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+  }
+  .data-table tr {
+    background: var(--bg-panel);
+    border: 1px solid var(--line-soft);
+    border-radius: var(--r-md);
+    padding: var(--s-2) 0;
+    margin-bottom: var(--s-3);
+    box-shadow: var(--shadow-xs);
+  }
+  .data-table tr:nth-child(even) { background: var(--bg-panel); }
+  .data-table tr:hover { background: var(--bg-panel); }
+  .data-table td {
+    padding: var(--s-2) var(--s-4);
+    border: none;
+    text-align: right;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: var(--s-3);
+    min-height: 36px;
+  }
+  .data-table td::before {
+    content: attr(data-label);
+    flex-shrink: 0;
+    font-size: var(--fs-xs);
+    font-weight: var(--fw-bold);
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    text-align: left;
+  }
+  /* Erste Zelle einer Zeile = Titel der Card (groß, prominent) */
+  .data-table td:first-child {
+    background: var(--bg-soft-2);
+    padding: var(--s-3) var(--s-4);
+    border-radius: var(--r-md) var(--r-md) 0 0;
+    margin: calc(var(--s-2) * -1) 0 var(--s-2);
+    font-weight: var(--fw-bold);
+    color: var(--mitra-primary);
+    font-size: var(--fs-md);
+    flex-direction: column;
+    align-items: stretch;
+    text-align: left;
+  }
+  .data-table td:first-child::before {
+    color: var(--mitra-accent);
+    margin-bottom: var(--s-1);
+  }
+  .data-table td.num { text-align: right; }
+}
+
+/* ───── Desktop: klassische Tabelle ───── */
+@media (min-width: 768px) {
+  .data-table-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    border: 1px solid var(--line-soft);
+  }
+  .data-table {
+    font-size: var(--fs-sm);
+  }
+  .data-table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background: var(--mitra-primary);
+    color: var(--text-on-dark);
+    text-align: left;
+    padding: var(--s-3) var(--s-4);
+    font-weight: var(--fw-semi);
+    font-size: var(--fs-xs);
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    white-space: nowrap;
+  }
+  .data-table thead th.num { text-align: right; }
+  .data-table tbody td {
+    padding: var(--s-3) var(--s-4);
+    border-top: 1px solid var(--line-soft);
+    color: var(--text-ink);
+    vertical-align: top;
+    font-variant-numeric: tabular-nums;
+  }
+  .data-table tbody td.num { text-align: right; }
+  .data-table tbody tr:nth-child(even) { background: var(--bg-soft-2); }
+  .data-table tbody tr:hover { background: var(--bg-soft); }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+ * UTILITY — BUTTONS (.btn hierarchy)
+ *
+ * Alle Buttons ≥48px Touch-Target. Konsistente Hover/Focus/Disabled.
+ * Varianten: primary | secondary | ghost | danger | icon
+ * Größen:    (default) | sm | lg
+ * Modifier:  block (volle Breite)
+ * ═══════════════════════════════════════════════════════════════════════ */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s-2);
+  min-height: var(--touch-target);
+  padding: 0 var(--s-4);
+  font-family: inherit;
+  font-size: var(--fs-base);
+  font-weight: var(--fw-semi);
+  line-height: 1;
+  border: 1.5px solid transparent;
+  border-radius: var(--r);
+  background: transparent;
+  color: var(--text-ink);
+  text-decoration: none;
+  cursor: pointer;
+  transition: background var(--transition-fast), border-color var(--transition-fast),
+              color var(--transition-fast), transform var(--transition-fast);
+  white-space: nowrap;
+  user-select: none;
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring);
+  }
+  &:disabled,
+  &[aria-disabled="true"] {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+}
+
+/* Größen */
+.btn--sm { min-height: 36px; padding: 0 var(--s-3); font-size: var(--fs-sm); }
+.btn--lg { min-height: var(--touch-target-lg); padding: 0 var(--s-6); font-size: var(--fs-md); }
+.btn--block { display: flex; width: 100%; }
+
+/* Primary — Marine Brand */
+.btn--primary {
   background: var(--mitra-primary);
   color: var(--text-on-dark);
-  text-align: left;
-  padding: var(--s-3) var(--s-4);
-  font-weight: var(--fw-semi);
-  font-size: var(--fs-xs);
-  text-transform: uppercase;
-  letter-spacing: 0.4px;
-  white-space: nowrap;
+  border-color: var(--mitra-primary);
+
+  &:hover:not(:disabled) {
+    background: var(--mitra-primary-dark);
+    border-color: var(--mitra-primary-dark);
+  }
 }
-.data-table thead th.num { text-align: right; }
-.data-table tbody td {
-  padding: var(--s-3) var(--s-4);
-  border-top: 1px solid var(--line-soft);
+
+/* Accent — Orange CTA */
+.btn--accent {
+  background: var(--mitra-accent);
+  color: var(--text-on-dark);
+  border-color: var(--mitra-accent);
+
+  &:hover:not(:disabled) {
+    background: var(--mitra-accent-dark);
+    border-color: var(--mitra-accent-dark);
+  }
+}
+
+/* Secondary — Outline */
+.btn--secondary {
+  background: var(--bg-panel);
   color: var(--text-ink);
-  vertical-align: top;
-  font-variant-numeric: tabular-nums;
+  border-color: var(--line-medium);
+
+  &:hover:not(:disabled) {
+    background: var(--bg-soft);
+    border-color: var(--line-strong);
+  }
 }
-.data-table tbody td.num { text-align: right; }
-.data-table tbody tr:nth-child(even) { background: var(--bg-soft-2); }
-.data-table tbody tr:hover { background: var(--bg-soft); }
+
+/* Ghost — minimal, kein Border */
+.btn--ghost {
+  background: transparent;
+  color: var(--text-ink);
+
+  &:hover:not(:disabled) {
+    background: var(--bg-soft);
+  }
+}
+
+/* Danger */
+.btn--danger {
+  background: var(--status-err);
+  color: var(--text-on-dark);
+  border-color: var(--status-err);
+
+  &:hover:not(:disabled) {
+    background: #951c1c;
+    border-color: #951c1c;
+  }
+}
+.btn--danger-ghost {
+  background: transparent;
+  color: var(--status-err);
+  border-color: transparent;
+
+  &:hover:not(:disabled) {
+    background: var(--status-err-bg);
+  }
+}
+
+/* Icon-only — quadratisch, ≥48px */
+.btn--icon {
+  min-width: var(--touch-target);
+  padding: 0;
+
+  &.btn--sm { min-width: 36px; }
+  &.btn--lg { min-width: var(--touch-target-lg); }
+}
+
+.btn-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+  align-items: center;
+
+  &.btn-row--right { justify-content: flex-end; }
+  &.btn-row--between { justify-content: space-between; }
+}
 
 /* ═══════════════════════════════════════════════════════════════════════
  * UTILITY — BADGES / PILLS
@@ -509,23 +764,79 @@ textarea { resize: vertical; min-height: 80px; line-height: var(--lh-normal); }
 
 /* ═══════════════════════════════════════════════════════════════════════
  * RESPONSIVE — Mobile-first breakpoints
+ *
+ * Default = Mobile (< 768px). Größere Viewports erweitern progressiv.
+ * Breakpoint-Skala:
+ *   sm  640px   (große Phones im Landscape)
+ *   md  768px   (Tablets)
+ *   lg  1024px  (Tablet Landscape / kleine Laptops)
+ *   xl  1280px  (Desktop)
  * ═══════════════════════════════════════════════════════════════════════ */
+.stats-row {
+  /* Mobile-first: 1 Spalte */
+  grid-template-columns: 1fr;
+}
+@media (min-width: 480px) {
+  .stats-row { grid-template-columns: 1fr 1fr; }
+}
 @media (min-width: 768px) {
   h1 { font-size: var(--fs-4xl); }
   h2 { font-size: var(--fs-3xl); }
   h3 { font-size: var(--fs-2xl); }
   .container { padding-inline: var(--s-6); }
+  .stats-row { grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); }
 }
 
-@media (max-width: 767px) {
-  .form-grid { grid-template-columns: 1fr; }
-  .stats-row { grid-template-columns: 1fr 1fr; }
-  .data-table thead th,
-  .data-table tbody td { padding: var(--s-2) var(--s-3); }
+/* ═══════════════════════════════════════════════════════════════════════
+ * SKELETON LOADER — Loading-State für Listen/Karten
+ *
+ * Verwendung:
+ *   <div class="skeleton skeleton--text"></div>
+ *   <div class="skeleton skeleton--card"></div>
+ *   <div class="skeleton skeleton--circle"></div>
+ *
+ * Container-Variante:
+ *   <div class="skeleton-list">
+ *     <div class="skeleton-list__item">…</div>
+ *   </div>
+ * ═══════════════════════════════════════════════════════════════════════ */
+@keyframes skeleton-shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position:  200% 0; }
 }
+.skeleton {
+  background: linear-gradient(90deg,
+    var(--bg-soft) 0%,
+    var(--bg-soft-2) 50%,
+    var(--bg-soft) 100%);
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.4s ease-in-out infinite;
+  border-radius: var(--r-sm);
+  color: transparent !important;
+  pointer-events: none;
+  user-select: none;
+  display: inline-block;
+  min-height: 1em;
+  width: 100%;
+}
+.skeleton--text  { height: 14px; width: 60%; }
+.skeleton--title { height: 22px; width: 40%; border-radius: var(--r); }
+.skeleton--card  { height: 96px; border-radius: var(--r-md); }
+.skeleton--row   { height: var(--touch-target); border-radius: var(--r); }
+.skeleton--circle{ width: 44px; height: 44px; border-radius: 50%; }
 
-@media (max-width: 480px) {
-  .stats-row { grid-template-columns: 1fr; }
+.skeleton-list {
+  display: flex; flex-direction: column; gap: var(--s-2);
+  & > .skeleton-list__item {
+    height: 72px;
+    border-radius: var(--r-md);
+    background: linear-gradient(90deg,
+      var(--bg-soft) 0%,
+      var(--bg-soft-2) 50%,
+      var(--bg-soft) 100%);
+    background-size: 200% 100%;
+    animation: skeleton-shimmer 1.4s ease-in-out infinite;
+  }
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
@@ -585,44 +896,13 @@ textarea { resize: vertical; min-height: 80px; line-height: var(--lh-normal); }
  * Design-System. So bleibt alles konsistent ohne Refactor-Risiko.
  * ═══════════════════════════════════════════════════════════════════════ */
 
-/* button-link (häufig als <a> für CTA-Navigation) */
-.button-link {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--s-2);
-  min-height: var(--touch-target);
-  padding: 10px var(--s-4);
-  background: var(--mitra-primary);
-  color: var(--text-on-dark);
-  border: 1px solid transparent;
-  border-radius: var(--r);
-  font-weight: var(--fw-semi);
-  font-size: var(--fs-base);
-  text-decoration: none;
-  cursor: pointer;
-  transition: background var(--transition-fast), transform var(--transition-fast);
+/* Legacy-B Aliase entfernt 2026-05-18: .button-link + .button-link.secondary
+ * sowie der globale Fallback button.secondary:not(.btn) — alle Templates
+ * sind auf .btn .btn--variant migriert. */
 
-  &:hover,
-  &:focus-visible {
-    background: var(--mitra-primary-dark);
-    color: var(--text-on-dark);
-    transform: translateY(-1px);
-    border-bottom-color: transparent;
-  }
-  &.secondary {
-    background: var(--bg-panel);
-    color: var(--text-ink);
-    border-color: var(--line-medium);
-
-    &:hover, &:focus-visible {
-      background: var(--bg-soft);
-      color: var(--text-ink);
-    }
-  }
-}
-
-/* Plain <button> innerhalb von .button-row bekommt sinnvolle Defaults */
+/* Plain <button> ohne Klasse innerhalb von .button-row bekommt sinnvolle
+ * Defaults (Primary-Look). Das ist absichtlich erhalten: viele Wizard- und
+ * Formular-Submits nutzen plain <button> ohne Klassenattribut. */
 .button-row {
   display: flex;
   flex-wrap: wrap;
@@ -646,18 +926,6 @@ textarea { resize: vertical; min-height: 80px; line-height: var(--lh-normal); }
 
     &:hover:not(:disabled) { background: var(--mitra-primary-dark); }
     &:disabled { opacity: .5; cursor: not-allowed; }
-  }
-  & > button.secondary {
-    background: var(--bg-panel);
-    color: var(--text-ink);
-    border: 1px solid var(--line-medium);
-    min-height: var(--touch-target);
-    padding: 10px var(--s-4);
-    border-radius: var(--r);
-    font-weight: var(--fw-semi);
-    cursor: pointer;
-
-    &:hover { background: var(--bg-soft); }
   }
 }
 
@@ -695,32 +963,41 @@ textarea { resize: vertical; min-height: 80px; line-height: var(--lh-normal); }
   @media (max-width: 767px) { padding: var(--s-4); }
 }
 
-/* Pill-Toggle — verwendet für Status-Buttons (Grün/Gelb/Rot) etc. */
+/* Pill-Toggle — verwendet für Status-Buttons (Grün/Gelb/Rot), Multi-Select-Chips etc. */
 .pill-toggle {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: var(--s-1);
-  min-height: 38px;
-  padding: 6px var(--s-3);
+  gap: var(--s-2);
+  min-height: var(--touch-target);
+  padding: 0 var(--s-4);
   border: 1.5px solid var(--line-medium);
   border-radius: var(--r-pill);
   background: var(--bg-panel);
   color: var(--text-muted);
+  font-family: inherit;
   font-size: var(--fs-sm);
   font-weight: var(--fw-semi);
   cursor: pointer;
-  transition: all var(--transition-fast);
+  transition: background var(--transition-fast), border-color var(--transition-fast),
+              color var(--transition-fast);
 
-  &:hover {
+  &:hover:not(:disabled) {
     border-color: var(--line-strong);
     color: var(--text-ink);
+    background: var(--bg-soft);
+  }
+  &:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring);
   }
   &.active {
     background: var(--mitra-primary);
     color: var(--text-on-dark);
     border-color: var(--mitra-primary);
   }
+  &:disabled { opacity: 0.5; cursor: not-allowed; }
+
   /* Status-Variants */
   &.green.active {
     background: var(--status-ok);
@@ -815,3 +1092,29 @@ textarea { resize: vertical; min-height: 80px; line-height: var(--lh-normal); }
 
 /* App-Notice/Login-Wrapper */
 .app-header { display: contents; }
+
+/* Inline-Push-to-Talk: <textarea> + <app-ptt-button> nebeneinander.
+   Wird von allen Formularen genutzt — daily-report-form, open-points-forms.
+   Mobile: PTT-Button rutscht unter das Textfeld, rechtsbündig. */
+.ptt-field {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+
+  textarea {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  app-ptt-button {
+    flex-shrink: 0;
+    margin-top: 4px;
+  }
+
+  @media (max-width: 480px) {
+    flex-wrap: wrap;
+    app-ptt-button {
+      align-self: flex-end;
+    }
+  }
+}

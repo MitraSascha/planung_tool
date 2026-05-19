@@ -10,6 +10,7 @@ import {
   RouterOutlet,
 } from '@angular/router';
 
+import { MoreDrawerComponent } from './shared/components/more-drawer/more-drawer.component';
 import { AuthService } from './core/services/auth.service';
 import { NotificationListenerService } from './core/services/notification-listener.service';
 import { NotificationService } from './core/services/notification.service';
@@ -28,8 +29,11 @@ const ADMIN_ROLES = ['admin'];
 interface BottomTab {
   icon: string;
   label: string;
-  route: string;
+  /** Wenn gesetzt → Tab ist Link. Wenn nicht → Tab führt eine Aktion aus. */
+  route?: string;
   exact?: boolean;
+  /** Aktion statt Navigation. Aktuell nur `openMore` für den Drawer-Trigger. */
+  action?: 'openMore';
 }
 
 interface NavItem {
@@ -50,7 +54,14 @@ const SIDEBAR_KEY = 'hez.sidebar.collapsed';
 
 @Component({
   selector: 'app-root',
-  imports: [CommonModule, FormsModule, RouterOutlet, RouterLink, RouterLinkActive],
+  imports: [
+    CommonModule,
+    FormsModule,
+    RouterOutlet,
+    RouterLink,
+    RouterLinkActive,
+    MoreDrawerComponent,
+  ],
   templateUrl: './app.html',
   styleUrl: './app.scss',
 })
@@ -130,14 +141,16 @@ export class App {
       {
         label: 'Überblick',
         items: [
-          { label: 'Dashboard', route: '/', icon: '🏠', exact: true, visible: true },
-          { label: 'Alle Projekte', route: '/overview/all', icon: '📊', visible: overview, disabledReason: 'Nur für Bauleitung, Projektleitung und Admin' },
+          { label: 'Start', route: '/', icon: '🏠', exact: true, visible: true },
         ],
       },
       {
         label: 'Baustellen',
         items: [
           { label: 'Meine Baustellen', route: '/landing', icon: '🏗', visible: true },
+          // Konsolidierte Projektliste (Karten + Tabelle via View-Switch).
+          // Das frühere "Alle Projekte → /overview/all" entfällt — der Pfad
+          // routed weiterhin auf dieselbe Komponente mit Default-Tabelle.
           { label: 'Projekte', route: '/projects', icon: '📁', visible: overview, disabledReason: 'Nur für Bauleitung, Projektleitung und Admin' },
           { label: 'Dokumente erzeugen', route: '/outputs', icon: '📄', visible: gen, disabledReason: 'Nur für Projektleitung und Admin' },
           { label: 'Anomalien', route: '/anomalies', icon: '⚠️', visible: overview, disabledReason: 'Nur für Bauleitung, Projektleitung und Admin' },
@@ -146,7 +159,7 @@ export class App {
       {
         label: 'Auswertung',
         items: [
-          { label: 'Analysen', route: '/analyses', icon: '📈', visible: overview, disabledReason: 'Nur für Bauleitung, Projektleitung und Admin' },
+          { label: 'Projekt-Dashboard', route: '/analyses', icon: '📈', visible: overview, disabledReason: 'Nur für Bauleitung, Projektleitung und Admin' },
         ],
       },
       {
@@ -160,6 +173,16 @@ export class App {
     ];
   });
 
+  /** Letzter Bottom-Tab in allen Rollen-Varianten: öffnet den More-Drawer
+   *  (Slide-Up-Sheet mit allen Sidebar-Routen). Spart einen festen Slot,
+   *  damit Routen wie /anomalies, /admin/dsgvo etc. auf Mobile erreichbar
+   *  sind, ohne dass die Bottom-Nav überquillt. */
+  private readonly moreTab: BottomTab = {
+    icon: '⋯',
+    label: 'Mehr',
+    action: 'openMore',
+  };
+
   protected readonly bottomTabs = computed<readonly BottomTab[]>(() => {
     const user = this.currentUser();
     if (!user) {
@@ -169,26 +192,45 @@ export class App {
     if (role === 'admin') {
       return [
         { icon: '🏗', label: 'Projekte', route: '/projects' },
-        { icon: '📊', label: 'Status', route: '/overview/all' },
         { icon: '📄', label: 'Dokumente', route: '/outputs' },
         { icon: '🛠', label: 'Admin', route: '/admin' },
+        this.moreTab,
       ];
     }
     if (role === 'projektleitung' || role === 'bauleitung') {
       return [
         { icon: '🏗', label: 'Baustellen', route: '/landing' },
-        { icon: '📊', label: 'Status', route: '/overview/all' },
         { icon: '📁', label: 'Projekte', route: '/projects' },
-        { icon: '⚙️', label: 'Mehr', route: '/', exact: true },
+        { icon: '📈', label: 'Dashboard', route: '/analyses' },
+        this.moreTab,
       ];
     }
     // monteur / obermonteur / viewer
     return [
       { icon: '🏠', label: 'Heute', route: '/landing' },
-      { icon: '🔔', label: 'Hinweise', route: '/settings/push' },
-      { icon: '⚙️', label: 'Mehr', route: '/', exact: true },
+      { icon: '🔔', label: 'Push', route: '/settings/push' },
+      this.moreTab,
     ];
   });
+
+  // ──────────────────────────────────────────────────────────────────
+  // Mobile „Mehr"-Drawer
+  // ──────────────────────────────────────────────────────────────────
+  protected readonly moreDrawerOpen = signal<boolean>(false);
+
+  protected openMore(): void {
+    this.moreDrawerOpen.set(true);
+  }
+
+  protected closeMore(): void {
+    this.moreDrawerOpen.set(false);
+  }
+
+  /** Vorgebundener Callback, damit das Drawer den Helper aufrufen kann,
+   *  ohne dass wir im Template `.bind(this)` brauchen (lazily evaluated
+   *  – Funktion ist stabil pro App-Instanz). */
+  protected readonly isNavActiveFn = (item: { route: string; exact?: boolean }) =>
+    this.isNavActive(item);
 
   protected readonly lastSyncRelative = computed<string>(() => {
     const at = this.lastSyncAt();
@@ -240,6 +282,19 @@ export class App {
     return true;
   });
 
+  /** Aktivitätsprüfung für Sidebar + Bottom-Nav, die ``routerLinkActive``
+   *  ersetzt: ``/landing`` redirected bei Single-Project-Usern direkt zu
+   *  ``/projects/<slug>/role`` — daraufhin würde nur die Klasse von
+   *  ``/projects`` greifen und „Meine Baustelle" wäre nie aktiv. Der
+   *  Helper bündelt die zwei Sonderfälle plus den normalen URL-Match. */
+  protected isNavActive(item: { route: string; exact?: boolean }): boolean {
+    if (item.route === '/landing') return this.landingActive();
+    if (item.route === '/projects') return this.projectsActive();
+    const url = this.currentUrl();
+    if (item.exact) return url === item.route || url.split('?')[0] === item.route;
+    return url === item.route || url.startsWith(item.route + '/') || url.startsWith(item.route + '?');
+  }
+
   constructor() {
     this.router.events
       .pipe(filter((event): event is NavigationEnd => event instanceof NavigationEnd))
@@ -284,7 +339,7 @@ export class App {
       return '/admin';
     }
     if (role === 'projektleitung' || role === 'bauleitung') {
-      return '/overview/all';
+      return '/projects';
     }
     return '/landing';
   }

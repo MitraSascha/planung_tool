@@ -53,6 +53,16 @@ export class HeatingDesignImportComponent implements OnInit {
   // Key = canonical field name; value = source column name (or empty string for "not mapped").
   protected mappingState: Record<string, string> = {};
   protected sourceColumns: string[] = [];
+  /**
+   * Grouped columns for the manual-mapping dropdown when the file has
+   * multiple sheets. Empty when the file is single-sheet — in that case the
+   * UI falls back to the flat ``sourceColumns`` list.
+   * Shape: [{ sheet: 'Daten', columns: [{ header, label }, …] }, …]
+   */
+  protected sourceColumnGroups: Array<{
+    sheet: string;
+    columns: Array<{ header: string; label: string }>;
+  }> = [];
 
   // Save-mapping modal state
   protected showSaveMappingModal = false;
@@ -158,6 +168,44 @@ export class HeatingDesignImportComponent implements OnInit {
     } else {
       this.sourceColumns = headers.sort((a, b) => a.localeCompare(b, 'de'));
     }
+
+    // Build per-sheet groups for the manual-mapping dropdown if the backend
+    // delivered the multi-sheet column index. We fold in the merged
+    // ``source_columns`` headers as well so that every selectable value in
+    // the merged universe also appears in the grouped view.
+    this.sourceColumnGroups = this.buildSourceColumnGroups(preview);
+  }
+
+  private buildSourceColumnGroups(
+    preview: HeatingDesignImportPreview,
+  ): Array<{ sheet: string; columns: Array<{ header: string; label: string }> }> {
+    const bySheet = preview.source_columns_by_sheet;
+    if (!bySheet || Object.keys(bySheet).length === 0) {
+      return [];
+    }
+    const groups: Array<{
+      sheet: string;
+      columns: Array<{ header: string; label: string }>;
+    }> = [];
+    for (const sheetName of Object.keys(bySheet)) {
+      const cols = bySheet[sheetName] ?? {};
+      const entries: Array<{ header: string; label: string }> = [];
+      for (const header of Object.keys(cols).sort((a, b) =>
+        a.localeCompare(b, 'de'),
+      )) {
+        const samples = cols[header] ?? [];
+        const shown = samples.slice(0, 3).join(', ');
+        const more = samples.length > 3 ? ', …' : '';
+        const label = samples.length > 0
+          ? `${header} — z.B. ${shown}${more}`
+          : header;
+        entries.push({ header, label });
+      }
+      if (entries.length > 0) {
+        groups.push({ sheet: sheetName, columns: entries });
+      }
+    }
+    return groups;
   }
 
   /** Compact one-line label for the mapping dropdown: "WE (Wohnung 1, Wohnung 2, …)". */

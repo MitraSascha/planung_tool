@@ -169,6 +169,15 @@ class DailyReport(Base):
     team: Mapped[str | None] = mapped_column(String(255), nullable=True)
     completed_work: Mapped[str | None] = mapped_column(Text, nullable=True)
     open_work: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # Roh-Eingabe der „Arbeitstagerfassung" (Voice oder Text in einem Feld).
+    # Wird vom LLM in completed_work + open_work gesplittet (siehe
+    # services/arbeitstagerfassung.py). Quelle bleibt persistent, damit
+    # Re-Splits beim Edit reproduzierbar sind und der Originaltext (z.B. nicht-
+    # deutsche Voice-Aufnahme) für Audit/Korrektur erhalten bleibt.
+    raw_work_log: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # Sprach-Code der Roh-Eingabe (Whisper Auto-Detect, ISO 639-1). Nützlich
+    # für die Bauleitung um zu sehen ob die Übersetzung getriggert wurde.
+    raw_work_log_language: Mapped[str | None] = mapped_column(String(8), nullable=True)
     material_missing: Mapped[str | None] = mapped_column(Text, nullable=True)
     blockers: Mapped[str | None] = mapped_column(Text, nullable=True)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
@@ -189,6 +198,38 @@ class DailyReport(Base):
     )
 
     project: Mapped[Project] = relationship()
+    user: Mapped[User] = relationship()
+    attendees: Mapped[list["DailyReportAttendee"]] = relationship(
+        back_populates="daily_report",
+        cascade="all, delete-orphan",
+    )
+
+
+class DailyReportAttendee(Base):
+    """Strukturierte Anwesenheits-Liste pro Tagesbericht.
+
+    Wer war an diesem Tag auf der Baustelle? Daraus speist sich der
+    automatisch generierte Teamstatus (jeder Anwesende erbt den
+    Bericht-Status für diesen Tag).
+    """
+
+    __tablename__ = "daily_report_attendees"
+    __table_args__ = (
+        UniqueConstraint("daily_report_id", "user_id", name="uq_daily_attendee"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    daily_report_id: Mapped[int] = mapped_column(
+        ForeignKey("daily_reports.id", ondelete="CASCADE"), index=True
+    )
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), index=True
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+
+    daily_report: Mapped[DailyReport] = relationship(back_populates="attendees")
     user: Mapped[User] = relationship()
 
 
@@ -222,10 +263,50 @@ class MaterialIssue(Base):
     description: Mapped[str] = mapped_column(Text)
     priority: Mapped[str] = mapped_column(String(16), default="normal")
     status: Mapped[str] = mapped_column(String(32), default="open")
+    # Beschaffungs-Workflow (Stepper): Offen -> Bestellt -> Unterwegs -> Angekommen.
+    # Linear, aber rücksetzbar — Audit-Spalten (``*_at`` / ``*_by_user_id``)
+    # bleiben beim Zurücksetzen erhalten (Historie statt Auslöschen).
+    procurement_status: Mapped[str] = mapped_column(
+        String(16), default="offen", server_default="offen", index=True,
+    )
+    ordered_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True,
+    )
+    ordered_by_user_id: Mapped[int | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"), nullable=True,
+    )
+    shipped_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True,
+    )
+    shipped_by_user_id: Mapped[int | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"), nullable=True,
+    )
+    arrived_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True,
+    )
+    arrived_by_user_id: Mapped[int | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"), nullable=True,
+    )
+    # Auto-Sync-Anker: gesetzt, wenn dieser Issue aus dem Freitext-Feld
+    # ``DailyReport.material_missing`` synchronisiert wurde. Updates am
+    # Bericht aktualisieren die Zeile statt zu duplizieren.
+    source_daily_report_id: Mapped[int | None] = mapped_column(
+        ForeignKey("daily_reports.id", ondelete="SET NULL"),
+        nullable=True, index=True,
+    )
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     project: Mapped[Project] = relationship()
-    user: Mapped[User] = relationship()
+    user: Mapped[User] = relationship(foreign_keys=[user_id])
+    ordered_by: Mapped["User | None"] = relationship(
+        foreign_keys=[ordered_by_user_id]
+    )
+    shipped_by: Mapped["User | None"] = relationship(
+        foreign_keys=[shipped_by_user_id]
+    )
+    arrived_by: Mapped["User | None"] = relationship(
+        foreign_keys=[arrived_by_user_id]
+    )
 
 
 class Blocker(Base):
@@ -238,6 +319,12 @@ class Blocker(Base):
     description: Mapped[str] = mapped_column(Text)
     severity: Mapped[str] = mapped_column(String(16), default="medium")
     status: Mapped[str] = mapped_column(String(32), default="open")
+    # Auto-Sync-Anker (analog ``MaterialIssue``): Quelle aus dem
+    # Freitext-Feld ``DailyReport.blockers``.
+    source_daily_report_id: Mapped[int | None] = mapped_column(
+        ForeignKey("daily_reports.id", ondelete="SET NULL"),
+        nullable=True, index=True,
+    )
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     project: Mapped[Project] = relationship()
@@ -655,6 +742,9 @@ class MaterialItem(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     project_id: Mapped[int] = mapped_column(ForeignKey("projects.id", ondelete="CASCADE"), index=True)
     user_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    offer_item_id: Mapped[int | None] = mapped_column(
+        ForeignKey("offer_items.id", ondelete="SET NULL"), nullable=True, index=True
+    )
     section_number: Mapped[int | None] = mapped_column(Integer, nullable=True)
     kind: Mapped[str] = mapped_column(String(16), default="material")
     # kind: "material" | "werkzeug"
@@ -666,6 +756,16 @@ class MaterialItem(Base):
     status: Mapped[str] = mapped_column(String(16), default="vorhanden")
     # status: "vorhanden" | "fehlt" | "bestellt" | "geliefert"
     note: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # source markiert die Herkunft des MaterialItem — Basis für Nachkalkulation
+    # und Nachträge. „artikelstamm" = ad-hoc vom Großhandel, NICHT im Angebot.
+    # „offer" = aus einem Angebot übernommen. „manual" = von Hand angelegt
+    # (Werkzeug, Initial-Inventar). „daily_report_freitext" = automatisch aus
+    # einem Tagesbericht-Material-Freitext erzeugt.
+    source: Mapped[str] = mapped_column(String(32), default="manual", index=True)
+    artikelstamm_artikelnummer: Mapped[str | None] = mapped_column(
+        String(32), nullable=True, index=True
+    )
+    artikelstamm_preis_eur: Mapped[float | None] = mapped_column(Float, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
@@ -798,3 +898,80 @@ class DataRetentionRule(Base):
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
+
+
+
+class MaterialUsage(Base):
+    """Verbrauchsbuchung: pro Daily-Report wird festgehalten,
+    wieviel von welchem Material an einem Tag verbaut wurde.
+    `material_items.ist_qty` wird applikationsseitig als Summe der
+    Buchungen eines Items aggregiert (siehe services/material_usage.py).
+    """
+
+    __tablename__ = "material_usages"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    project_id: Mapped[int] = mapped_column(
+        ForeignKey("projects.id", ondelete="CASCADE"), index=True
+    )
+    material_item_id: Mapped[int | None] = mapped_column(
+        ForeignKey("material_items.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+    daily_report_id: Mapped[int | None] = mapped_column(
+        ForeignKey("daily_reports.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+    user_id: Mapped[int | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
+    section_number: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    qty_used: Mapped[float] = mapped_column(Float, nullable=False)
+    unit: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    used_at: Mapped[date] = mapped_column(Date, nullable=False, index=True)
+    notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+
+    project: Mapped[Project] = relationship()
+    material_item: Mapped["MaterialItem | None"] = relationship()
+
+
+class Milestone(Base):
+    """Projekt-Meilenstein. Drei Typen werden automatisch befüllt
+    (siehe services/milestones.py), 'custom' ist für manuelle Einträge.
+    """
+
+    __tablename__ = "milestones"
+    __table_args__ = (
+        UniqueConstraint("project_id", "type", "section_id", name="uq_milestone_proj_type_section"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    project_id: Mapped[int] = mapped_column(
+        ForeignKey("projects.id", ondelete="CASCADE"), index=True
+    )
+    type: Mapped[str] = mapped_column(String(32), index=True)
+    # type: 'section_end' | 'druckpruefung' | 'inbetriebnahme' | 'custom'
+    section_id: Mapped[int | None] = mapped_column(
+        ForeignKey("project_sections.id", ondelete="CASCADE"), nullable=True
+    )
+    title: Mapped[str] = mapped_column(String(255))
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    planned_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    actual_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    status: Mapped[str] = mapped_column(String(16), default="pending")
+    # status: 'pending' | 'done' | 'overdue'
+    auto_generated: Mapped[bool] = mapped_column(default=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+    project: Mapped[Project] = relationship()
+    section: Mapped["ProjectSection | None"] = relationship()

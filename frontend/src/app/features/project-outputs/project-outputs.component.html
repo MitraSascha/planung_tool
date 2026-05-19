@@ -4,7 +4,7 @@
       <p class="panel-kicker">Generator</p>
       <h2>Projektsteuerung und Ablage</h2>
     </div>
-    <a class="button-link" routerLink="/projects/new">Neues Projekt</a>
+    <a class="btn btn--primary" routerLink="/projects/new">Neues Projekt</a>
   </div>
 
   <app-empty-state
@@ -27,7 +27,7 @@
           </div>
         </div>
         <div class="button-row">
-          <button type="button" class="secondary" (click)="loadOutputs(project.slug); $event.preventDefault()">Aktualisieren</button>
+          <button type="button" class="btn btn--secondary" (click)="loadOutputs(project.slug); $event.preventDefault()">Aktualisieren</button>
         </div>
       </div>
     </summary>
@@ -52,7 +52,7 @@
       </div>
 
       <div class="button-row">
-        <button type="button" class="secondary" (click)="runDryGenerate(project.slug)">Dry-Run</button>
+        <button type="button" class="btn btn--secondary" (click)="runDryGenerate(project.slug)">Dry-Run</button>
         <button type="button" [disabled]="!project.ready_for_generation || generatingSlug() === project.slug" (click)="runGenerate(project)">
           {{ generatingSlug() === project.slug ? 'Wird erzeugt …' : 'Dokumente erzeugen' }}
         </button>
@@ -60,17 +60,132 @@
 
       <app-run-progress *ngIf="generationRuns()[project.slug] as run" [run]="run"></app-run-progress>
 
+      <!-- ── Generator-Input-Übersicht: ALLE Quellen die in die Generierung einfließen ── -->
+      <section class="gen-input" *ngIf="project.generator_input as gi">
+        <h4 class="gen-input__title">Generator-Input — was fließt in die Erzeugung ein?</h4>
+        <div class="gen-input__grid">
+          <a class="gen-input__source" [routerLink]="['/projects', project.slug, 'offers']">
+            <span class="gen-input__icon">📑</span>
+            <div class="gen-input__meta">
+              <strong>Angebote</strong>
+              <span *ngIf="gi.offer_count > 0">{{ gi.offer_count }} Angebot{{ gi.offer_count === 1 ? '' : 'e' }} · {{ gi.offer_position_count }} Positionen</span>
+              <span *ngIf="gi.offer_count === 0" class="muted">Noch keins hochgeladen</span>
+            </div>
+          </a>
+
+          <a class="gen-input__source" [routerLink]="['/projects', project.slug, 'heating-design']">
+            <span class="gen-input__icon">🔥</span>
+            <div class="gen-input__meta">
+              <strong>Heizlast</strong>
+              <span *ngIf="gi.heating">{{ gi.heating.circuit_count }} Heizkreise{{ gi.heating.system_type ? ' · ' + gi.heating.system_type : '' }}</span>
+              <span *ngIf="!gi.heating" class="muted">Noch nicht importiert</span>
+            </div>
+          </a>
+
+          <div class="gen-input__source gen-input__source--passive">
+            <span class="gen-input__icon">📦</span>
+            <div class="gen-input__meta">
+              <strong>Material-Stamm</strong>
+              <span *ngIf="gi.material_item_count > 0">
+                {{ gi.material_item_count }} Positionen
+                <small *ngIf="gi.material_item_with_offer_link > 0">({{ gi.material_item_with_offer_link }} aus Angebot)</small>
+              </span>
+              <span *ngIf="gi.material_item_count === 0" class="muted">Keine erfasst</span>
+            </div>
+          </div>
+
+          <div class="gen-input__source gen-input__source--passive">
+            <span class="gen-input__icon">🏗️</span>
+            <div class="gen-input__meta">
+              <strong>Bauabschnitte</strong>
+              <span *ngIf="gi.section_count > 0">{{ gi.section_count }} Abschnitte</span>
+              <span *ngIf="gi.section_count === 0" class="muted">Keine definiert</span>
+            </div>
+          </div>
+
+          <div class="gen-input__source gen-input__source--passive">
+            <span class="gen-input__icon">👥</span>
+            <div class="gen-input__meta">
+              <strong>Mitglieder</strong>
+              <span *ngIf="gi.member_count > 0">{{ gi.member_count }} zugeordnet</span>
+              <span *ngIf="gi.member_count === 0" class="muted">Keine zugewiesen</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Angebot-Detail: pro Angebot Quell-Datei nennen -->
+        <details class="gen-input__detail" *ngIf="gi.offers.length > 0">
+          <summary>📑 Angebot-Dateien anzeigen</summary>
+          <ul class="gen-input__file-list">
+            <li *ngFor="let o of gi.offers">
+              <span class="gen-input__icon">📊</span>
+              <div class="gen-input__meta">
+                <strong>{{ o.source_file || (o.supplier_name + ' · ' + (o.offer_no || '—')) }}</strong>
+                <small>
+                  {{ o.supplier_name }}
+                  <ng-container *ngIf="o.offer_no"> · {{ o.offer_no }}</ng-container>
+                  <ng-container *ngIf="o.offer_date"> · {{ o.offer_date }}</ng-container>
+                  · {{ o.position_count }} Positionen
+                  <ng-container *ngIf="o.total_net_eur != null"> · {{ o.total_net_eur }} € netto</ng-container>
+                </small>
+              </div>
+            </li>
+          </ul>
+        </details>
+
+        <details class="gen-input__detail" *ngIf="gi.heating?.source_file">
+          <summary>🔥 Heizlast-Quelle anzeigen</summary>
+          <ul class="gen-input__file-list">
+            <li>
+              <span class="gen-input__icon">📊</span>
+              <div class="gen-input__meta">
+                <strong>{{ gi.heating!.source_file }}</strong>
+                <small>
+                  {{ gi.heating!.source || '—' }}
+                  · {{ gi.heating!.circuit_count }} Heizkreise
+                  <ng-container *ngIf="gi.heating!.imported_at"> · importiert {{ formatDateTime(gi.heating!.imported_at) }}</ng-container>
+                  <ng-container *ngIf="gi.heating!.pump_model"> · Pumpe: {{ gi.heating!.pump_model }}</ng-container>
+                </small>
+              </div>
+            </li>
+          </ul>
+        </details>
+      </section>
+
       <div class="upload-box">
+        <div class="upload-box__head">
+          <div>
+            <strong>Weitere Unterlagen (PDF/Pläne/Sonstiges)</strong>
+            <small>{{ project.upload_count }} {{ project.upload_count === 1 ? 'Datei' : 'Dateien' }} im Generator-Input</small>
+          </div>
+        </div>
+
+        <ul class="uploaded-list" *ngIf="project.uploads?.length; else noUploads">
+          <li *ngFor="let upload of project.uploads">
+            <span class="uploaded-list__icon" aria-hidden="true">{{ uploadIcon(upload.filename) }}</span>
+            <div class="uploaded-list__meta">
+              <strong>{{ upload.filename }}</strong>
+              <small>
+                {{ formatFileSize(upload.size_bytes) }}
+                <ng-container *ngIf="upload.created_at"> &middot; {{ formatDateTime(upload.created_at) }}</ng-container>
+              </small>
+            </div>
+          </li>
+        </ul>
+        <ng-template #noUploads>
+          <p class="uploaded-empty">Noch keine Unterlagen hochgeladen — Heizlast, Aufmaß, Pläne hier ablegen.</p>
+        </ng-template>
+
         <div class="upload-line">
-          <label>Unterlagen-Ablage (CSV, PDF, XLSX, XLS)
+          <label>Neue Datei wählen (CSV, PDF, XLSX, XLS)
             <input type="file" multiple [accept]="allowedUploadTypes" (change)="onUploadSelection(project.slug, $event)">
           </label>
-          <button type="button" class="secondary" [disabled]="uploadingSlug() === project.slug" (click)="uploadFiles(project.slug)">
-            {{ uploadingSlug() === project.slug ? 'Upload laeuft...' : 'Dateien hochladen' }}
+          <button type="button" class="btn btn--secondary" [disabled]="uploadingSlug() === project.slug" (click)="uploadFiles(project.slug)">
+            {{ uploadingSlug() === project.slug ? 'Upload läuft …' : 'Hochladen' }}
           </button>
         </div>
         <p class="selected-files" *ngIf="selectedUploadNames()[project.slug]?.length">
-          {{ selectedUploadNames()[project.slug].join(', ') }}
+          Ausgewählt: {{ selectedUploadNames()[project.slug].join(', ') }}
         </p>
       </div>
 

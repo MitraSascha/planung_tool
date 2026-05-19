@@ -136,6 +136,15 @@ def upsert_form_response(
 
     db.commit()
     db.refresh(row)
+    # Wenn die Antwort eine Checklist-Position betrifft, Meilensteine
+    # neu durchrechnen (Druckprüfung / Abschnitts-Abschluss / Inbetriebnahme).
+    if payload.field_id.startswith("checkliste."):
+        from app.services.milestones import sync_milestones
+        try:
+            sync_milestones(db, project.id)
+        except Exception:
+            # Meilensteine sind sekundär — Hauptantwort darf nicht scheitern.
+            db.rollback()
     # joinedload would have been cleaner, but the refresh already fetched
     # the row — load filled_by lazily on the way out.
     _ = row.filled_by

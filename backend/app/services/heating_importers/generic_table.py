@@ -57,11 +57,18 @@ _FIELD_SYNONYMS: dict[str, tuple[str, ...]] = {
     "area_sqm": (
         "flachem2",
         "flachem",
+        "flache",            # „Fläche" → norm: flache
         "wohnflache",
         "raumflache",
         "nutzflache",
         "grundflache",
-        "flaeche",
+        "nettoflache",       # „Nettofläche"
+        "bezugsflache",      # „Bezugsfläche"
+        "beheizteflache",    # „Beheizte Fläche" (DIN-EN 12831 Standardbegriff)
+        "heizflache",        # „Heizfläche" — Vorrang über radiator_type wenn Unit m²
+        "anorm",             # „A_norm" / „A norm"
+        "anmm2",             # „A_N m²"
+        "flmm2",             # „Fl. m²"
     ),
     "heat_load_w": (
         "heizlast",
@@ -131,12 +138,39 @@ _NUMERIC_FIELDS = {
 
 # Plant-level meta-data labels (system_type, supply/return temp, etc.).
 _DESIGN_LABEL_SYNONYMS: dict[str, tuple[str, ...]] = {
-    "system_type": ("system", "systemtyp", "anlagenart", "anlage", "heizungstyp"),
-    "supply_temp_c": ("vorlauf", "vorlauftemperatur", "tv", "vl"),
-    "return_temp_c": ("rucklauf", "ruecklauf", "rucklauftemperatur", "tr", "rl"),
-    "total_volume_flow_lph": ("gesamtvolumenstrom", "anlagenvolumenstrom", "vgesamt"),
-    "pump_head_pa": ("forderhohe", "foerderhoehe", "pumpenforderhohe", "pumpendruck"),
-    "pump_model": ("pumpe", "pumpenmodell", "umwalzpumpe", "umwalzungspumpe"),
+    "system_type": (
+        "system", "systemtyp", "anlagentyp", "anlagenart", "anlage",
+        "heizungstyp", "heizsystem",
+    ),
+    "supply_temp_c": (
+        "vorlauf", "vorlauftemperatur", "vorlauftemp", "tvorlauf", "tv", "vl",
+    ),
+    "return_temp_c": (
+        "rucklauf", "ruecklauf", "rucklauftemperatur", "rucklauftemp",
+        "trucklauf", "tr", "rl",
+    ),
+    "delta_t_k": (
+        "spreizung", "spreizungtk", "temperaturspreizung", "tspreizung",
+        "deltat", "deltatk", "dt", "dtk",
+    ),
+    "total_volume_flow_lph": (
+        # „Volumenstrom" alleine ist sowohl Spaltenheader (pro Kreis) als auch
+        # Anlagen-Kenndaten-Label. In _parse_design_meta laufen wir aber NUR
+        # über die Pre-Header-Zeilen — dort ist „Volumenstrom" immer der
+        # Anlagen-Wert. Darum ist es sicher, das Synonym hier zu führen.
+        "volumenstrom", "gesamtvolumenstrom", "anlagenvolumenstrom", "vgesamt",
+        "volumenstromgesamt", "vstrom", "vdot",
+        "forderstrom", "foerderstrom",
+    ),
+    "pump_head_pa": (
+        "forderhohe", "foerderhoehe", "pumpenforderhohe", "pumpendruck",
+        "pumpenforderdruck", "forderdruck", "restforderhohe",
+        "verfugbareforderhohe", "anlagendruck",
+    ),
+    "pump_model": (
+        "pumpe", "pumpenmodell", "pumpentyp", "umwalzpumpe", "umwalzungspumpe",
+        "umwalzungspumpemodell",
+    ),
 }
 
 
@@ -211,15 +245,43 @@ def _extract_unit(header: str) -> str | None:
     return None
 
 
+def _unit_bias_field(header: str) -> str | None:
+    """Wenn der Header eine eindeutige Einheit trägt, kann sie das Feld
+    fast deterministisch festnageln. Beispiel: Header „A norm m²" sieht
+    syntaktisch nach allem aus, aber die Einheit m² lässt nur area_sqm
+    sinnvoll zu. Wird im Matcher als Tiebreaker UND als Threshold-Boost
+    benutzt, damit kurze Header (z. B. „A [m²]") nicht durchs Raster fallen.
+    """
+    unit = _extract_unit(header)
+    if not unit:
+        return None
+    u = unit.strip().lower().replace(" ", "").replace("²", "2").replace("³", "3")
+    if u in {"m2", "qm", "m^2"}:
+        return "area_sqm"
+    if u in {"w", "watt", "kw", "kilowatt", "mw", "megawatt"}:
+        return "heat_load_w"
+    if u in {"l/h", "lh", "kg/h", "kgh", "m3/h", "m^3/h", "m3h", "l/s", "ls"}:
+        return "volume_flow_lph"
+    if u in {"pa", "pascal", "hpa", "mbar", "kpa", "bar"}:
+        return "pressure_drop_pa"
+    if u in {"m", "cm", "mm", "meter"}:
+        return "pipe_length_m"
+    return None
+
+
 def fuzzy_match_canonical(header: str) -> tuple[str | None, float]:
     """Return ``(canonical_field, score)`` for the best fuzzy match.
 
     ``score`` is the difflib SequenceMatcher ratio against the closest
     synonym. ``canonical_field`` is None when no synonym scores >= 0.5.
+    Unit-Hint im Header (z. B. „[m²]") drückt Synonym-Treffer derselben
+    Felder über die Auto-Mapping-Schwelle und bricht Ties zugunsten der
+    Einheit.
     """
     normalized = normalize_header(header)
     if not normalized:
         return None, 0.0
+    unit_field = _unit_bias_field(header)
     best_field: str | None = None
     best_score = 0.0
     for canonical, synonyms in _FIELD_SYNONYMS.items():
@@ -236,9 +298,22 @@ def fuzzy_match_canonical(header: str) -> tuple[str | None, float]:
                 score = max(0.85, len(synonym) / max(len(normalized), 1))
             else:
                 score = difflib.SequenceMatcher(None, normalized, synonym).ratio()
+            # Unit-Bias: passt die Einheit zum kanonischen Feld, +0.15 Boost
+            # (capped bei 1.0). So gewinnt „Heizfläche [m²]" (Unit m²) gegen
+            # das Heizkörper-Synonym und matched area_sqm.
+            if unit_field and canonical == unit_field:
+                score = min(1.0, score + 0.15)
             if score > best_score:
                 best_score = score
                 best_field = canonical
+    # Letzter Fallback: kurze Header (z. B. „A [m²]", „F [m²]") fallen sonst
+    # komplett durchs Raster — die Einheit im Header gibt aber eindeutig
+    # das Feld vor. Hebe den Score auf knapp über die Auto-Mapping-Schwelle,
+    # damit das Feld akzeptiert wird, aber nicht über echte Treffer dominiert.
+    # Greift sowohl wenn best_field != unit_field als auch wenn das passende
+    # Feld zwar gewonnen hat, aber noch unter der Schwelle liegt.
+    if unit_field and best_score < _AUTO_MAPPING_MIN_SCORE:
+        return unit_field, 0.80
     if best_score < 0.5:
         return None, best_score
     return best_field, best_score
@@ -247,6 +322,31 @@ def fuzzy_match_canonical(header: str) -> tuple[str | None, float]:
 # ----------------------------------------------------------------------
 # Unit conversion.
 # ----------------------------------------------------------------------
+
+
+def _split_value_unit(text: str) -> tuple[str, str | None]:
+    """Trenne „5,79 m³/h" → ("5,79", "m³/h"). Falls keine Einheit am
+    Wert-Ende erkennbar ist, gib (text, None) zurück. Numerische Tokens
+    werden inkl. deutschem Dezimalkomma und Tausender-Punkt erfasst.
+    """
+    s = text.strip()
+    m = re.match(r"^\s*(-?\d[\d\.,\s]*)\s*(.+?)\s*$", s)
+    if not m:
+        return s, None
+    number_part = m.group(1).strip()
+    rest = m.group(2).strip()
+    # Slash-getrennte Doppel-Werte wie „23049 Pa / 2,35 m": nimm das erste
+    # Token, ignoriere den Rest. ABER nur splitten, wenn rechts vom Slash
+    # tatsächlich ein neuer Zahlenwert folgt — sonst zerlegen wir Einheiten
+    # wie „m³/h", „l/h", „kg/h", „m/s" fälschlich.
+    if "/" in rest:
+        left, _, right = rest.partition("/")
+        if right.strip() and re.match(r"^\s*-?\d", right):
+            rest = left.strip()
+    # „Pa", „m³/h" etc. — nur akzeptieren wenn es nach Einheit aussieht.
+    if not rest:
+        return number_part, None
+    return number_part, rest
 
 
 def _convert_value(field: str, value: Any, unit: str | None) -> tuple[Any, str | None]:
@@ -264,12 +364,19 @@ def _convert_value(field: str, value: Any, unit: str | None) -> tuple[Any, str |
         # notes, strand, room, floor).
         return str(value).strip(), None
 
-    # Parse numeric (tolerate German decimal comma + thousand separators).
+    # Parse numeric (tolerate German decimal comma + thousand separators
+    # und inline-Einheit wie „5,79 m³/h" — dann steht die Einheit am Wert).
     try:
         if isinstance(value, (int, float)):
             num = float(value)
         else:
-            cleaned = str(value).strip().replace(" ", "")
+            raw = str(value).strip()
+            if not raw:
+                return None, None
+            number_part, value_unit = _split_value_unit(raw)
+            if unit is None and value_unit:
+                unit = value_unit
+            cleaned = number_part.replace(" ", "")
             if not cleaned:
                 return None, None
             # If both ',' and '.' appear, the rightmost one is the decimal
@@ -322,6 +429,10 @@ def _convert_value(field: str, value: Any, unit: str | None) -> tuple[Any, str |
             num *= 1000.0
         elif unit_norm in ("bar",):
             num *= 100_000.0
+        elif unit_norm in ("m", "mws", "msa", "meterwassersaule", "mwassersaule"):
+            # Meter Wassersäule → Pa. ρ·g ≈ 9806.65 N/m³ bei 4 °C.
+            # Bsp. 2,35 m → 23045.6 Pa
+            num *= 9806.65
         else:
             warning = f"Unbekannte Einheit fuer pressure_drop_pa: {unit!r}"
     elif field == "pipe_length_m":
@@ -539,38 +650,60 @@ def _parse_design_meta(meta_rows: Sequence[Sequence[Any]]) -> HeatingDesignBase:
     system_type: str | None = None
     supply_temp_c: float | None = None
     return_temp_c: float | None = None
+    explicit_delta_t_k: float | None = None
     total_volume_flow_lph: float | None = None
     pump_head_pa: float | None = None
     pump_model: str | None = None
 
     def _try_set(label: str, value: Any) -> None:
-        nonlocal system_type, supply_temp_c, return_temp_c
+        nonlocal system_type, supply_temp_c, return_temp_c, explicit_delta_t_k
         nonlocal total_volume_flow_lph, pump_head_pa, pump_model
         normalized_label = normalize_header(label)
         if not normalized_label:
             return
+        # Match-Reihenfolge:
+        #  1) Exakter Match (z.B. „vorlauf" == „vorlauf") wins.
+        #  2) Substring-Treffer, ABER nur mit Synonymen >= 4 Zeichen — sonst
+        #     macht „tr" (T-Rücklauf) das Wort „volumens-tr-om" zu einem
+        #     return_temp_c-Match. Auch „vl"/„rl"/„dt" sind gefährlich kurz.
+        #  3) Unit-Bias als Tiebreaker (z.B. Spreizung K → delta_t_k).
+        match: str | None = None
         for canonical, synonyms in _DESIGN_LABEL_SYNONYMS.items():
-            if any(syn in normalized_label for syn in synonyms):
-                unit = _extract_unit(label)
-                if canonical == "system_type":
-                    system_type = str(value).strip() or None
-                elif canonical == "pump_model":
-                    pump_model = str(value).strip() or None
-                elif canonical == "supply_temp_c":
-                    converted, _ = _convert_value("pipe_length_m", value, unit)
-                    # Temperatures aren't in _NUMERIC_FIELDS — parse directly.
-                    supply_temp_c = _to_float(value)
-                elif canonical == "return_temp_c":
-                    return_temp_c = _to_float(value)
-                elif canonical == "total_volume_flow_lph":
-                    num, _ = _convert_value("volume_flow_lph", value, unit)
-                    if isinstance(num, (int, float)):
-                        total_volume_flow_lph = float(num)
-                elif canonical == "pump_head_pa":
-                    num, _ = _convert_value("pressure_drop_pa", value, unit)
-                    if isinstance(num, (int, float)):
-                        pump_head_pa = float(num)
-                return
+            if any(syn == normalized_label for syn in synonyms):
+                match = canonical
+                break
+        if match is None:
+            for canonical, synonyms in _DESIGN_LABEL_SYNONYMS.items():
+                if any(len(syn) >= 4 and syn in normalized_label for syn in synonyms):
+                    match = canonical
+                    break
+        if match is None:
+            return
+        canonical = match
+        unit = _extract_unit(label)
+        if canonical == "system_type":
+            system_type = str(value).strip() or None
+        elif canonical == "pump_model":
+            pump_model = str(value).strip() or None
+        elif canonical == "supply_temp_c":
+            supply_temp_c = _to_float(value)
+        elif canonical == "return_temp_c":
+            return_temp_c = _to_float(value)
+        elif canonical == "delta_t_k":
+            # Explizit angegebene Spreizung — überschreibt unten die VL−RL-
+            # Berechnung. Einheit ist immer Kelvin (=°C-Differenz).
+            v = _to_float(value)
+            if v is not None:
+                explicit_delta_t_k = v
+        elif canonical == "total_volume_flow_lph":
+            num, _ = _convert_value("volume_flow_lph", value, unit)
+            if isinstance(num, (int, float)):
+                total_volume_flow_lph = float(num)
+        elif canonical == "pump_head_pa":
+            num, _ = _convert_value("pressure_drop_pa", value, unit)
+            if isinstance(num, (int, float)):
+                pump_head_pa = float(num)
+        return
 
     for row in meta_rows:
         cells = [c for c in row if c is not None and str(c).strip() != ""]
@@ -587,8 +720,9 @@ def _parse_design_meta(meta_rows: Sequence[Sequence[Any]]) -> HeatingDesignBase:
                 if label.strip() and value.strip():
                     _try_set(label, value.strip())
 
-    delta_t_k: float | None = None
-    if supply_temp_c is not None and return_temp_c is not None:
+    # Expliziter Excel-Wert hat Vorrang vor der Berechnung; sonst aus VL−RL.
+    delta_t_k: float | None = explicit_delta_t_k
+    if delta_t_k is None and supply_temp_c is not None and return_temp_c is not None:
         delta_t_k = supply_temp_c - return_temp_c
 
     return HeatingDesignBase(
@@ -730,6 +864,112 @@ class GenericTableImporter(HeatingImporter):
     }
 
     @staticmethod
+    def _extract_strand_pressure_drops(
+        sheets: dict[str, list[list[Any]]],
+    ) -> tuple[dict[str, float], float | None]:
+        """Scan all sheets for per-strand pressure-drop values.
+
+        Hydraulisch: die Pumpenförderhöhe muss nur den **ungünstigsten** Strang
+        überwinden, nicht die Summe — das Heizwasser läuft parallel. Wir suchen
+        deshalb pro Strang den Druckverlust und liefern ein Tupel
+        ``({"1": 18500.0, "2": 21300.0, ...}, distribution_drop_pa)``.
+        ``distribution_drop_pa`` ist der Druckverlust der Verteilung
+        (Kellerleitung) — er liegt in Serie zum ungünstigsten Strang
+        und wird im Aggregator addiert.
+
+        Erkennungsmuster:
+          - Pattern A: Sheet-Name beginnt mit „Strang N" (z.B. „Strang 3",
+            „Strang 3 Wohnung 1"); im Sheet eine Zeile mit „Druckverlust"
+            (Label) und einem numerischen Wert (entweder Pa, mbar, m).
+          - Pattern B: In einem zentralen „Pumpe"/„Kellerleitung"-Sheet
+            steht „Druckverlust Strang N" oder „Strang N Druckverlust" mit
+            Wert.
+          - Pattern C: Sheet-Name „Kellerleitung" / „Verteilung" mit einer
+            „Druckverlust"-Zeile → distribution_drop_pa.
+
+        Werte werden via ``_convert_value("pressure_drop_pa", …)`` in Pa
+        normiert (mWS → Pa wird unterstützt).
+        """
+        result: dict[str, float] = {}
+        distribution_drop: float | None = None
+        strand_in_sheet_re = re.compile(r"^\s*strang\s*(\d+)\b", re.IGNORECASE)
+        distribution_sheet_re = re.compile(
+            r"^\s*(kellerleitung|verteilung|hauptleitung)\b", re.IGNORECASE
+        )
+        druckverlust_in_value_re = re.compile(
+            r"druckverlust\W*strang\W*(\d+)", re.IGNORECASE
+        )
+        druckverlust_label_re = re.compile(r"druckverlust", re.IGNORECASE)
+
+        def _take_max(strand: str, pa_value: float) -> None:
+            existing = result.get(strand)
+            if existing is None or pa_value > existing:
+                result[strand] = pa_value
+
+        def _take_max_distribution(pa_value: float) -> None:
+            nonlocal distribution_drop
+            if distribution_drop is None or pa_value > distribution_drop:
+                distribution_drop = pa_value
+
+        for sheet_name, rows in sheets.items():
+            sheet_strand = None
+            sheet_is_distribution = False
+            m = strand_in_sheet_re.match(sheet_name.strip())
+            if m:
+                sheet_strand = m.group(1)
+            elif distribution_sheet_re.match(sheet_name.strip()):
+                sheet_is_distribution = True
+
+            for row in rows:
+                cells = [c for c in row if c is not None]
+                if not cells:
+                    continue
+
+                # Pattern B: „Druckverlust Strang N" in einer Zelle, Wert daneben.
+                for idx, cell in enumerate(cells):
+                    text = str(cell)
+                    bm = druckverlust_in_value_re.search(text)
+                    if bm and idx + 1 < len(cells):
+                        strand = bm.group(1)
+                        unit = _extract_unit(text)
+                        num, _ = _convert_value(
+                            "pressure_drop_pa", cells[idx + 1], unit
+                        )
+                        if isinstance(num, (int, float)):
+                            _take_max(strand, float(num))
+
+                # Pattern A / C: in einem „Strang N" oder „Kellerleitung"-Sheet
+                # eine Zeile mit „Druckverlust" → der nächstgelegene
+                # numerische Nachbar ist der Wert.
+                if sheet_strand is not None or sheet_is_distribution:
+                    for idx, cell in enumerate(cells):
+                        text = str(cell)
+                        if not druckverlust_label_re.search(text):
+                            continue
+                        unit = _extract_unit(text)
+                        candidates: list[Any] = []
+                        inline = re.search(
+                            r"druckverlust[^0-9\-]*([\-+]?\d[\d\.,\s]*)", text, re.IGNORECASE
+                        )
+                        if inline:
+                            tail = text[inline.end(1):].strip(" :")
+                            candidates.append(inline.group(1).strip() + (f" {tail}" if tail else ""))
+                        if idx + 1 < len(cells):
+                            candidates.append(cells[idx + 1])
+                        for cand in candidates:
+                            num, _ = _convert_value(
+                                "pressure_drop_pa", cand, unit
+                            )
+                            if isinstance(num, (int, float)) and num > 0:
+                                if sheet_strand is not None:
+                                    _take_max(sheet_strand, float(num))
+                                else:
+                                    _take_max_distribution(float(num))
+                                break
+
+        return result, distribution_drop
+
+    @staticmethod
     def _extract_strand_assignments(
         sheets: dict[str, list[list[Any]]],
     ) -> dict[str, list[str]]:
@@ -788,11 +1028,25 @@ class GenericTableImporter(HeatingImporter):
         merged_design: HeatingDesignBase | None = None
         merged_detected: dict[str, str] = {}
         merged_source_columns: dict[str, list[str]] = {}
+        # Per-sheet column index so the UI can offer a grouped mapping
+        # dropdown that includes columns from sheets that are skipped for
+        # circuit extraction (Pumpe-Sheet, Strang-Sheets, Kellerleitung).
+        source_columns_by_sheet: dict[str, dict[str, list[str]]] = {}
         used_sheets: list[tuple[str, int]] = []
         skipped_sheets: list[tuple[str, str]] = []
         position_offset = 0
 
         for sheet_name, raw_rows in sheets.items():
+            # Best-effort column harvest for EVERY sheet (used + skipped).
+            # The UI needs every column reachable regardless of whether the
+            # sheet contributed circuit rows. Errors here must never break
+            # the import flow.
+            try:
+                sheet_cols = self._harvest_sheet_columns(raw_rows)
+                if sheet_cols:
+                    source_columns_by_sheet[sheet_name] = sheet_cols
+            except Exception:  # noqa: BLE001 — defensive, never raise from preview
+                pass
             rows = [
                 r for r in raw_rows
                 if any(c is not None and str(c).strip() != "" for c in r)
@@ -803,7 +1057,31 @@ class GenericTableImporter(HeatingImporter):
 
             kind = self._classify_sheet(rows)
             if kind != "aggregate":
-                skipped_sheets.append((sheet_name, self._SKIP_REASONS.get(kind, kind)))
+                # Auch wenn ein Sheet keine Aggregat-Tabelle ist, kann es
+                # Anlagen-Kenndaten als Label/Wert-Paare enthalten — typisch
+                # für ein „Pumpe"-Sheet oder „Anlagendaten"-Sheet. Wir ziehen
+                # die Plant-Meta heraus und mergen sie unten.
+                meta_from_param = _parse_design_meta(rows)
+                meta_fields_filled = [
+                    f for f, v in meta_from_param.model_dump().items() if v is not None
+                ]
+                if meta_fields_filled:
+                    if merged_design is None:
+                        merged_design = meta_from_param
+                    else:
+                        base = merged_design.model_dump()
+                        for key, val in meta_from_param.model_dump().items():
+                            if base.get(key) is None and val is not None:
+                                base[key] = val
+                        merged_design = HeatingDesignBase(**base)
+                    reason = self._SKIP_REASONS.get(kind, kind)
+                    reason = (
+                        f"{reason} — Anlagenwerte übernommen: "
+                        f"{', '.join(meta_fields_filled)}"
+                    )
+                    skipped_sheets.append((sheet_name, reason))
+                else:
+                    skipped_sheets.append((sheet_name, self._SKIP_REASONS.get(kind, kind)))
                 continue
 
             try:
@@ -811,11 +1089,32 @@ class GenericTableImporter(HeatingImporter):
                     filename, sheet_name, rows, mapping, []
                 )
             except HeatingImporterError:
-                # Long error messages don't help here — they're already
-                # grouped with other rejects under a short reason.
-                skipped_sheets.append(
-                    (sheet_name, "kein nutzbarer Heizlast-Datenblock")
-                )
+                # Sheet sah nach Heizlast-Tabelle aus, war aber doch nur eine
+                # Parameter-Sammlung (z. B. „Pumpe" mit Label:Wert-Paaren —
+                # _classify_sheet hat es als aggregate erkannt, weil ein
+                # „Volumenstrom"-Label drinsteht, aber ein Tabellen-Header
+                # fehlt). Zweite Chance: als Plant-Meta-Quelle scannen.
+                meta_fallback = _parse_design_meta(rows)
+                fb_fields = [
+                    f for f, v in meta_fallback.model_dump().items() if v is not None
+                ]
+                if fb_fields:
+                    if merged_design is None:
+                        merged_design = meta_fallback
+                    else:
+                        base = merged_design.model_dump()
+                        for key, val in meta_fallback.model_dump().items():
+                            if base.get(key) is None and val is not None:
+                                base[key] = val
+                        merged_design = HeatingDesignBase(**base)
+                    skipped_sheets.append((
+                        sheet_name,
+                        f"Parameter-/Konstanten-Liste — Anlagenwerte übernommen: {', '.join(fb_fields)}",
+                    ))
+                else:
+                    skipped_sheets.append(
+                        (sheet_name, "kein nutzbarer Heizlast-Datenblock")
+                    )
                 continue
 
             sheet_circuits = sub_preview.circuits
@@ -862,6 +1161,56 @@ class GenericTableImporter(HeatingImporter):
                 for header, samples in sub_preview.source_columns.items():
                     merged_source_columns.setdefault(header, samples)
 
+        # Wenn pump_head_pa noch nicht aus expliziten Anlagen-Headern kam,
+        # versuche die Strang-Druckverluste zu aggregieren. Hydraulik:
+        # die Pumpe muss nur den UNGÜNSTIGSTEN Strang überwinden — der
+        # Maximalwert ist also der konservative Ansatz. Wenn auch noch ein
+        # Verteilungs-/Kellerleitungs-Druckverlust separat gefunden wurde,
+        # addieren wir ihn (das Wasser muss durch die Verteilung UND den
+        # Strang). Aufschlag für Sicherheit machen wir hier NICHT — das
+        # wäre eine Auslegungs-Entscheidung des Planers, kein Parser-Job.
+        strand_drops, distribution_drop = self._extract_strand_pressure_drops(sheets)
+        if (
+            merged_design is not None
+            and merged_design.pump_head_pa is None
+            and strand_drops
+        ):
+            worst_strand = max(strand_drops, key=lambda s: strand_drops[s])
+            worst_value = strand_drops[worst_strand]
+            total = worst_value + (distribution_drop or 0.0)
+            base = merged_design.model_dump()
+            base["pump_head_pa"] = total
+            detail = ", ".join(
+                f"Strang {s}: {v:.0f} Pa"
+                for s, v in sorted(strand_drops.items(), key=lambda kv: int(kv[0]) if kv[0].isdigit() else 0)
+            )
+            if distribution_drop:
+                note_addition = (
+                    f"Pumpenförderhöhe automatisch berechnet: "
+                    f"max({detail}) = {worst_value:.0f} Pa (Strang {worst_strand}) "
+                    f"+ Verteilung {distribution_drop:.0f} Pa = {total:.0f} Pa."
+                )
+                warning_msg = (
+                    f"Pumpenförderhöhe berechnet: {worst_value:.0f} Pa "
+                    f"(Strang {worst_strand}) + {distribution_drop:.0f} Pa "
+                    f"(Verteilung) = {total:.0f} Pa."
+                )
+            else:
+                note_addition = (
+                    f"Pumpenförderhöhe automatisch aus Strang-Druckverlusten "
+                    f"berechnet: max({detail}) = {worst_value:.0f} Pa (Strang {worst_strand}). "
+                    f"Verteilungs-Druckverlust nicht gefunden — ggf. manuell ergänzen."
+                )
+                warning_msg = (
+                    f"Pumpenförderhöhe berechnet: max von {len(strand_drops)} "
+                    f"Strang-Druckverlusten = {worst_value:.0f} Pa (Strang {worst_strand})."
+                )
+            base["notes"] = (
+                f"{base['notes']}\n{note_addition}" if base.get("notes") else note_addition
+            )
+            merged_design = HeatingDesignBase(**base)
+            all_warnings.append(warning_msg)
+
         # Harvest WE→Strang from any Strang-schema sheets in the workbook
         # and apply to circuits whose room is 'Wohnung X'.
         strand_map = self._extract_strand_assignments(sheets)
@@ -891,12 +1240,15 @@ class GenericTableImporter(HeatingImporter):
         all_warnings.insert(0, summary)
 
         # Group skipped sheets by reason so the panel stays readable.
-        # 12 separate "Sheet X übersprungen: …" lines = noise; 3 grouped
-        # lines = scannable.
+        # „Übernommen: …"-Detail bleibt sichtbar — der Sheet ist zwar nicht
+        # als Tabelle verwertet, aber Anlagenwerte sind gelandet.
         by_reason: dict[str, list[str]] = {}
         for sheet_name, reason in skipped_sheets:
+            if "übernommen" in reason.lower():
+                # Detail-Linie pro Sheet, damit der Hinweis erhalten bleibt.
+                all_warnings.append(f"Sheet '{sheet_name}': {reason}")
+                continue
             short = reason.split("—")[0].strip().rstrip(":").strip()
-            # Strip trailing punctuation/whitespace; coalesce duplicates.
             by_reason.setdefault(short, []).append(sheet_name)
         for reason, sheet_names in by_reason.items():
             joined = ", ".join(f"'{n}'" for n in sheet_names)
@@ -913,7 +1265,70 @@ class GenericTableImporter(HeatingImporter):
             warnings=all_warnings,
             detected_columns=merged_detected,
             source_columns=merged_source_columns,
+            source_columns_by_sheet=source_columns_by_sheet,
         )
+
+    @staticmethod
+    def _harvest_sheet_columns(
+        raw_rows: list[list[Any]],
+    ) -> dict[str, list[str]]:
+        """Collect ``{header: [sample, …]}`` from a sheet for the mapping UI.
+
+        Works on any sheet — even parameter / strand sheets that don't
+        match the aggregate-table heuristic — so the user can still see
+        their columns in the manual-mapping dropdown.
+
+        - Picks the most plausible header row via ``_find_header_row``;
+          falls back to the first non-empty row if none looks like a
+          header.
+        - Samples up to 5 distinct non-empty values per column from the
+          rows below the header.
+        - Ignores empty header cells and de-dupes within a sheet.
+        """
+        rows = [
+            r for r in raw_rows
+            if any(c is not None and str(c).strip() != "" for c in r)
+        ]
+        if not rows:
+            return {}
+
+        header_idx = _find_header_row(rows)
+        if header_idx is None:
+            header_idx = 0
+
+        header_row = rows[header_idx]
+        headers: list[str] = []
+        for cell in header_row:
+            if cell is None:
+                headers.append("")
+            else:
+                headers.append(str(cell).strip())
+
+        data_rows = rows[header_idx + 1 :]
+        out: dict[str, list[str]] = {}
+        for col_idx, header in enumerate(headers):
+            if not header:
+                continue
+            if header in out:
+                # Duplicate header in the same sheet — keep the first.
+                continue
+            samples: list[str] = []
+            for raw_row in data_rows:
+                if col_idx >= len(raw_row):
+                    continue
+                v = raw_row[col_idx]
+                if v is None:
+                    continue
+                text = str(v).strip()
+                if not text:
+                    continue
+                if text in samples:
+                    continue
+                samples.append(text[:50])
+                if len(samples) >= 5:
+                    break
+            out[header] = samples
+        return out
 
     # ------------------------------------------------------------------
     # Single-sheet flow (called per CSV, per .xls, or per XLSX sheet)
@@ -1060,6 +1475,20 @@ class GenericTableImporter(HeatingImporter):
 
         # Plant metadata extracted from rows above the header.
         design = _parse_design_meta(meta_rows)
+
+        # Auch Footer-Zeilen scannen (alles nach dem letzten echten Kreis).
+        # Manche Heizlast-Tools schreiben Vorlauf/Rücklauf-Temperaturen
+        # unter die Wohnungs-Tabelle als Anlagen-Fußzeile. Nur Werte, die
+        # noch fehlen, werden ergänzt — explizite Pre-Header-Werte gewinnen.
+        footer_start_idx = header_idx + 1 + len(circuits)
+        footer_rows = rows[footer_start_idx:]
+        if footer_rows:
+            footer_design = _parse_design_meta(footer_rows)
+            base = design.model_dump()
+            for key, val in footer_design.model_dump().items():
+                if base.get(key) is None and val is not None:
+                    base[key] = val
+            design = HeatingDesignBase(**base)
 
         # Optional: apply design_overrides from the explicit mapping.
         if mapping is not None and mapping.design_overrides:

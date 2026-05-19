@@ -3,6 +3,7 @@ export * from './generation.model';
 export * from './user.model';
 export * from './report.model';
 export * from './heating.model';
+export * from './material.model';
 export * from './offer.model';
 export * from './analytics.model';
 export * from './photo.model';

@@ -15,9 +15,17 @@
         <strong>Material fehlt melden</strong>
         <small>Bauleitung wird informiert</small>
       </a>
+      <a class="action-card" routerLink="/material-issues">
+        <strong>📦 Meine Meldungen</strong>
+        <small>Was wurde schon bestellt / ist da?</small>
+      </a>
       <a class="action-card" [routerLink]="['/projects', project().slug, 'open-points', 'blocker', 'new']">
         <strong>Blocker melden</strong>
         <small>Stoerung, Mangel oder Risiko</small>
+      </a>
+      <a class="action-card" [routerLink]="['/projects', project().slug, 'voice-notes']">
+        <strong>🎙 Sprachnotiz</strong>
+        <small>Aufnehmen, transkribieren — fließt in Generator ein</small>
       </a>
     </div>
   </section>
@@ -57,7 +65,7 @@
         <p class="panel-kicker">Verlauf</p>
         <h2>Meine letzten Tagesberichte</h2>
       </div>
-      <a class="button-link secondary" [routerLink]="['/projects', project().slug, 'reports']">Alle Berichte</a>
+      <a class="btn btn--secondary" [routerLink]="['/projects', project().slug, 'reports']">Alle Berichte</a>
     </div>
     <app-empty-state
       *ngIf="myDailyReports().length === 0"
@@ -68,12 +76,21 @@
       (action)="startDailyReport()">
     </app-empty-state>
     <ul class="report-list" *ngIf="myDailyReports().length > 0">
-      <li *ngFor="let report of myDailyReports()">
-        <div>
+      <li *ngFor="let report of myDailyReports()" class="report-list__row">
+        <a class="report-list__main"
+           [routerLink]="['/projects', project().slug, 'reports', 'daily']"
+           [fragment]="'report-' + report.id"
+           title="Detail im Berichtsarchiv">
           <strong>{{ formatDate(report.report_date) }}</strong>
           <small>Abschnitt {{ report.section_number ?? '-' }}</small>
-        </div>
+        </a>
         <span class="status-pill" [class.green]="report.status === 'green'" [class.yellow]="report.status === 'yellow'" [class.red]="report.status === 'red'">{{ reportStatusLabel(report.status) }}</span>
+        <a *ngIf="report.editable"
+           class="btn btn--secondary btn--sm"
+           [routerLink]="['/projects', project().slug, 'reports', 'daily', report.id, 'edit']"
+           title="Bericht bearbeiten (bis Folgetag möglich)">
+          ✎
+        </a>
       </li>
     </ul>
   </section>

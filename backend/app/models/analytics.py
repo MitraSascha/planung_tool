@@ -30,6 +30,18 @@ class HoursPerUserRead(BaseModel):
     days: int
 
 
+class HoursPerSectionRead(BaseModel):
+    section_number: int | None
+    section_name: str | None
+    ist_hours: float
+    user_count: int
+    report_count: int
+    planned_hours: float | None = None
+    delta_hours: float | None = None
+    percent_done: float | None = None
+    status: str = "unknown"
+
+
 class ProjectAnalyticsRead(BaseModel):
     project_slug: str
     project_name: str
@@ -47,7 +59,12 @@ class ProjectAnalyticsRead(BaseModel):
     materials_by_status: dict[str, int] = Field(default_factory=dict)
     hours_total_soll: float = 0.0
     hours_total_ist: float = 0.0
+    hours_total_planned: float = 0.0
+    hours_total_delta: float = 0.0
+    hours_total_percent: float | None = None
+    hours_total_status: str = "unknown"
     hours_by_user: list[HoursPerUserRead] = Field(default_factory=list)
+    hours_by_section: list[HoursPerSectionRead] = Field(default_factory=list)
     daily_status_series: list[TimeSeriesPointRead] = Field(default_factory=list)
     blockers_opened_per_day: list[TimeSeriesPointRead] = Field(default_factory=list)
     offer_total_net: float | None = None

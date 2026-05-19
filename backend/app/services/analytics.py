@@ -21,12 +21,14 @@ from sqlalchemy.orm import Session
 from app.db.orm_models import (
     Blocker,
     DailyReport,
+    DailyReportAttendee,
     MaterialIssue,
     MaterialItem,
     Offer,
     Project,
     RiskIssue,
     TeamStatusEntry,
+    User,
     WeeklyReport,
 )
 
@@ -68,6 +70,24 @@ class HoursPerUser:
 
 
 @dataclass
+class HoursPerSection:
+    section_number: int | None
+    section_name: str | None
+    ist_hours: float
+    user_count: int
+    report_count: int
+    planned_hours: float | None = None
+    # Diff = ist - planned; positiv = überzogen, negativ = noch Puffer
+    delta_hours: float | None = None
+    # Fortschritt in Prozent (kann > 100 sein bei Überschreitung). None wenn
+    # planned_hours fehlt oder 0 — dann ist „Fortschritt" undefiniert.
+    percent_done: float | None = None
+    # Status: 'under' (< 80%), 'on_track' (80–100%), 'over' (> 100%),
+    # 'unknown' (kein Soll hinterlegt)
+    status: str = "unknown"
+
+
+@dataclass
 class ProjectAnalytics:
     """Pro-Projekt KPI-Set."""
     project_slug: str
@@ -91,7 +111,15 @@ class ProjectAnalytics:
     # Stunden
     hours_total_soll: float = 0.0
     hours_total_ist: float = 0.0
+    # Geplante Gesamtstunden aus den Bauabschnitten (Projekt-Soll). Bezieht
+    # sich auf den GESAMTPLAN, nicht auf die Periode — die Range-Bars
+    # rechnen Ist (Periode) gegen dieses Plan-Soll.
+    hours_total_planned: float = 0.0
+    hours_total_delta: float = 0.0
+    hours_total_percent: float | None = None
+    hours_total_status: str = "unknown"
     hours_by_user: list[HoursPerUser] = field(default_factory=list)
+    hours_by_section: list[HoursPerSection] = field(default_factory=list)
     # Zeitreihen
     daily_status_series: list[TimeSeriesPoint] = field(default_factory=list)
     blockers_opened_per_day: list[TimeSeriesPoint] = field(default_factory=list)
@@ -116,6 +144,119 @@ class PortfolioAnalytics:
     open_material_total: int = 0
     open_risks_total: int = 0
     total_offer_value_net: float = 0.0
+
+
+# ───────────────────────────────────────────────────────────────────────
+# Stunden-Helper: Tagesbericht + Anwesenheit → (user, day) Matrix
+# ───────────────────────────────────────────────────────────────────────
+
+
+def _attendance_hours_per_user_day(
+    db: Session,
+    *,
+    project_id: int | None,
+    period_start: date,
+    period_end: date | None = None,
+) -> list[dict[str, Any]]:
+    """Aggregiert Stunden aus DailyReport + Attendees zu einer Liste von
+    `{user_id, day, ist_hours, status, section_number, display_name}`-
+    Einträgen — ein Eintrag pro (Anwesender, Tag, Bericht).
+
+    Logik (an template_renderer.py auto_matrix angelehnt):
+      * Wer einen Tagesbericht erstellt UND in eigenen Attendees ist (oder
+        keine Attendees gesetzt), zählt für sich selbst.
+      * Jeder gelistete Anwesende bekommt die ``ist_hours`` des Berichts
+        gutgeschrieben — die App-Konvention ist „ein Monteur dokumentiert
+        die Arbeitszeit für das anwesende Team".
+      * Manuelle ``TeamStatusEntry``-Rows überschreiben den Auto-Wert
+        pro (user, day) — Bauleitung-Korrektur gewinnt.
+
+    Keine Multiplikation, keine Doppelzählung: Wenn ein User an einem Tag
+    in zwei Berichten als Attendee auftaucht (z.B. zwei Abschnitte),
+    werden die Stunden ADDIERT — er hat tatsächlich an beiden Stellen
+    gearbeitet. Manuelle Override ersetzt den gesamten Tagessaldo.
+    """
+    end = period_end or date.today()
+
+    daily_query = (
+        db.query(DailyReport)
+        .filter(
+            DailyReport.report_date >= period_start,
+            DailyReport.report_date <= end,
+        )
+    )
+    if project_id is not None:
+        daily_query = daily_query.filter(DailyReport.project_id == project_id)
+    reports = daily_query.all()
+    report_ids = [r.id for r in reports]
+
+    # Attendees + User-Namen in einem Rutsch.
+    attendees_by_report: dict[int, list[tuple[int, str]]] = defaultdict(list)
+    if report_ids:
+        att_rows = (
+            db.query(DailyReportAttendee, User)
+            .join(User, DailyReportAttendee.user_id == User.id)
+            .filter(DailyReportAttendee.daily_report_id.in_(report_ids))
+            .all()
+        )
+        for att, usr in att_rows:
+            attendees_by_report[att.daily_report_id].append(
+                (att.user_id, usr.display_name or usr.username)
+            )
+
+    # Owner-Name pro Bericht für den Fallback (kein Attendee gepflegt).
+    owner_user = {r.id: r.user for r in reports}
+
+    entries: list[dict[str, Any]] = []
+    for r in reports:
+        present = attendees_by_report.get(r.id, [])
+        if not present:
+            # Fallback: nur der Owner — sonst gehen seine Stunden verloren.
+            usr = owner_user[r.id]
+            if usr is not None:
+                present = [(r.user_id, usr.display_name or usr.username)]
+        for uid, name in present:
+            entries.append({
+                "user_id": uid,
+                "display_name": name,
+                "day": r.report_date,
+                "ist_hours": float(r.ist_hours or 0),
+                "status": r.status,
+                "section_number": r.section_number,
+                "source": "report",
+                "report_id": r.id,
+            })
+
+    # Manuelle TeamStatusEntries — überschreiben den Auto-Wert pro (user, day).
+    manual_query = (
+        db.query(TeamStatusEntry, User)
+        .join(User, TeamStatusEntry.user_id == User.id)
+        .filter(
+            TeamStatusEntry.day >= period_start,
+            TeamStatusEntry.day <= end,
+        )
+    )
+    if project_id is not None:
+        manual_query = manual_query.filter(TeamStatusEntry.project_id == project_id)
+    manual_rows = manual_query.all()
+    manual_keys = {(t.user_id, t.day) for t, _ in manual_rows}
+
+    # Auto-Einträge für (user, day) mit manueller Override raus.
+    entries = [e for e in entries if (e["user_id"], e["day"]) not in manual_keys]
+    for t, usr in manual_rows:
+        entries.append({
+            "user_id": t.user_id,
+            "display_name": usr.display_name or usr.username,
+            "day": t.day,
+            "ist_hours": float(t.ist_hours or 0),
+            "status": t.status,
+            "section_number": None,
+            "soll_hours": float(t.soll_hours or 0),
+            "source": "manual",
+            "report_id": None,
+        })
+
+    return entries
 
 
 # ───────────────────────────────────────────────────────────────────────
@@ -246,24 +387,41 @@ def project_analytics(
     out.risks_open = sum(1 for r in risks if r.status == "offen")
 
     # ── Stunden ──
-    team_rows = (
-        db.query(TeamStatusEntry)
-        .filter(
-            TeamStatusEntry.project_id == project.id,
-            TeamStatusEntry.day >= period_start,
-        )
-        .all()
+    # Quelle: Tagesberichte + Attendees, mit manuellem TeamStatusEntry-Override.
+    # So tauchen Monteur-Stunden sofort nach dem Abschicken eines Tagesberichts
+    # in der Analyse auf — vorher nur aus separat eingepflegten TeamStatus.
+    hour_entries = _attendance_hours_per_user_day(
+        db, project_id=project.id, period_start=period_start, period_end=today,
     )
-    by_user: dict[int, dict[str, float]] = defaultdict(
-        lambda: {"soll": 0.0, "ist": 0.0, "days": 0, "name": ""}
+    by_user: dict[int, dict[str, Any]] = defaultdict(
+        lambda: {"soll": 0.0, "ist": 0.0, "days": set(), "name": ""}
     )
-    for t in team_rows:
-        bucket = by_user[t.user_id]
-        bucket["soll"] += float(t.soll_hours or 0)
-        bucket["ist"] += float(t.ist_hours or 0)
-        bucket["days"] += 1
-        if t.user and not bucket["name"]:
-            bucket["name"] = t.user.display_name or t.user.username
+    by_section: dict[int | None, dict[str, Any]] = defaultdict(
+        lambda: {"ist": 0.0, "users": set(), "reports": set()}
+    )
+    section_name_lookup = {s.number: s.name for s in project.sections}
+    section_planned_lookup: dict[int, float | None] = {
+        s.number: (float(s.planned_hours) if s.planned_hours is not None else None)
+        for s in project.sections
+    }
+    # Auch Abschnitte OHNE bisherige Ist-Buchungen sollen in der Bar erscheinen
+    # (sonst sieht der PL nur „verbuchte" Abschnitte und übersieht die noch
+    # nicht angefassten). Initialisiere alle Sektionen aus dem Projekt-Plan.
+    for s in project.sections:
+        _ = by_section[s.number]  # legt leeren Bucket an
+    for e in hour_entries:
+        bucket = by_user[e["user_id"]]
+        bucket["soll"] += float(e.get("soll_hours") or 0)
+        bucket["ist"] += float(e["ist_hours"] or 0)
+        bucket["days"].add(e["day"])
+        if not bucket["name"]:
+            bucket["name"] = e["display_name"]
+
+        sec_bucket = by_section[e.get("section_number")]
+        sec_bucket["ist"] += float(e["ist_hours"] or 0)
+        sec_bucket["users"].add(e["user_id"])
+        if e.get("report_id") is not None:
+            sec_bucket["reports"].add(e["report_id"])
 
     out.hours_by_user = sorted(
         [
@@ -272,14 +430,63 @@ def project_analytics(
                 display_name=b["name"] or f"User {uid}",
                 soll_hours=round(b["soll"], 1),
                 ist_hours=round(b["ist"], 1),
-                days=int(b["days"]),
+                days=len(b["days"]),
             )
             for uid, b in by_user.items()
         ],
         key=lambda h: -h.ist_hours,
     )
+
+    def _hours_status(planned: float | None, ist: float) -> tuple[float | None, float | None, str]:
+        """Liefert (percent, delta, status). status: under | on_track | over | unknown."""
+        if planned is None or planned <= 0:
+            return None, None, "unknown"
+        percent = round(ist / planned * 100.0, 1)
+        delta = round(ist - planned, 1)
+        if percent > 100:
+            status = "over"
+        elif percent >= 80:
+            status = "on_track"
+        else:
+            status = "under"
+        return percent, delta, status
+
+    section_rows: list[HoursPerSection] = []
+    for sec, b in by_section.items():
+        planned = section_planned_lookup.get(sec) if sec is not None else None
+        ist = round(b["ist"], 1)
+        percent, delta, status = _hours_status(planned, ist)
+        section_rows.append(
+            HoursPerSection(
+                section_number=sec,
+                section_name=section_name_lookup.get(sec) if sec is not None else None,
+                ist_hours=ist,
+                user_count=len(b["users"]),
+                report_count=len(b["reports"]),
+                planned_hours=planned,
+                delta_hours=delta,
+                percent_done=percent,
+                status=status,
+            )
+        )
+    out.hours_by_section = sorted(
+        section_rows,
+        key=lambda h: (h.section_number is None, h.section_number or 0),
+    )
+
     out.hours_total_soll = round(sum(h.soll_hours for h in out.hours_by_user), 1)
     out.hours_total_ist = round(sum(h.ist_hours for h in out.hours_by_user), 1)
+    # Plan-Soll aus den Sektionen (NICHT aus TeamStatus). Das ist der eigentliche
+    # Projektplan, gegen den die Range-Bar im Frontend rechnet.
+    out.hours_total_planned = round(
+        sum(float(s.planned_hours or 0) for s in project.sections), 1
+    )
+    total_percent, total_delta, total_status = _hours_status(
+        out.hours_total_planned or None, out.hours_total_ist
+    )
+    out.hours_total_percent = total_percent
+    out.hours_total_delta = total_delta if total_delta is not None else 0.0
+    out.hours_total_status = total_status
 
     # ── Offers (aus heute eingebauter Domäne) ──
     offers = (
@@ -353,17 +560,16 @@ def portfolio_analytics(db: Session) -> PortfolioAnalytics:
         db.query(func.count(RiskIssue.id)).filter(RiskIssue.status == "offen").scalar() or 0
     )
 
-    # Stunden letzte 7 Tage
-    team_rows = (
-        db.query(TeamStatusEntry)
-        .filter(TeamStatusEntry.day >= last_7d)
-        .all()
-    )
-    out.total_hours_soll_last_7d = round(
-        sum(float(t.soll_hours or 0) for t in team_rows), 1
+    # Stunden letzte 7 Tage — gleiche Quelle wie pro-Projekt-Analytics:
+    # Tagesbericht + Attendees, manueller TeamStatus überschreibt.
+    hour_entries = _attendance_hours_per_user_day(
+        db, project_id=None, period_start=last_7d, period_end=today,
     )
     out.total_hours_ist_last_7d = round(
-        sum(float(t.ist_hours or 0) for t in team_rows), 1
+        sum(float(e["ist_hours"] or 0) for e in hour_entries), 1
+    )
+    out.total_hours_soll_last_7d = round(
+        sum(float(e.get("soll_hours") or 0) for e in hour_entries), 1
     )
 
     # Offer-Volumen aller Projekte

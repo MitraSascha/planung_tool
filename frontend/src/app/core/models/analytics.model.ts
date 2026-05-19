@@ -25,6 +25,20 @@ export interface HoursPerUser {
   days: number;
 }
 
+export type HoursStatus = 'under' | 'on_track' | 'over' | 'unknown';
+
+export interface HoursPerSection {
+  section_number: number | null;
+  section_name: string | null;
+  ist_hours: number;
+  user_count: number;
+  report_count: number;
+  planned_hours?: number | null;
+  delta_hours?: number | null;
+  percent_done?: number | null;
+  status: HoursStatus;
+}
+
 export interface ProjectAnalytics {
   project_slug: string;
   project_name: string;
@@ -42,7 +56,12 @@ export interface ProjectAnalytics {
   materials_by_status: Record<string, number>;
   hours_total_soll: number;
   hours_total_ist: number;
+  hours_total_planned: number;
+  hours_total_delta: number;
+  hours_total_percent: number | null;
+  hours_total_status: HoursStatus;
   hours_by_user: HoursPerUser[];
+  hours_by_section: HoursPerSection[];
   daily_status_series: TimeSeriesPoint[];
   blockers_opened_per_day: TimeSeriesPoint[];
   offer_total_net?: number | null;

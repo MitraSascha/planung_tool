@@ -11,6 +11,7 @@ import {
   IssueStatusUpdate,
   MaterialIssueCreate,
   MaterialIssueRead,
+  ProcurementStatusUpdate,
   ProjectMemberRead,
   ProjectRole,
   ReportSummary,
@@ -74,6 +75,17 @@ export class ReportsService {
     );
   }
 
+  updateDailyReport(
+    slug: string,
+    reportId: number,
+    payload: Partial<DailyReportForm>,
+  ): Observable<DailyReportRead> {
+    return this.http.patch<DailyReportRead>(
+      `/api/reports/projects/${slug}/daily-reports/${reportId}`,
+      payload,
+    );
+  }
+
   loadWeeklyReports(slug: string): Observable<WeeklyReportRead[]> {
     return this.http
       .get<WeeklyReportRead[]>(`/api/reports/projects/${slug}/weekly-reports`)
@@ -125,6 +137,11 @@ export class ReportsService {
       );
   }
 
+  /** Bündel-Liste über alle für den User sichtbaren Projekte (Issue #1). */
+  loadAllMaterialIssues(): Observable<MaterialIssueRead[]> {
+    return this.http.get<MaterialIssueRead[]>('/api/reports/material-issues/all');
+  }
+
   updateMaterialIssueStatus(
     slug: string,
     issueId: number,
@@ -133,6 +150,28 @@ export class ReportsService {
     return this.http
       .patch<MaterialIssueRead>(
         `/api/reports/projects/${slug}/material-issues/${issueId}`,
+        payload,
+      )
+      .pipe(
+        tap((updated) =>
+          this.materialIssuesSignal.update((current) => {
+            const rows = (current[slug] ?? []).map((r) => (r.id === updated.id ? updated : r));
+            return { ...current, [slug]: rows };
+          }),
+        ),
+      );
+  }
+
+  /** Beschaffungs-Stepper: setzt die Stufe (Offen/Bestellt/Unterwegs/Angekommen).
+   * Backend stempelt Timestamp + User pro Stufe (Audit-Trail). */
+  updateMaterialIssueProcurement(
+    slug: string,
+    issueId: number,
+    payload: ProcurementStatusUpdate,
+  ): Observable<MaterialIssueRead> {
+    return this.http
+      .patch<MaterialIssueRead>(
+        `/api/reports/projects/${slug}/material-issues/${issueId}/procurement`,
         payload,
       )
       .pipe(

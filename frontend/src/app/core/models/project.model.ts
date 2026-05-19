@@ -44,11 +44,44 @@ export interface ProjectUploadRead {
   created_at?: string | null;
 }
 
+export interface GeneratorOfferSummary {
+  id: number;
+  supplier_name: string;
+  offer_no?: string | null;
+  offer_date?: string | null;
+  source_file?: string | null;
+  position_count: number;
+  total_net_eur?: number | null;
+  created_at?: string | null;
+}
+
+export interface HeatingDesignSummary {
+  source?: string | null;
+  source_file?: string | null;
+  circuit_count: number;
+  system_type?: string | null;
+  pump_model?: string | null;
+  imported_at?: string | null;
+}
+
+export interface GeneratorInputSummary {
+  upload_count: number;
+  offer_count: number;
+  offer_position_count: number;
+  offers: GeneratorOfferSummary[];
+  heating?: HeatingDesignSummary | null;
+  material_item_count: number;
+  material_item_with_offer_link: number;
+  section_count: number;
+  member_count: number;
+}
+
 export interface ProjectRead extends ProjectForm {
   status: ProjectStatus;
   preview_url?: string | null;
   uploads: ProjectUploadRead[];
   upload_count: number;
+  generator_input?: GeneratorInputSummary;
   ready_for_generation: boolean;
   readiness_issues: string[];
   documentation_checklist: string[];

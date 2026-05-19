@@ -59,6 +59,12 @@ class Settings(BaseSettings):
     # Days; 0 = keep forever.
     default_retention_days: int = 0
 
+    # Artikelstamm — externe Großhändler-DB (DATANORM, > 2 Mio Artikel).
+    # Wird vom MaterialPicker durchsucht, damit Monteure Material aus dem
+    # Großhandel anlegen können, das nicht im Projekt-Stamm war (Ad-hoc-Kauf).
+    # Leer = Suche deaktiviert (Endpoint liefert 503).
+    artikelstamm_db_url: str | None = None
+
     @property
     def workspaces_path(self) -> Path:
         return self.storage_root / "workspaces"

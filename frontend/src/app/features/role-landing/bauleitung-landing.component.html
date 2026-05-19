@@ -1,17 +1,46 @@
 <div class="role-grid">
-  <section class="panel">
+  <section class="panel" [class.panel--critical]="trafficLight() === 'red'">
     <div class="panel-head">
       <div>
         <p class="panel-kicker">Steuerung</p>
         <h2>Tagesberichte pruefen</h2>
       </div>
-      <a class="button-link secondary" [routerLink]="['/projects', project().slug, 'reports']">Alle Berichte</a>
+      <div class="panel-head-actions">
+        <span
+          class="status-pill"
+          [class.green]="trafficLight() === 'green'"
+          [class.yellow]="trafficLight() === 'yellow'"
+          [class.red]="trafficLight() === 'red'"
+          [class.status-pill--critical-flash]="trafficLight() === 'red'"
+          [attr.role]="trafficLight() === 'red' ? 'alert' : null"
+          [attr.aria-live]="trafficLight() === 'red' ? 'assertive' : null">
+          <span *ngIf="trafficLight() === 'red'" class="status-pill__icon" aria-hidden="true">⚠</span>
+          {{ trafficLight() === 'green' ? 'Auf Kurs' : trafficLight() === 'yellow' ? 'Achtung' : 'Kritisch' }}
+        </span>
+        <a class="btn btn--secondary" [routerLink]="['/projects', project().slug, 'reports']">Alle Berichte</a>
+      </div>
     </div>
     <div class="metric-row" *ngIf="summary() as s">
-      <div class="metric-card"><span>Tagesberichte</span><strong>{{ s.daily_reports }}</strong></div>
-      <div class="metric-card"><span>Wochenberichte</span><strong>{{ s.weekly_reports }}</strong></div>
-      <div class="metric-card"><span>Offene Blocker</span><strong>{{ s.blockers_open }}</strong></div>
-      <div class="metric-card"><span>Material offen</span><strong>{{ s.material_issues_open }}</strong></div>
+      <a class="metric-card metric-card--link"
+         [routerLink]="['/projects', project().slug, 'reports', 'daily']">
+        <span>Tagesberichte</span><strong>{{ s.daily_reports }}</strong>
+      </a>
+      <a class="metric-card metric-card--link"
+         [routerLink]="['/projects', project().slug, 'reports', 'weekly']">
+        <span>Wochenberichte</span><strong>{{ s.weekly_reports }}</strong>
+      </a>
+      <a class="metric-card metric-card--link"
+         [class.metric-card--alert]="s.blockers_open > 0"
+         [routerLink]="['/projects', project().slug, 'open-points']"
+         [queryParams]="{ tab: 'blocker' }">
+        <span>Offene Blocker</span><strong>{{ s.blockers_open }}</strong>
+      </a>
+      <a class="metric-card metric-card--link"
+         [class.metric-card--warn]="s.material_issues_open > 0"
+         [routerLink]="['/projects', project().slug, 'open-points']"
+         [queryParams]="{ tab: 'material' }">
+        <span>Material offen</span><strong>{{ s.material_issues_open }}</strong>
+      </a>
     </div>
     <app-empty-state
       *ngIf="recentReports().length === 0"
@@ -46,13 +75,25 @@
         <strong>Offene Punkte</strong>
         <small>Material, Blocker, Maengel</small>
       </a>
+      <a class="action-card" routerLink="/material-issues">
+        <strong>📦 Materialmeldungen</strong>
+        <small>Bündel über alle Projekte · abhaken</small>
+      </a>
       <a class="action-card" [routerLink]="['/projects', project().slug, 'reports', 'daily', 'new']">
         <strong>Tagesbericht</strong>
         <small>Ergaenzend zur Erfassung</small>
       </a>
-      <a class="action-card" [routerLink]="['/projects', project().slug]">
+      <a class="action-card" [routerLink]="['/projects', project().slug, 'details']">
         <strong>Projektdaten</strong>
         <small>Stammdaten und Mitglieder</small>
+      </a>
+      <a class="action-card" [routerLink]="['/projects', project().slug, 'voice-notes']">
+        <strong>🎙 Sprachnotiz</strong>
+        <small>Anhören und Transkripte lesen</small>
+      </a>
+      <a class="action-card" [routerLink]="['/projects', project().slug, 'nachkalkulation']">
+        <strong>📋 Nachkalkulation</strong>
+        <small>Ad-hoc-Käufe als Nachträge</small>
       </a>
     </div>
   </section>

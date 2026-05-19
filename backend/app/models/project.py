@@ -90,11 +90,46 @@ class ProjectUploadRead(BaseModel):
     created_at: datetime | None = None
 
 
+class OfferSummary(BaseModel):
+    id: int
+    supplier_name: str
+    offer_no: str | None = None
+    offer_date: date | None = None
+    source_file: str | None = None
+    position_count: int = 0
+    total_net_eur: float | None = None
+    created_at: datetime | None = None
+
+
+class HeatingDesignSummary(BaseModel):
+    source: str | None = None
+    source_file: str | None = None
+    circuit_count: int = 0
+    system_type: str | None = None
+    pump_model: str | None = None
+    imported_at: datetime | None = None
+
+
+class GeneratorInputSummary(BaseModel):
+    """Konsolidierte Sicht aller Quellen die der Generator nutzt."""
+
+    upload_count: int = 0                  # generische project_uploads
+    offer_count: int = 0
+    offer_position_count: int = 0
+    offers: list[OfferSummary] = Field(default_factory=list)
+    heating: HeatingDesignSummary | None = None
+    material_item_count: int = 0
+    material_item_with_offer_link: int = 0
+    section_count: int = 0
+    member_count: int = 0
+
+
 class ProjectRead(ProjectCreate):
     status: str
     preview_url: str | None = None
     uploads: list[ProjectUploadRead] = Field(default_factory=list)
     upload_count: int = 0
+    generator_input: GeneratorInputSummary = Field(default_factory=GeneratorInputSummary)
     ready_for_generation: bool = False
     readiness_issues: list[str] = Field(default_factory=list)
     documentation_checklist: list[str] = Field(default_factory=list)

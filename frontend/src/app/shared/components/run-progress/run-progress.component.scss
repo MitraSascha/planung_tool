@@ -1,130 +1,200 @@
+/* ═══════════════════════════════════════════════════════════════════════
+ * RUN PROGRESS — Stepper für LLM-Generatorlauf
+ * Brand-Tokens: --mitra-primary, --mitra-accent, --status-*
+ * ═══════════════════════════════════════════════════════════════════════ */
+
 .run-stepper {
   display: grid;
-  gap: 14px;
-  padding: 14px 16px;
-  border: 1px solid rgba(13, 107, 143, .2);
-  border-radius: 14px;
-  background: rgba(13, 107, 143, .07);
+  gap: var(--s-4);
+  padding: var(--s-4) var(--s-5);
+  border: 1px solid rgba(28, 50, 68, 0.16);
+  border-radius: var(--r-md);
+  background:
+    linear-gradient(135deg, rgba(28, 50, 68, 0.04), rgba(239, 128, 78, 0.03)),
+    var(--bg-panel);
+  position: relative;
+  overflow: hidden;
+  transition: border-color var(--transition), background var(--transition);
+
+  /* Akzentstreifen links */
+  &::before {
+    content: "";
+    position: absolute;
+    top: 0; bottom: 0; left: 0;
+    width: 4px;
+    background: linear-gradient(180deg, var(--mitra-primary), var(--mitra-accent));
+  }
 
   &.completed {
-    border-color: rgba(20, 130, 60, .25);
-    background: rgba(20, 130, 60, .07);
+    border-color: rgba(22, 104, 53, 0.30);
+    background:
+      linear-gradient(135deg, rgba(22, 104, 53, 0.05), rgba(74, 222, 128, 0.03)),
+      var(--bg-panel);
+
+    &::before { background: var(--status-ok); }
   }
 
   &.errored {
-    border-color: rgba(180, 50, 50, .3);
-    background: rgba(180, 50, 50, .07);
+    border-color: rgba(178, 36, 36, 0.32);
+    background:
+      linear-gradient(135deg, rgba(178, 36, 36, 0.05), rgba(178, 36, 36, 0.02)),
+      var(--bg-panel);
+
+    &::before { background: var(--status-err); }
   }
 }
 
 .step {
   display: grid;
-  gap: 6px;
+  gap: var(--s-2);
+  transition: opacity var(--transition);
 
-  &.pending {
-    opacity: 0.55;
-  }
+  &.pending { opacity: 0.45; }
 }
 
 .step-head {
   display: flex;
   align-items: center;
-  gap: 10px;
-  font-size: 14px;
+  gap: var(--s-3);
+  font-size: var(--fs-sm);
 }
 
 .step-num {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 22px;
-  height: 22px;
+  width: 28px; height: 28px;
   border-radius: 50%;
-  background: rgba(13, 107, 143, .15);
-  color: var(--brand, #0d6b8f);
-  font-weight: 800;
-  font-size: 12px;
+  background: rgba(28, 50, 68, 0.10);
+  color: var(--mitra-primary);
+  font-weight: var(--fw-black);
+  font-size: var(--fs-sm);
+  flex-shrink: 0;
+  transition: background var(--transition), color var(--transition), transform var(--transition);
 }
 
 .step.active .step-num {
-  background: var(--brand, #0d6b8f);
-  color: #fff;
+  background: var(--mitra-primary);
+  color: var(--text-on-dark);
+  animation: step-pulse 1.5s ease-in-out infinite;
+  box-shadow: 0 0 0 4px rgba(28, 50, 68, 0.12);
 }
 
 .step.done .step-num {
-  background: rgba(20, 130, 60, .85);
-  color: #fff;
+  background: var(--status-ok);
+  color: var(--text-on-dark);
+  transform: scale(1.05);
+}
+
+.run-stepper.errored .step.active .step-num {
+  background: var(--status-err);
+  color: var(--text-on-dark);
+  animation: none;
+  box-shadow: 0 0 0 4px rgba(178, 36, 36, 0.18);
+}
+
+@keyframes step-pulse {
+  0%, 100% { box-shadow: 0 0 0 4px rgba(28, 50, 68, 0.12); }
+  50%      { box-shadow: 0 0 0 6px rgba(239, 128, 78, 0.20); }
 }
 
 .step-label {
-  font-weight: 700;
-  color: var(--ink, #1a1a1a);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: var(--fw-bold);
+  color: var(--text-ink);
+  font-size: var(--fs-base);
+
+  svg { color: var(--mitra-accent); }
 }
 
 .step-detail {
   margin-left: auto;
-  color: var(--muted, #5b6770);
-  font-size: 12px;
-  font-weight: 600;
+  color: var(--text-muted);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-semi);
+  font-variant-numeric: tabular-nums;
 }
 
 .bar {
   position: relative;
-  height: 8px;
-  border-radius: 999px;
-  background: rgba(13, 107, 143, .14);
+  height: 10px;
+  border-radius: var(--r-pill);
+  background: rgba(28, 50, 68, 0.10);
   overflow: hidden;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.06);
 }
 
 .bar-fill {
   height: 100%;
-  background: var(--brand, #0d6b8f);
-  border-radius: 999px;
-  transition: width 0.3s ease-out;
+  background: linear-gradient(90deg, var(--mitra-primary), var(--mitra-accent));
+  border-radius: var(--r-pill);
+  transition: width 0.4s cubic-bezier(.4, 0, .2, 1);
+  position: relative;
+
+  /* Subtile Shimmer-Animation */
+  &::after {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.35), transparent);
+    background-size: 200% 100%;
+    animation: bar-shimmer 2s linear infinite;
+  }
 }
 
 .step.done .bar-fill {
-  background: rgba(20, 130, 60, .85);
+  background: var(--status-ok);
 }
 
 .run-stepper.errored .bar-fill {
-  background: rgba(180, 50, 50, .75);
+  background: var(--status-err);
 }
 
-// Indeterminate animation for the ingest step while filter pipeline runs
+@keyframes bar-shimmer {
+  0%   { background-position: -100% 0; }
+  100% { background-position: 200% 0; }
+}
+
 .bar.indeterminate {
   background: linear-gradient(
     90deg,
-    rgba(13, 107, 143, .14) 0%,
-    rgba(13, 107, 143, .14) 30%,
-    rgba(13, 107, 143, .45) 50%,
-    rgba(13, 107, 143, .14) 70%,
-    rgba(13, 107, 143, .14) 100%
+    rgba(28, 50, 68, 0.08) 0%,
+    rgba(28, 50, 68, 0.08) 30%,
+    rgba(239, 128, 78, 0.42) 50%,
+    rgba(28, 50, 68, 0.08) 70%,
+    rgba(28, 50, 68, 0.08) 100%
   );
   background-size: 220% 100%;
   animation: stepper-indeterminate 1.4s linear infinite;
-}
 
-.bar.indeterminate .bar-fill {
-  display: none;
+  .bar-fill { display: none; }
 }
 
 @keyframes stepper-indeterminate {
-  0% { background-position: 100% 0; }
+  0%   { background-position: 100% 0; }
   100% { background-position: -100% 0; }
 }
 
 .finish {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-weight: 700;
-  color: rgba(20, 130, 60, .9);
-  font-size: 14px;
-  margin-top: 2px;
+  gap: var(--s-2);
+  margin-top: var(--s-1);
+  padding: var(--s-2) var(--s-3);
+  background: var(--status-ok-bg);
+  border: 1px solid rgba(22, 104, 53, 0.22);
+  border-radius: var(--r);
+  color: var(--status-ok);
+  font-weight: var(--fw-bold);
+  font-size: var(--fs-sm);
+  animation: finish-pop 0.3s ease both;
 
   &.failed {
-    color: rgba(180, 50, 50, .9);
+    background: var(--status-err-bg);
+    border-color: rgba(178, 36, 36, 0.22);
+    color: var(--status-err);
   }
 }
 
@@ -132,15 +202,19 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 22px;
-  height: 22px;
+  width: 26px; height: 26px;
   border-radius: 50%;
-  background: rgba(20, 130, 60, .85);
-  color: #fff;
-  font-weight: 800;
-  font-size: 13px;
+  background: var(--status-ok);
+  color: var(--text-on-dark);
+  flex-shrink: 0;
+  box-shadow: var(--shadow-xs);
 }
 
 .finish.failed .finish-icon {
-  background: rgba(180, 50, 50, .85);
+  background: var(--status-err);
+}
+
+@keyframes finish-pop {
+  from { opacity: 0; transform: translateY(4px) scale(.95); }
+  to   { opacity: 1; transform: translateY(0)    scale(1); }
 }

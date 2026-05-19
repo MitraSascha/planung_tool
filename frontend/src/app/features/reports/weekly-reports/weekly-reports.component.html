@@ -3,7 +3,7 @@
     <p class="panel-kicker">Liste</p>
     <h3>{{ allReports().length }} Wochenberichte</h3>
   </div>
-  <a class="button-link" [routerLink]="['/projects', slug, 'reports', 'weekly', 'new']">Neuer Wochenbericht</a>
+  <a class="btn btn--primary" [routerLink]="['/projects', slug, 'reports', 'weekly', 'new']">Neuer Wochenbericht</a>
 </div>
 
 <p class="empty" *ngIf="loading()">Wochenberichte werden geladen...</p>

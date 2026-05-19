@@ -3,7 +3,7 @@
     <p class="panel-kicker">Liste</p>
     <h3>{{ filteredReports().length }} Tagesberichte</h3>
   </div>
-  <a class="button-link" [routerLink]="['/projects', slug, 'reports', 'daily', 'new']">Neuer Tagesbericht</a>
+  <a class="btn btn--primary" [routerLink]="['/projects', slug, 'reports', 'daily', 'new']">Neuer Tagesbericht</a>
 </div>
 
 <div class="filter-row">
@@ -27,7 +27,7 @@
   <label>Bis
     <input type="date" [(ngModel)]="filterTo" (change)="filterTo.set($any($event.target).value)">
   </label>
-  <button type="button" class="secondary" (click)="resetFilters()">Filter zuruecksetzen</button>
+  <button type="button" class="btn btn--secondary" (click)="resetFilters()">Filter zuruecksetzen</button>
 </div>
 
 <p class="empty" *ngIf="loading()">Tagesberichte werden geladen...</p>
@@ -98,6 +98,13 @@
         </ul>
       </section>
 
+      <div class="report-actions" *ngIf="report.editable">
+        <a class="btn btn--secondary btn--sm"
+           [routerLink]="['/projects', slug, 'reports', 'daily', report.id, 'edit']">
+          ✎ Bearbeiten
+        </a>
+        <small class="report-actions__hint">Bis zum Folgetag noch änderbar</small>
+      </div>
       <small>Erfasst von {{ report.display_name }} am {{ formatDateTime(report.created_at) }}</small>
     </div>
   </li>
@@ -107,7 +114,7 @@
   <div class="lightbox-inner" (click)="$event.stopPropagation()">
     <header class="lightbox-head">
       <strong>{{ lb.caption || lb.filename }}</strong>
-      <button type="button" class="secondary" (click)="closeLightbox()">Schliessen</button>
+      <button type="button" class="btn btn--secondary" (click)="closeLightbox()">Schliessen</button>
     </header>
     <img [src]="lb.url" [alt]="lb.caption || lb.filename">
   </div>

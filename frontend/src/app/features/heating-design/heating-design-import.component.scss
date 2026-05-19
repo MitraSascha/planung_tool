@@ -127,9 +127,9 @@
 
   &.right { justify-content: flex-end; }
 
-  button,
-  .secondary,
-  .button-link {
+  /* Plain <button> ohne Klasse innerhalb von .button-row → Primary-Look.
+   * (Klassen-Buttons .btn .btn--variant nutzen die globalen BEM-Styles.) */
+  button:not([class]) {
     min-height: var(--touch-target);
     padding: 10px var(--s-4);
     border-radius: var(--r);
@@ -151,13 +151,6 @@
       color: var(--text-on-dark);
     }
     &:disabled { opacity: .5; cursor: not-allowed; }
-
-    &.secondary {
-      background: var(--bg-panel);
-      color: var(--text-ink);
-      border-color: var(--line-medium);
-      &:hover { background: var(--bg-soft); color: var(--text-ink); }
-    }
   }
 }
 
@@ -299,6 +292,32 @@
     font-size: var(--fs-sm);
     color: var(--text-muted);
     line-height: var(--lh-relax);
+
+    &.subtle {
+      font-size: var(--fs-xs);
+      margin-top: calc(-1 * var(--s-2));
+    }
+  }
+
+  .mapping-subhead {
+    margin: var(--s-4) 0 var(--s-2);
+    font-size: var(--fs-sm);
+    font-weight: var(--fw-bold);
+    color: var(--mitra-primary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+
+    &:first-of-type { margin-top: 0; }
+
+    small {
+      display: block;
+      font-size: var(--fs-xs);
+      font-weight: var(--fw-normal);
+      color: var(--text-muted);
+      text-transform: none;
+      letter-spacing: 0;
+      margin-top: 2px;
+    }
   }
 }
 
@@ -335,11 +354,12 @@
     select {
       width: 100%;
       max-width: 360px;
-      padding: 6px var(--s-2);
+      min-height: 44px;
+      padding: 8px var(--s-2);
       border: 1px solid var(--line-medium);
       border-radius: var(--r-sm);
       background: var(--bg-panel);
-      font-size: var(--fs-xs);
+      font-size: var(--fs-sm);
     }
   }
 }

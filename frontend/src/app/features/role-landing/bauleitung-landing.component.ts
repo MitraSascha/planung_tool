@@ -49,6 +49,16 @@ export class BauleitungLandingComponent implements OnChanges {
     return this.summariesByProject()[this.project().slug] ?? null;
   });
 
+  /** Gleiche Ampel-Logik wie in projektleitung-landing — Bauleitung muss
+   *  Probleme genauso früh sehen wie die Projektleitung. */
+  protected readonly trafficLight = computed<'green' | 'yellow' | 'red'>(() => {
+    const s = this.summary();
+    if (!s) return 'green';
+    if (s.status_red > 0 || s.blockers_open > 0) return 'red';
+    if (s.status_yellow > 0 || s.material_issues_open > 0) return 'yellow';
+    return 'green';
+  });
+
   ngOnChanges(changes: SimpleChanges): void {
     if ('project' in changes) {
       const slug = this.project().slug;

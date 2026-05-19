@@ -163,7 +163,7 @@ export class ProjectFormComponent implements OnInit {
             : 'Projekt wurde angelegt und der Workspace wurde erstellt.',
         );
         this.projectService.list().subscribe();
-        this.router.navigate(['/projects', this.form.slug]);
+        this.router.navigate(['/projects', this.form.slug, 'details']);
       },
       error: (response) =>
         this.notifications.showError(
@@ -174,10 +174,11 @@ export class ProjectFormComponent implements OnInit {
 
   private defaultForm(): ProjectForm {
     return {
-      slug: 'hez-640',
-      name: 'Heizungsmodernisierung',
+      slug: '',
+      name: '',
       project_type: 'standard',
       address: '',
+      client_name: '',
       responsible: '',
       construction_manager: '',
       foreman: '',
@@ -187,9 +188,9 @@ export class ProjectFormComponent implements OnInit {
       sections: [
         {
           number: 1,
-          name: 'Kellerleitung',
+          name: '',
           goal: '',
-          planned_hours: 200,
+          planned_hours: undefined,
           responsible: '',
           staff: '',
         },

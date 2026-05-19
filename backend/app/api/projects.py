@@ -336,6 +336,65 @@ def _reveal_pii_for_role(
     return text
 
 
+def _generator_input_summary(project: Project, db: Session | None) -> "GeneratorInputSummary":
+    """Konsolidierte Sicht: project_uploads + offers + heating + material + sections + members."""
+    from app.models.project import (
+        GeneratorInputSummary,
+        HeatingDesignSummary,
+        OfferSummary,
+    )
+    from app.db.orm_models import MaterialItem
+
+    upload_count = len(project.uploads) if project.uploads else 0
+    offer_position_count = sum(len(o.items or []) for o in (project.offers or []))
+    offers = [
+        OfferSummary(
+            id=o.id,
+            supplier_name=o.supplier_name,
+            offer_no=o.offer_no,
+            offer_date=o.offer_date,
+            source_file=o.source_file,
+            position_count=len(o.items or []),
+            total_net_eur=o.total_net_eur,
+            created_at=o.created_at,
+        )
+        for o in sorted((project.offers or []), key=lambda x: x.created_at or 0, reverse=True)
+    ]
+
+    heating = None
+    if project.heating_design is not None:
+        hd = project.heating_design
+        heating = HeatingDesignSummary(
+            source=hd.source,
+            source_file=hd.source_file,
+            circuit_count=len(hd.circuits or []),
+            system_type=hd.system_type,
+            pump_model=hd.pump_model,
+            imported_at=hd.imported_at,
+        )
+
+    material_count = 0
+    material_with_offer = 0
+    if db is not None:
+        material_rows = db.query(MaterialItem.offer_item_id).filter(
+            MaterialItem.project_id == project.id
+        ).all()
+        material_count = len(material_rows)
+        material_with_offer = sum(1 for (oid,) in material_rows if oid is not None)
+
+    return GeneratorInputSummary(
+        upload_count=upload_count,
+        offer_count=len(offers),
+        offer_position_count=offer_position_count,
+        offers=offers,
+        heating=heating,
+        material_item_count=material_count,
+        material_item_with_offer_link=material_with_offer,
+        section_count=len(project.sections or []),
+        member_count=len(project.members) if hasattr(project, "members") and project.members else 0,
+    )
+
+
 def _to_project_read(
     project: Project,
     db: Session | None = None,
@@ -343,6 +402,7 @@ def _to_project_read(
 ) -> ProjectRead:
     uploads = [_to_upload_read(upload) for upload in project.uploads]
     readiness_issues = _readiness_issues(project)
+    generator_input = _generator_input_summary(project, db)
 
     def reveal(value: str | None) -> str | None:
         if db is None or role is None:
@@ -374,6 +434,7 @@ def _to_project_read(
         preview_url=_preview_url(project.slug),
         uploads=uploads,
         upload_count=len(uploads),
+        generator_input=generator_input,
         ready_for_generation=len(readiness_issues) == 0,
         readiness_issues=readiness_issues,
         documentation_checklist=_documentation_checklist(project),
@@ -393,6 +454,7 @@ def _project_or_404(db: Session, slug: str) -> Project:
             selectinload(Project.uploads),
             selectinload(Project.heating_design).selectinload(HeatingDesign.circuits),
             selectinload(Project.offers).selectinload(Offer.items),
+            selectinload(Project.members),
         )
         .filter(Project.slug == slug)
         .one_or_none()
@@ -489,12 +551,21 @@ def create_project(
         _assign_section_staff(db, db_section, user_ids)
 
     try:
+        workspace = create_project_workspace(project)
+    except OSError as exc:
+        db.rollback()
+        raise HTTPException(
+            status_code=500,
+            detail=f"Could not create project workspace: {exc}",
+        ) from exc
+
+    try:
         db.commit()
     except IntegrityError as exc:
         db.rollback()
         raise HTTPException(status_code=409, detail="Project slug already exists") from exc
 
-    return create_project_workspace(project)
+    return workspace
 
 
 @router.get("", response_model=list[ProjectRead])
@@ -502,7 +573,14 @@ def list_projects(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> list[ProjectRead]:
-    query = db.query(Project).options(selectinload(Project.sections), selectinload(Project.uploads))
+    from app.db.orm_models import HeatingDesign, Offer
+    query = db.query(Project).options(
+        selectinload(Project.sections),
+        selectinload(Project.uploads),
+        selectinload(Project.heating_design).selectinload(HeatingDesign.circuits),
+        selectinload(Project.offers).selectinload(Offer.items),
+        selectinload(Project.members),
+    )
 
     if current_user.global_role not in ADMIN_ROLES:
         query = query.join(ProjectMember).filter(ProjectMember.user_id == current_user.id)

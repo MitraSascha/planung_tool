@@ -5,7 +5,7 @@
         <p class="panel-kicker">Projekt {{ slug }}</p>
         <h2>Offene Punkte</h2>
       </div>
-      <a class="button-link secondary" [routerLink]="['/projects', slug]">Zurueck zum Projekt</a>
+      <a class="btn btn--secondary" [routerLink]="['/projects', slug]">Zurueck zum Projekt</a>
     </div>
 
     <div class="metric-row">
@@ -30,7 +30,7 @@
           <p class="panel-kicker">Material</p>
           <h3>Materialmeldungen</h3>
         </div>
-        <a class="button-link" [routerLink]="['/projects', slug, 'open-points', 'material', 'new']">Neue Materialmeldung</a>
+        <a class="btn btn--primary" [routerLink]="['/projects', slug, 'open-points', 'material', 'new']">Neue Materialmeldung</a>
       </div>
 
       <p *ngIf="loading()" class="info-note">Lade…</p>
@@ -45,6 +45,36 @@
               <span class="issue-meta">{{ issue.display_name || issue.username }} · {{ issue.created_at | date:'shortDate' }}</span>
             </div>
             <p class="issue-text">{{ issue.description }}</p>
+
+            <!-- Beschaffungs-Stepper: Offen -> Bestellt -> Unterwegs -> Angekommen.
+                 Klick stempelt Audit (Timestamp + User) im Backend. -->
+            <div
+              class="procurement-stepper"
+              role="group"
+              [attr.aria-label]="'Beschaffungs-Status: ' + issue.procurement_status"
+              [attr.aria-busy]="pendingId() === issue.id"
+            >
+              <button
+                *ngFor="let step of procurementSteps; let i = index"
+                type="button"
+                class="step"
+                [class.is-active]="step.value === issue.procurement_status"
+                [class.is-reached]="i <= procurementIndex(issue)"
+                [disabled]="pendingId() === issue.id"
+                [attr.aria-current]="step.value === issue.procurement_status ? 'step' : null"
+                [attr.aria-label]="step.label + ' (Schritt ' + (i + 1) + ' von ' + procurementSteps.length + ')'"
+                (click)="onProcurementStepClick(issue, step)"
+              >
+                <span class="step-circle" aria-hidden="true">
+                  <span class="step-icon">{{ step.icon }}</span>
+                </span>
+                <span class="step-label">{{ step.label }}</span>
+                <span
+                  *ngIf="stepAuditInfo(issue, step) as audit"
+                  class="step-audit"
+                >{{ audit.user }} · {{ audit.at | date:'shortDate' }}</span>
+              </button>
+            </div>
           </div>
           <div class="issue-actions">
             <select
@@ -65,7 +95,7 @@
           <p class="panel-kicker">Blocker</p>
           <h3>Blocker</h3>
         </div>
-        <a class="button-link" [routerLink]="['/projects', slug, 'open-points', 'blocker', 'new']">Neuen Blocker melden</a>
+        <a class="btn btn--primary" [routerLink]="['/projects', slug, 'open-points', 'blocker', 'new']">Neuen Blocker melden</a>
       </div>
 
       <p *ngIf="loading()" class="info-note">Lade…</p>

@@ -1,257 +1,428 @@
 <section class="view dsgvo-layout">
-  <header class="dsgvo-header">
-    <h1>DSGVO &amp; Audit</h1>
-    <p class="muted">
-      Audit-Log, Aufbewahrungsfristen, manueller Cleanup, Projekt-Anonymisierung
-      und Hard-Delete. Alle Aktionen sind nicht rueckgaengig zu machen.
-    </p>
+  <!-- ───────── Hero-Header ───────── -->
+  <header class="dsgvo-hero">
+    <div class="dsgvo-hero__icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 2 4 5v7c0 5 3.5 8.5 8 10 4.5-1.5 8-5 8-10V5l-8-3z"/>
+        <path d="m9 12 2 2 4-4"/>
+      </svg>
+    </div>
+    <div class="dsgvo-hero__copy">
+      <p class="dsgvo-hero__kicker">Datenschutz</p>
+      <h1>DSGVO &amp; Audit</h1>
+      <p class="dsgvo-hero__lead">
+        Audit-Log, Aufbewahrungsfristen, manueller Cleanup, Projekt-Anonymisierung
+        und Hard-Delete. Alle Aktionen sind nicht rückgängig zu machen.
+      </p>
+    </div>
   </header>
 
-  <!-- Audit-Log -->
-  <section class="panel">
-    <div class="panel-head">
-      <div>
-        <p class="panel-kicker">Audit</p>
-        <h2>Audit-Log</h2>
+  <!-- ───────── Stat-Cards ───────── -->
+  <div class="stats-row dsgvo-stats">
+    <div class="stat-card">
+      <span class="stat-card__label">Audit-Einträge</span>
+      <span class="stat-card__value">{{ auditEvents().length }}</span>
+      <span class="stat-card__hint">aktuelle Abfrage</span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-card__label">Aktive Regeln</span>
+      <span class="stat-card__value">{{ retentionRules().length }}</span>
+      <span class="stat-card__hint">Aufbewahrungsfristen</span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-card__label">Projekte</span>
+      <span class="stat-card__value">{{ projectSlugs().length }}</span>
+      <span class="stat-card__hint">verwaltet</span>
+    </div>
+    <div class="stat-card stat-card--highlight">
+      <span class="stat-card__label">Status</span>
+      <span class="stat-card__value">
+        <span class="status-dot" [class.busy]="busy() || auditLoading()"></span>
+        {{ busy() || auditLoading() ? 'Arbeite…' : 'Bereit' }}
+      </span>
+      <span class="stat-card__hint">Backend-Verbindung</span>
+    </div>
+  </div>
+
+  <!-- ───────── Audit-Log ───────── -->
+  <section class="dsgvo-panel">
+    <div class="dsgvo-panel__head">
+      <div class="dsgvo-panel__title">
+        <span class="dsgvo-panel__icon dsgvo-panel__icon--info" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <path d="M14 2v6h6M8 13h8M8 17h6M8 9h2"/>
+          </svg>
+        </span>
+        <div>
+          <p class="panel-kicker">Audit</p>
+          <h2>Audit-Log</h2>
+        </div>
       </div>
-      <button type="button" class="secondary" (click)="refreshAudit()" [disabled]="auditLoading()">
+      <button type="button" class="btn btn--secondary btn--sm" (click)="refreshAudit()" [disabled]="auditLoading()">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/><path d="M3 21v-5h5"/>
+        </svg>
         Aktualisieren
       </button>
     </div>
 
-    <div class="filter-row">
-      <label>Entity-Type
+    <div class="filter-row form-grid">
+      <label class="form-field">
+        <span>Entity-Type</span>
         <select name="filter_entity" [(ngModel)]="auditFilter.entity_type">
           <option value="">Alle</option>
           <option *ngFor="let opt of entityOptions" [value]="opt">{{ opt }}</option>
         </select>
       </label>
-      <label>Action
+      <label class="form-field">
+        <span>Action</span>
         <select name="filter_action" [(ngModel)]="auditFilter.action">
           <option value="">Alle</option>
           <option *ngFor="let opt of actionOptions" [value]="opt">{{ opt }}</option>
         </select>
       </label>
-      <label>Projekt
+      <label class="form-field">
+        <span>Projekt</span>
         <input name="filter_slug" [(ngModel)]="auditFilter.project_slug" placeholder="slug">
       </label>
-      <label>Von
+      <label class="form-field">
+        <span>Von</span>
         <input name="filter_from" type="datetime-local" [(ngModel)]="auditFilter.from">
       </label>
-      <label>Bis
+      <label class="form-field">
+        <span>Bis</span>
         <input name="filter_to" type="datetime-local" [(ngModel)]="auditFilter.to">
       </label>
-      <label>Limit
+      <label class="form-field">
+        <span>Limit</span>
         <input name="filter_limit" type="number" min="1" max="2000" [(ngModel)]="auditFilter.limit">
       </label>
-      <button type="button" (click)="refreshAudit()" [disabled]="auditLoading()">Filtern</button>
+      <div class="form-field filter-row__action">
+        <button type="button" class="btn btn--primary btn--sm" (click)="refreshAudit()" [disabled]="auditLoading()">
+          Filtern
+        </button>
+      </div>
     </div>
 
-    <table class="data-table">
-      <thead>
-        <tr>
-          <th>Zeitpunkt</th>
-          <th>Action</th>
-          <th>Entity</th>
-          <th>Entity-ID</th>
-          <th>Projekt</th>
-          <th>User</th>
-          <th>IP</th>
-          <th>Diff</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let event of auditEvents()">
-          <td>{{ event.created_at }}</td>
-          <td>{{ event.action }}</td>
-          <td>{{ event.entity_type }}</td>
-          <td>{{ event.entity_id }}</td>
-          <td>{{ event.project_slug }}</td>
-          <td>{{ event.user_id }}</td>
-          <td>{{ event.ip_address }}</td>
-          <td><code *ngIf="event.changes_json">{{ event.changes_json }}</code></td>
-        </tr>
-        <tr *ngIf="!auditEvents().length">
-          <td colspan="8" class="empty">Keine Audit-Eintraege gefunden.</td>
-        </tr>
-      </tbody>
-    </table>
+    <div class="data-table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Zeitpunkt</th>
+            <th>Action</th>
+            <th>Entity</th>
+            <th>Entity-ID</th>
+            <th>Projekt</th>
+            <th>User</th>
+            <th>IP</th>
+            <th>Diff</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let event of auditEvents()">
+            <td class="nowrap">{{ event.created_at }}</td>
+            <td>
+              <span class="badge"
+                    [class.badge--ok]="event.action === 'create'"
+                    [class.badge--info]="event.action === 'update' || event.action === 'login'"
+                    [class.badge--warn]="event.action === 'anonymize' || event.action === 'export'"
+                    [class.badge--err]="event.action === 'delete'">
+                {{ event.action }}
+              </span>
+            </td>
+            <td>{{ event.entity_type }}</td>
+            <td><code>{{ event.entity_id }}</code></td>
+            <td>{{ event.project_slug || '—' }}</td>
+            <td>{{ event.user_id || '—' }}</td>
+            <td class="nowrap"><small>{{ event.ip_address || '—' }}</small></td>
+            <td class="diff-cell"><code *ngIf="event.changes_json">{{ event.changes_json }}</code></td>
+          </tr>
+          <tr *ngIf="!auditEvents().length">
+            <td colspan="8">
+              <div class="empty-state">
+                <svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <circle cx="12" cy="12" r="9"/><path d="M9 9.5h.01M15 9.5h.01M8.5 15s1.5-2 3.5-2 3.5 2 3.5 2"/>
+                </svg>
+                <p>Keine Audit-Einträge gefunden.</p>
+                <small>Filter anpassen oder Aktualisieren.</small>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
   </section>
 
-  <!-- Aufbewahrungsfristen -->
-  <section class="panel">
-    <div class="panel-head">
-      <div>
-        <p class="panel-kicker">Retention</p>
-        <h2>Aufbewahrungsfristen</h2>
+  <!-- ───────── Aufbewahrungsfristen ───────── -->
+  <section class="dsgvo-panel">
+    <div class="dsgvo-panel__head">
+      <div class="dsgvo-panel__title">
+        <span class="dsgvo-panel__icon dsgvo-panel__icon--accent" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>
+          </svg>
+        </span>
+        <div>
+          <p class="panel-kicker">Retention</p>
+          <h2>Aufbewahrungsfristen</h2>
+        </div>
       </div>
-      <button type="button" class="secondary" (click)="refreshRules()">Aktualisieren</button>
+      <button type="button" class="btn btn--secondary btn--sm" (click)="refreshRules()">
+        Aktualisieren
+      </button>
     </div>
 
-    <table class="data-table">
-      <thead>
-        <tr>
-          <th>Entity-Type</th>
-          <th>TTL (Tage)</th>
-          <th>Action</th>
-          <th>Aktiv</th>
-          <th>Beschreibung</th>
-          <th>Aktionen</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let rule of retentionRules()">
-          <td>{{ rule.entity_type }}</td>
-          <td><input type="number" min="0" [(ngModel)]="rule.ttl_days" [name]="'ttl_' + rule.id"></td>
-          <td>
-            <select [(ngModel)]="rule.action" [name]="'action_' + rule.id">
-              <option value="delete">delete</option>
-              <option value="anonymize">anonymize</option>
-            </select>
-          </td>
-          <td>
-            <input type="checkbox" [checked]="rule.enabled" (change)="toggleRule(rule)">
-          </td>
-          <td><input [(ngModel)]="rule.description" [name]="'desc_' + rule.id"></td>
-          <td>
-            <button type="button" class="secondary" (click)="updateRule(rule)" [disabled]="busy()">
-              Speichern
-            </button>
-            <button type="button" class="danger" (click)="deleteRule(rule)" [disabled]="busy()">
-              Loeschen
-            </button>
-          </td>
-        </tr>
-        <tr *ngIf="!retentionRules().length">
-          <td colspan="6" class="empty">Noch keine Aufbewahrungsregeln definiert.</td>
-        </tr>
-      </tbody>
-    </table>
+    <div class="data-table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Entity-Type</th>
+            <th class="num">TTL (Tage)</th>
+            <th>Action</th>
+            <th>Aktiv</th>
+            <th>Beschreibung</th>
+            <th>Aktionen</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let rule of retentionRules()" [class.row--inactive]="!rule.enabled">
+            <td><strong>{{ rule.entity_type }}</strong></td>
+            <td class="num">
+              <input type="number" min="0" [(ngModel)]="rule.ttl_days" [name]="'ttl_' + rule.id" class="inline-input">
+            </td>
+            <td>
+              <select [(ngModel)]="rule.action" [name]="'action_' + rule.id" class="inline-input">
+                <option value="delete">delete</option>
+                <option value="anonymize">anonymize</option>
+              </select>
+            </td>
+            <td>
+              <label class="toggle-switch">
+                <input type="checkbox" [checked]="rule.enabled" (change)="toggleRule(rule)">
+                <span class="toggle-switch__track"><span class="toggle-switch__thumb"></span></span>
+              </label>
+            </td>
+            <td><input [(ngModel)]="rule.description" [name]="'desc_' + rule.id" class="inline-input"></td>
+            <td>
+              <div class="row-actions">
+                <button type="button" class="btn btn--secondary btn--sm" (click)="updateRule(rule)" [disabled]="busy()" title="Speichern">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>
+                </button>
+                <button type="button" class="btn btn--danger btn--sm" (click)="deleteRule(rule)" [disabled]="busy()" title="Löschen">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="m6 6 1 14a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-14"/><path d="M10 11v6M14 11v6"/></svg>
+                </button>
+              </div>
+            </td>
+          </tr>
+          <tr *ngIf="!retentionRules().length">
+            <td colspan="6">
+              <div class="empty-state">
+                <svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>
+                </svg>
+                <p>Noch keine Aufbewahrungsregeln definiert.</p>
+                <small>Lege unten eine neue Regel an.</small>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
 
     <form class="rule-form" (ngSubmit)="addRule()">
-      <h3>Neue Regel</h3>
-      <label>Entity
-        <select name="new_entity" [(ngModel)]="newRule.entity_type">
-          <option *ngFor="let opt of retentionEntities" [value]="opt">{{ opt }}</option>
-        </select>
-      </label>
-      <label>TTL (Tage)
-        <input type="number" min="0" name="new_ttl" [(ngModel)]="newRule.ttl_days">
-      </label>
-      <label>Action
-        <select name="new_action" [(ngModel)]="newRule.action">
-          <option value="delete">delete</option>
-          <option value="anonymize">anonymize</option>
-        </select>
-      </label>
-      <label>Aktiv
-        <input type="checkbox" name="new_enabled" [(ngModel)]="newRule.enabled">
-      </label>
-      <label>Beschreibung
-        <input name="new_desc" [(ngModel)]="newRule.description">
-      </label>
-      <button type="submit" [disabled]="busy()">Regel hinzufuegen</button>
+      <h3>
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>
+        Neue Regel
+      </h3>
+      <div class="form-grid">
+        <label class="form-field">
+          <span>Entity</span>
+          <select name="new_entity" [(ngModel)]="newRule.entity_type">
+            <option *ngFor="let opt of retentionEntities" [value]="opt">{{ opt }}</option>
+          </select>
+        </label>
+        <label class="form-field">
+          <span>TTL (Tage)</span>
+          <input type="number" min="0" name="new_ttl" [(ngModel)]="newRule.ttl_days">
+        </label>
+        <label class="form-field">
+          <span>Action</span>
+          <select name="new_action" [(ngModel)]="newRule.action">
+            <option value="delete">delete</option>
+            <option value="anonymize">anonymize</option>
+          </select>
+        </label>
+        <label class="form-field check-field">
+          <input type="checkbox" name="new_enabled" [(ngModel)]="newRule.enabled" id="new_enabled_chk">
+          <span>Aktiv</span>
+        </label>
+        <label class="form-field wide">
+          <span>Beschreibung</span>
+          <input name="new_desc" [(ngModel)]="newRule.description" placeholder="optional">
+        </label>
+      </div>
+      <button type="submit" class="btn btn--primary" [disabled]="busy()">
+        Regel hinzufügen
+      </button>
     </form>
   </section>
 
-  <!-- Cleanup -->
-  <section class="panel">
-    <div class="panel-head">
-      <div>
-        <p class="panel-kicker">Cleanup</p>
-        <h2>Aufbewahrung anwenden</h2>
+  <!-- ───────── Cleanup ───────── -->
+  <section class="dsgvo-panel">
+    <div class="dsgvo-panel__head">
+      <div class="dsgvo-panel__title">
+        <span class="dsgvo-panel__icon dsgvo-panel__icon--ok" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/>
+          </svg>
+        </span>
+        <div>
+          <p class="panel-kicker">Cleanup</p>
+          <h2>Aufbewahrung anwenden</h2>
+        </div>
       </div>
       <div class="button-row">
-        <button type="button" class="secondary" (click)="runDryRun()" [disabled]="busy()">
+        <button type="button" class="btn btn--secondary" (click)="runDryRun()" [disabled]="busy()">
           Dry-Run starten
         </button>
-        <button type="button" class="danger" (click)="runCleanup()" [disabled]="busy()">
-          Cleanup jetzt durchfuehren
+        <button type="button" class="btn btn--danger" (click)="runCleanup()" [disabled]="busy()">
+          Cleanup jetzt durchführen
         </button>
       </div>
     </div>
 
-    <table class="data-table" *ngIf="cleanupResult() as result">
-      <caption>
-        Ergebnis ({{ result.dry_run ? 'Dry-Run' : 'Live-Run' }})
-      </caption>
-      <thead>
-        <tr>
-          <th>Entity</th>
-          <th>Action</th>
-          <th>Betroffen</th>
-          <th>Ausgefuehrt</th>
-          <th>Hinweise</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let row of cleanupRules()">
-          <td>{{ row.entity_type }}</td>
-          <td>{{ row.stats.action }}</td>
-          <td>{{ row.stats.affected }}</td>
-          <td>{{ row.stats.executed ?? 0 }}</td>
-          <td>{{ row.stats.skipped ? ('Uebersprungen: ' + row.stats.reason) : '-' }}</td>
-        </tr>
-      </tbody>
-    </table>
+    <ng-container *ngIf="cleanupResult() as result; else cleanupHint">
+      <div class="cleanup-result">
+        <div class="cleanup-result__badge"
+             [class.cleanup-result__badge--dry]="result.dry_run"
+             [class.cleanup-result__badge--live]="!result.dry_run">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
+          {{ result.dry_run ? 'Dry-Run' : 'Live-Run' }} abgeschlossen
+        </div>
+
+        <div class="data-table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Entity</th>
+                <th>Action</th>
+                <th class="num">Betroffen</th>
+                <th class="num">Ausgeführt</th>
+                <th>Hinweise</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let row of cleanupRules()">
+                <td><strong>{{ row.entity_type }}</strong></td>
+                <td>
+                  <span class="badge"
+                        [class.badge--err]="row.stats.action === 'delete'"
+                        [class.badge--warn]="row.stats.action === 'anonymize'">
+                    {{ row.stats.action }}
+                  </span>
+                </td>
+                <td class="num">{{ row.stats.affected }}</td>
+                <td class="num">{{ row.stats.executed ?? 0 }}</td>
+                <td>
+                  <span *ngIf="row.stats.skipped" class="badge badge--muted">
+                    Übersprungen: {{ row.stats.reason }}
+                  </span>
+                  <span *ngIf="!row.stats.skipped" class="text-faint">—</span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </ng-container>
+    <ng-template #cleanupHint>
+      <div class="empty-state empty-state--inline">
+        <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg>
+        <p>Noch kein Cleanup-Lauf in dieser Sitzung.</p>
+        <small>Starte einen <strong>Dry-Run</strong>, um zu sehen, welche Datensätze betroffen wären.</small>
+      </div>
+    </ng-template>
   </section>
 
-  <!-- Anonymisierung -->
-  <section class="panel">
-    <div class="panel-head">
-      <div>
-        <p class="panel-kicker">Projekt</p>
-        <h2>Anonymisierung</h2>
+  <!-- ───────── Anonymisierung ───────── -->
+  <section class="dsgvo-panel dsgvo-panel--warn">
+    <div class="dsgvo-panel__head">
+      <div class="dsgvo-panel__title">
+        <span class="dsgvo-panel__icon dsgvo-panel__icon--warn" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="8" r="4"/><path d="M4 22v-2a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v2"/>
+          </svg>
+        </span>
+        <div>
+          <p class="panel-kicker">Projekt</p>
+          <h2>Anonymisierung</h2>
+        </div>
       </div>
     </div>
-    <p class="muted">
+    <p class="dsgvo-panel__lead">
       Alle PII-haltigen Felder eines Projekts werden tokenisiert oder durch
-      <code>[anonymisiert]</code> ersetzt. Datensaetze bleiben erhalten.
+      <code>[anonymisiert]</code> ersetzt. Datensätze bleiben erhalten.
     </p>
-    <div class="action-row">
-      <label>Projekt
+    <div class="action-row form-grid">
+      <label class="form-field">
+        <span>Projekt</span>
         <select name="anon_slug" [(ngModel)]="anonymizeSlug">
-          <option value="">— bitte waehlen —</option>
+          <option value="">— bitte wählen —</option>
           <option *ngFor="let slug of projectSlugs()" [value]="slug">{{ slug }}</option>
         </select>
       </label>
-      <button type="button" class="danger" (click)="anonymize()" [disabled]="busy() || !anonymizeSlug">
-        Anonymisieren
-      </button>
+      <div class="form-field">
+        <span>&nbsp;</span>
+        <button type="button" class="btn btn--danger" (click)="anonymize()" [disabled]="busy() || !anonymizeSlug">
+          Anonymisieren
+        </button>
+      </div>
     </div>
   </section>
 
-  <!-- Loeschung -->
-  <section class="panel">
-    <div class="panel-head">
-      <div>
-        <p class="panel-kicker">Projekt</p>
-        <h2>Hard-Delete</h2>
+  <!-- ───────── Hard-Delete ───────── -->
+  <section class="dsgvo-panel dsgvo-panel--danger">
+    <div class="dsgvo-panel__head">
+      <div class="dsgvo-panel__title">
+        <span class="dsgvo-panel__icon dsgvo-panel__icon--danger" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><path d="M12 9v4M12 17h.01"/>
+          </svg>
+        </span>
+        <div>
+          <p class="panel-kicker panel-kicker--danger">Projekt · Achtung</p>
+          <h2>Hard-Delete</h2>
+        </div>
       </div>
     </div>
-    <p class="muted">
+    <p class="dsgvo-panel__lead">
       Das Projekt wird unwiderruflich aus DB und Dateisystem entfernt. Zum
-      Bestaetigen muss <code>DELETE-&lt;slug&gt;</code> exakt eingegeben werden.
+      Bestätigen muss <code>DELETE-&lt;slug&gt;</code> exakt eingegeben werden.
     </p>
-    <div class="action-row">
-      <label>Projekt
+    <div class="action-row form-grid">
+      <label class="form-field">
+        <span>Projekt</span>
         <select name="del_slug" [ngModel]="deleteSlug" (ngModelChange)="onDeleteSlugChange($event)">
-          <option value="">— bitte waehlen —</option>
+          <option value="">— bitte wählen —</option>
           <option *ngFor="let slug of projectSlugs()" [value]="slug">{{ slug }}</option>
         </select>
       </label>
-      <label *ngIf="deleteSlug">
-        Bestaetigung (<code>DELETE-{{ deleteSlug }}</code>)
-        <input name="del_confirm" [(ngModel)]="deleteConfirm">
+      <label class="form-field" *ngIf="deleteSlug">
+        <span>Bestätigung (<code>DELETE-{{ deleteSlug }}</code>)</span>
+        <input name="del_confirm" [(ngModel)]="deleteConfirm" placeholder="DELETE-{{ deleteSlug }}">
       </label>
-      <button
-        type="button"
-        class="danger"
-        (click)="deleteProject()"
-        [disabled]="busy() || !deleteSlug || deleteConfirm !== ('DELETE-' + deleteSlug)"
-      >
-        Endgueltig loeschen
-      </button>
+      <div class="form-field">
+        <span>&nbsp;</span>
+        <button
+          type="button"
+          class="btn btn--danger"
+          (click)="deleteProject()"
+          [disabled]="busy() || !deleteSlug || deleteConfirm !== ('DELETE-' + deleteSlug)"
+        >
+          Endgültig löschen
+        </button>
+      </div>
     </div>
   </section>
 </section>

@@ -115,6 +115,14 @@ export interface HeatingDesignImportPreview {
   detected_columns: Record<string, string>;
   /** Header name → up to 5 sample values from data rows (for manual mapping dropdowns). */
   source_columns: Record<string, string[]>;
+  /**
+   * Per-sheet column index for multi-sheet XLSX uploads:
+   * { sheet_name: { header: [sample, sample, …] } }.
+   * Lets the UI render a grouped dropdown so users can map onto columns
+   * from sheets that were skipped for circuit extraction (Pumpe-Sheet,
+   * Strang-Sheets, Kellerleitung). Empty / absent for single-sheet sources.
+   */
+  source_columns_by_sheet?: Record<string, Record<string, string[]>>;
 }
 
 export interface HeatingImporterInfo {

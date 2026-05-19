@@ -103,6 +103,12 @@
     font-size: var(--fs-xl);
     color: var(--mitra-primary);
   }
+
+  &__lead {
+    margin: 0 0 var(--s-3);
+    color: var(--text-muted);
+    font-size: var(--fs-sm);
+  }
 }
 
 /* ───── Quick Access Cards ───── */
@@ -219,36 +225,8 @@
   }
 }
 
-.button-link {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--s-2);
-  min-height: var(--touch-target);
-  padding: 10px var(--s-4);
-  background: var(--mitra-primary);
-  color: var(--text-on-dark);
-  border-radius: var(--r);
-  font-weight: var(--fw-semi);
-  font-size: var(--fs-base);
-  text-decoration: none;
-  border-bottom: none;
-  transition: background var(--transition-fast), transform var(--transition-fast);
-
-  &:hover {
-    background: var(--mitra-primary-dark);
-    color: var(--text-on-dark);
-    transform: translateY(-1px);
-    border-bottom-color: transparent;
-  }
-  &.secondary {
-    background: var(--bg-panel);
-    color: var(--text-ink);
-    border: 1px solid var(--line-medium);
-
-    &:hover { background: var(--bg-soft); color: var(--text-ink); }
-  }
-}
+/* .button-link Block entfernt 2026-05-18 — Templates nutzen jetzt .btn .btn--primary
+ * bzw. .btn .btn--secondary global. */
 
 /* ───── Mobile tweaks ───── */
 @media (max-width: 767px) {

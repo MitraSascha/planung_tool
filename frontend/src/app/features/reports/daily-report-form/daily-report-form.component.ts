@@ -2,17 +2,33 @@ import { CommonModule } from '@angular/common';
 import { Component, Input, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
-import { forkJoin, of } from 'rxjs';
+import { forkJoin, of, Observable } from 'rxjs';
 import { catchError, switchMap } from 'rxjs/operators';
 
-import { DailyReportForm, ProjectRead, ReportStatus } from '../../../core/models';
+import { DailyReportForm, DailyReportRead, MaterialItem, ProjectMemberRead, ProjectRead, ReportStatus } from '../../../core/models';
+import { MaterialService } from '../../../core/services/material.service';
 import { NotificationService } from '../../../core/services/notification.service';
 import { PhotoService } from '../../../core/services/photo.service';
 import { ProjectService } from '../../../core/services/project.service';
 import { ReportsService } from '../../../core/services/reports.service';
 import { formatHttpError } from '../../../core/services/error-format';
+import { MaterialPickerComponent } from '../../../shared/components/material-picker/material-picker.component';
 import { PhotoAnnotatorComponent } from '../../../shared/components/photo-annotator/photo-annotator.component';
+import {
+  PttButtonComponent,
+  PttTranscriptionEvent,
+} from '../../../shared/components/ptt-button/ptt-button.component';
 import { todayIso } from '../../../shared/utils/format';
+
+interface DraftUsage {
+  id: string;
+  material_item_id: number;
+  material_name: string;
+  unit: string | null;
+  qty_used: number;
+  notes: string;
+}
+let draftUsageCounter = 0;
 
 interface DraftPhoto {
   id: string;
@@ -26,10 +42,19 @@ interface DraftPhoto {
 let draftPhotoCounter = 0;
 
 const TOTAL_STEPS = 4;
+/** Bump bei jeder Step-Struktur-Änderung — alte Drafts werden dann remapped. */
+const DRAFT_VERSION = 2;
 
 @Component({
   selector: 'app-daily-report-form',
-  imports: [CommonModule, FormsModule, RouterLink, PhotoAnnotatorComponent],
+  imports: [
+    CommonModule,
+    FormsModule,
+    RouterLink,
+    PhotoAnnotatorComponent,
+    MaterialPickerComponent,
+    PttButtonComponent,
+  ],
   templateUrl: './daily-report-form.component.html',
   styleUrl: './daily-report-form.component.scss',
 })
@@ -37,18 +62,46 @@ export class DailyReportFormComponent implements OnInit {
   private readonly reports = inject(ReportsService);
   private readonly projects = inject(ProjectService);
   private readonly photos = inject(PhotoService);
+  private readonly materials = inject(MaterialService);
   private readonly notifications = inject(NotificationService);
   private readonly router = inject(Router);
 
   @Input() slug!: string;
+  /** Wenn gesetzt: Edit-Modus — Form wird mit dem bestehenden Bericht vorbelegt
+   *  und der Submit ruft PATCH statt POST. Route-Param via withComponentInputBinding. */
+  @Input() reportId?: string | number;
+
+  protected readonly editingReport = signal<DailyReportRead | null>(null);
+  protected readonly isEditing = computed(() => this.editingReport() != null);
 
   protected readonly project = signal<ProjectRead | null>(null);
   // Explizites Signal für die Sections — sicherer als `project()?.sections`
   // im Template (Angular-Change-Detection greift garantiert).
   protected readonly sections = computed(() => this.project()?.sections ?? []);
   protected readonly submitting = signal(false);
+  /**
+   * Wenn ein vorheriger Submit den Daily-Report bereits erfolgreich angelegt
+   * hat aber die Anhänge (Photos/Usages) fehlgeschlagen sind, merken wir uns
+   * die report.id hier. Beim nächsten "Speichern" wird KEIN neuer Report mehr
+   * angelegt — nur die noch fehlenden Anhänge mit dieser ID nachgereicht.
+   * Damit entstehen keine Duplikat-Reports bei Retry.
+   */
+  private savedReportId: number | null = null;
   protected readonly draftPhotos = signal<DraftPhoto[]>([]);
   protected readonly photoCount = computed(() => this.draftPhotos().length);
+
+  // Material-Verbrauchsbuchungen für diesen Bericht
+  protected readonly materialItems = signal<MaterialItem[]>([]);
+  protected readonly draftUsages = signal<DraftUsage[]>([]);
+  protected usageDraft = { material_item_id: null as number | null, qty_used: null as number | null, notes: '' };
+
+  // Material-Auswahl (Filter, Gruppierung, Anzeige) liegt jetzt vollständig
+  // im <app-material-picker> — eigene Bottom-Sheet-Komponente mit Suche,
+  // 2-zeiligen Items und Group-Headern. Sie respektiert
+  // `currentSection`-Input und blendet Items anderer Abschnitte aus.
+
+  // Team-Multi-Select: Projekt-Mitglieder
+  protected readonly members = signal<ProjectMemberRead[]>([]);
 
   protected readonly totalSteps = TOTAL_STEPS;
   protected readonly currentStep = signal<number>(1);
@@ -58,25 +111,41 @@ export class DailyReportFormComponent implements OnInit {
 
   protected form: DailyReportForm = this.defaultForm();
 
-  protected readonly canGoNext = computed<boolean>(() => {
+  /**
+   * Plain method statt computed-Signal: `this.form` ist ein Plain Object,
+   * ngModel-Updates triggern keine Signal-Notifikation. Methode wird bei
+   * jedem Change-Detection-Cycle neu evaluiert (= bei jedem Tastendruck
+   * via ngModel-Binding).
+   */
+  protected canGoNext(): boolean {
     const step = this.currentStep();
     if (step === 1) {
-      return !!this.form.report_date;
-    }
-    if (step === 2) {
-      return this.form.team.trim().length > 0;
-    }
-    if (step === 3) {
+      // Wann & Wer: Datum pflicht + mindestens eine Team-Quelle
       return (
-        this.form.completed_work.trim().length > 0
-        && this.form.open_work.trim().length > 0
+        !!this.form.report_date
+        && (this.form.team.trim().length > 0 || this.form.attendee_user_ids.length > 0)
       );
     }
+    if (step === 2) {
+      // Neuer Flow: ein Roh-Feld „Arbeitstagerfassung" reicht. Backend splittet
+      // beim Speichern. Falls der User dennoch direkt completed/open getippt
+      // hat (z.B. Edit-Modus eines Berichts ohne raw_work_log), akzeptieren wir
+      // auch das als gültig.
+      const raw = (this.form.raw_work_log || '').trim();
+      const completed = this.form.completed_work.trim();
+      const open = this.form.open_work.trim();
+      return raw.length > 0 || completed.length > 0 || open.length > 0;
+    }
     return true;
-  });
+  }
 
   ngOnInit(): void {
-    this.restoreDraft();
+    const editId = this.reportIdAsNumber();
+    if (editId != null) {
+      this.loadReportForEdit(editId);
+    } else {
+      this.restoreDraft();
+    }
     this.projects.get(this.slug).subscribe({
       next: (project) => {
         this.project.set(project);
@@ -89,6 +158,117 @@ export class DailyReportFormComponent implements OnInit {
           formatHttpError(response, 'Projekt konnte nicht geladen werden.'),
         ),
     });
+    this.reloadMaterialItems();
+    this.reports.loadMembers(this.slug).subscribe({
+      next: (rows) => this.members.set(rows),
+      error: () => {
+        // Falls keine Mitglieder zugeordnet — Multi-Select bleibt leer, Freitext bleibt nutzbar.
+      },
+    });
+  }
+
+  /** Material-Stamm vom Server neu laden — nach Anlegen eines Artikelstamm-
+   *  Posten muss der Picker den neuen Eintrag sehen. */
+  protected reloadMaterialItems(): void {
+    this.materials.listItems(this.slug).subscribe({
+      next: (items) => this.materialItems.set(items),
+      error: () => {
+        // Optional — bei leerem Material-Stamm bleibt der Picker leer.
+      },
+    });
+  }
+
+  private reportIdAsNumber(): number | null {
+    if (this.reportId == null || this.reportId === '') return null;
+    const n = Number(this.reportId);
+    return Number.isFinite(n) ? n : null;
+  }
+
+  /** Lade die Liste der Tagesberichte, finde den zu editierenden, vorbelege
+   *  die Form. Wir nutzen die Listen-Route, weil es keinen GET-by-id-Endpoint
+   *  gibt — der Backend filtert eh schon auf den User bei Rolle Monteur. */
+  private loadReportForEdit(reportId: number): void {
+    this.reports.loadDailyReports(this.slug).subscribe({
+      next: (reports) => {
+        const target = reports.find((r) => r.id === reportId);
+        if (!target) {
+          this.notifications.showError('Tagesbericht nicht gefunden.');
+          this.router.navigate(['/projects', this.slug, 'reports']);
+          return;
+        }
+        if (!target.editable) {
+          this.notifications.showError(
+            'Dieser Tagesbericht kann nicht mehr bearbeitet werden (Bearbeitungs-Fenster abgelaufen).',
+          );
+          this.router.navigate(['/projects', this.slug, 'reports']);
+          return;
+        }
+        this.editingReport.set(target);
+        this.form = {
+          section_number: target.section_number ?? null,
+          report_date: target.report_date,
+          status: target.status,
+          team: target.team ?? '',
+          attendee_user_ids: target.attendee_user_ids ?? [],
+          raw_work_log: target.raw_work_log ?? '',
+          raw_work_log_language: target.raw_work_log_language ?? null,
+          completed_work: target.completed_work ?? '',
+          open_work: target.open_work ?? '',
+          material_missing: target.material_missing ?? '',
+          blockers: target.blockers ?? '',
+          notes: target.notes ?? '',
+          ist_hours: target.ist_hours ?? null,
+          safety_psa: target.safety_psa ?? null,
+          safety_tools: target.safety_tools ?? null,
+          safety_material: target.safety_material ?? null,
+          safety_workarea: target.safety_workarea ?? null,
+          safety_approval: target.safety_approval ?? null,
+        };
+        // Im Edit-Modus startet der Wizard auf Schritt 2 (Inhalte), weil
+        // Datum/Team meist nicht das ist, was korrigiert werden muss.
+        this.currentStep.set(2);
+      },
+      error: (response) =>
+        this.notifications.showError(
+          formatHttpError(response, 'Bericht konnte nicht geladen werden.'),
+        ),
+    });
+  }
+
+  protected toggleAttendee(userId: number): void {
+    const current = new Set(this.form.attendee_user_ids);
+    if (current.has(userId)) current.delete(userId);
+    else current.add(userId);
+    this.form.attendee_user_ids = [...current];
+    this.persistDraft();
+  }
+
+  protected isAttendeeSelected(userId: number): boolean {
+    return this.form.attendee_user_ids.includes(userId);
+  }
+
+  protected addUsageDraft(): void {
+    const itemId = this.usageDraft.material_item_id;
+    const qty = this.usageDraft.qty_used;
+    if (itemId == null || qty == null || qty <= 0) {
+      return;
+    }
+    const item = this.materialItems().find((m) => m.id === itemId);
+    if (!item) return;
+    const entry: DraftUsage = {
+      id: `usage-${++draftUsageCounter}`,
+      material_item_id: itemId,
+      material_name: item.name,
+      unit: item.unit,
+      qty_used: qty,
+      notes: this.usageDraft.notes,
+    };
+    this.draftUsages.update((current) => [...current, entry]);
+    this.usageDraft = { material_item_id: null, qty_used: null, notes: '' };
+  }
+
+  protected removeUsageDraft(id: string): void {
+    this.draftUsages.update((current) => current.filter((u) => u.id !== id));
   }
 
   protected setStatus(status: ReportStatus): void {
@@ -117,6 +297,7 @@ export class DailyReportFormComponent implements OnInit {
     if (typeof localStorage === 'undefined') return;
     try {
       localStorage.setItem(this.draftKey(), JSON.stringify({
+        version: DRAFT_VERSION,
         form: this.form,
         step: this.currentStep(),
       }));
@@ -125,17 +306,32 @@ export class DailyReportFormComponent implements OnInit {
     }
   }
 
+  /**
+   * Mappt einen Step aus einem alten 5-Schritt-Wizard auf das aktuelle
+   * 4-Schritt-Layout: Wann(1) + Wer(2) → Wann&Wer(1); Was(3)→2; Material(4)→3;
+   * Senden(5)→4. Drafts ohne Versionsfeld werden als „alt" behandelt.
+   */
+  private remapLegacyStep(step: number): number {
+    const map: Record<number, number> = { 1: 1, 2: 1, 3: 2, 4: 3, 5: 4 };
+    return map[step] ?? 1;
+  }
+
   private restoreDraft(): void {
     if (typeof localStorage === 'undefined') return;
     try {
       const raw = localStorage.getItem(this.draftKey());
       if (!raw) return;
-      const parsed = JSON.parse(raw) as { form?: DailyReportForm; step?: number };
+      const parsed = JSON.parse(raw) as { version?: number; form?: DailyReportForm; step?: number };
       if (parsed.form) {
         this.form = { ...this.defaultForm(), ...parsed.form };
       }
-      if (parsed.step && parsed.step >= 1 && parsed.step <= this.totalSteps) {
-        this.currentStep.set(parsed.step);
+      if (parsed.step && parsed.step >= 1) {
+        const step = parsed.version === DRAFT_VERSION
+          ? parsed.step
+          : this.remapLegacyStep(parsed.step);
+        if (step >= 1 && step <= this.totalSteps) {
+          this.currentStep.set(step);
+        }
       }
     } catch {
       /* Korrupter Draft → ignorieren. */
@@ -246,38 +442,105 @@ export class DailyReportFormComponent implements OnInit {
     this.submitting.set(true);
 
     const drafts = this.draftPhotos();
+    const usageDrafts = this.draftUsages();
 
-    this.reports
-      .submitDailyReport(this.slug, this.form)
+    // Drei Pfade:
+    //  1. Edit-Modus  → PATCH auf den existierenden Bericht.
+    //  2. Retry-Pfad  → Bericht ist bereits angelegt, nur Anhänge erneut versuchen.
+    //  3. Neu-Anlage  → POST.
+    const editing = this.editingReport();
+    const reportStream$ = editing
+      ? this.reports.updateDailyReport(this.slug, editing.id, this.form)
+      : this.savedReportId != null
+        ? of({ id: this.savedReportId } as DailyReportRead)
+        : this.reports.submitDailyReport(this.slug, this.form);
+
+    reportStream$
       .pipe(
         switchMap((report) => {
-          if (drafts.length === 0) {
-            return of(report);
-          }
-          const uploads = drafts.map((draft) => {
+          // Sobald der Report angelegt ist (oder schon vorher war), merken
+          // für Retry-Pfad — bei Anhang-Fehlern reuse statt neu anlegen.
+          this.savedReportId = report.id;
+          const tasks: Observable<{ kind: 'photo' | 'usage'; draftId: string; ok: boolean; error?: unknown }>[] = [];
+          for (const draft of drafts) {
             const file =
               draft.file instanceof File
                 ? draft.file
                 : new File([draft.file], draft.filename, { type: 'image/png' });
-            return this.photos
-              .upload(this.slug, file, {
-                sectionNumber: this.form.section_number,
-                dailyReportId: report.id,
-                caption: draft.caption || null,
-              })
-              .pipe(catchError(() => of(null)));
-          });
-          return forkJoin(uploads).pipe(switchMap(() => of(report)));
+            tasks.push(
+              this.photos
+                .upload(this.slug, file, {
+                  sectionNumber: this.form.section_number,
+                  dailyReportId: report.id,
+                  caption: draft.caption || null,
+                })
+                .pipe(
+                  // Erfolgreich → ok:true
+                  switchMap(() => of({ kind: 'photo' as const, draftId: draft.id, ok: true })),
+                  catchError((err) => of({ kind: 'photo' as const, draftId: draft.id, ok: false, error: err })),
+                ),
+            );
+          }
+          for (const u of usageDrafts) {
+            tasks.push(
+              this.materials
+                .createUsage(this.slug, {
+                  material_item_id: u.material_item_id,
+                  daily_report_id: report.id,
+                  section_number: this.form.section_number,
+                  qty_used: u.qty_used,
+                  unit: u.unit,
+                  used_at: this.form.report_date,
+                  notes: u.notes || null,
+                })
+                .pipe(
+                  switchMap(() => of({ kind: 'usage' as const, draftId: u.id, ok: true })),
+                  catchError((err) => of({ kind: 'usage' as const, draftId: u.id, ok: false, error: err })),
+                ),
+            );
+          }
+          if (tasks.length === 0) {
+            return of({ report, results: [] as Array<{ kind: 'photo' | 'usage'; draftId: string; ok: boolean; error?: unknown }> });
+          }
+          return forkJoin(tasks).pipe(switchMap((results) => of({ report, results })));
         }),
       )
       .subscribe({
-        next: () => {
+        next: ({ results }) => {
           this.submitting.set(false);
+          const failedPhotoIds = new Set(results.filter((r) => r.kind === 'photo' && !r.ok).map((r) => r.draftId));
+          const failedUsageIds = new Set(results.filter((r) => r.kind === 'usage' && !r.ok).map((r) => r.draftId));
+
+          // Erfolgreiche Photos: URL freigeben + entfernen. Failed behalten.
           for (const draft of drafts) {
-            URL.revokeObjectURL(draft.previewUrl);
+            if (!failedPhotoIds.has(draft.id)) {
+              URL.revokeObjectURL(draft.previewUrl);
+            }
           }
-          this.draftPhotos.set([]);
+          this.draftPhotos.update((current) => current.filter((p) => failedPhotoIds.has(p.id)));
+          this.draftUsages.update((current) => current.filter((u) => failedUsageIds.has(u.id)));
           this.clearDraft();
+
+          const failedCount = failedPhotoIds.size + failedUsageIds.size;
+          if (failedCount > 0) {
+            // Bericht ist gespeichert, aber Anhänge teilweise nicht — KRITISCH
+            // dass der User das sieht, da er sich auf den Material-Verbau verlässt.
+            const parts: string[] = [];
+            if (failedUsageIds.size > 0) parts.push(`${failedUsageIds.size} Verbrauchsbuchung(en)`);
+            if (failedPhotoIds.size > 0) parts.push(`${failedPhotoIds.size} Foto(s)`);
+            this.notifications.showError(
+              `Tagesbericht gespeichert, aber ${parts.join(' und ')} konnten nicht hochgeladen werden. ` +
+              `Die Drafts bleiben im Formular — bitte erneut speichern.`,
+            );
+            this.reports.loadDailyReports(this.slug).subscribe({ error: () => undefined });
+            this.reports.loadSummary(this.slug).subscribe({ error: () => undefined });
+            // Nicht navigieren — User muss erneut speichern
+            return;
+          }
+
+          // Alles durch — Retry-State zurücksetzen, sonst würde der nächste
+          // Submit am gleichen ID kleben.
+          this.savedReportId = null;
           this.notifications.showMessage('Tagesbericht gespeichert.');
           this.reports.loadDailyReports(this.slug).subscribe({ error: () => undefined });
           this.reports.loadSummary(this.slug).subscribe({ error: () => undefined });
@@ -298,11 +561,39 @@ export class DailyReportFormComponent implements OnInit {
       report_date: todayIso(),
       status: 'green',
       team: '',
+      attendee_user_ids: [],
+      raw_work_log: '',
+      raw_work_log_language: null,
       completed_work: '',
       open_work: '',
       material_missing: '',
       blockers: '',
       notes: '',
     };
+  }
+
+  /** Push-to-Talk-Output ins Roh-Feld einfügen. Vorhandenen Text behalten —
+   *  Voice-Diktate sind meist ergänzend, nicht ersetzend. */
+  protected onPttArbeitstag(event: PttTranscriptionEvent): void {
+    const existing = (this.form.raw_work_log || '').trim();
+    const incoming = event.text.trim();
+    this.form.raw_work_log = existing
+      ? `${existing}\n${incoming}`
+      : incoming;
+    if (event.source === 'server' && event.language) {
+      this.form.raw_work_log_language = event.language;
+    }
+    this.persistDraft();
+  }
+
+  /** Push-to-Talk für ein beliebiges Freitextfeld: appended ans Ende. */
+  protected appendPttToField(
+    fieldKey: 'material_missing' | 'blockers' | 'notes',
+    event: PttTranscriptionEvent,
+  ): void {
+    const existing = (this.form[fieldKey] || '').trim();
+    const incoming = event.text.trim();
+    this.form[fieldKey] = existing ? `${existing}\n${incoming}` : incoming;
+    this.persistDraft();
   }
 }

@@ -29,10 +29,12 @@ export const routes: Routes = [
       ),
   },
   {
+    // Legacy-Pfad → konsolidierte Projektliste. ProjectsListComponent erkennt
+    // den /overview/all-Prefix und stellt den View-Mode initial auf "table".
     path: 'overview/all',
     loadComponent: () =>
-      import('./features/projects-overview/projects-overview.component').then(
-        (m) => m.ProjectsOverviewComponent,
+      import('./features/projects-list/projects-list.component').then(
+        (m) => m.ProjectsListComponent,
       ),
   },
   {
@@ -43,7 +45,7 @@ export const routes: Routes = [
       ),
   },
   {
-    path: 'projects/:slug',
+    path: 'projects/:slug/details',
     loadComponent: () =>
       import('./features/project-detail/project-detail.component').then(
         (m) => m.ProjectDetailComponent,
@@ -79,6 +81,13 @@ export const routes: Routes = [
   },
   {
     path: 'projects/:slug/reports/daily/new',
+    loadComponent: () =>
+      import('./features/reports/daily-report-form/daily-report-form.component').then(
+        (m) => m.DailyReportFormComponent,
+      ),
+  },
+  {
+    path: 'projects/:slug/reports/daily/:reportId/edit',
     loadComponent: () =>
       import('./features/reports/daily-report-form/daily-report-form.component').then(
         (m) => m.DailyReportFormComponent,
@@ -126,10 +135,24 @@ export const routes: Routes = [
       import('./features/offers/offers.component').then((m) => m.OffersComponent),
   },
   {
+    path: 'projects/:slug/nachkalkulation',
+    loadComponent: () =>
+      import('./features/nachkalkulation/nachkalkulation.component').then(
+        (m) => m.NachkalkulationComponent,
+      ),
+  },
+  {
     path: 'anomalies',
     loadComponent: () =>
       import('./features/anomalies/anomalies.component').then(
         (m) => m.AnomaliesComponent,
+      ),
+  },
+  {
+    path: 'material-issues',
+    loadComponent: () =>
+      import('./features/material-issues-all/material-issues-all.component').then(
+        (m) => m.MaterialIssuesAllComponent,
       ),
   },
   {
@@ -176,6 +199,11 @@ export const routes: Routes = [
       import('./features/admin/push-settings/push-settings.component').then(
         (m) => m.PushSettingsComponent,
       ),
+  },
+  {
+    path: 'projects/:slug',
+    redirectTo: 'projects/:slug/role',
+    pathMatch: 'full',
   },
   { path: '**', redirectTo: '' },
 ];

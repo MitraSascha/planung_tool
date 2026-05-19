@@ -44,6 +44,8 @@ from app.services.offer_importers import (
     detect_offer_importer,
     get_offer_importer,
 )
+from app.services.offer_to_material import sync_offer_to_material
+from app.services.radiator_matching import apply_radiator_offers
 
 
 router = APIRouter()
@@ -380,6 +382,11 @@ def import_offer_confirm(
     _replace_items(offer, preview.items)
     db.commit()
     db.refresh(offer)
+    # Angebots-Positionen als Material-Stamm spiegeln (Soll-Liste).
+    sync_offer_to_material(db, offer.id)
+    db.commit()
+    # Heizkörper-Positionen automatisch auf Heizkreise mappen (Best-effort).
+    apply_radiator_offers(db, project.id)
     return _offer_to_read(project, offer)
 
 

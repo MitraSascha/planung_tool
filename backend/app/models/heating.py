@@ -69,3 +69,9 @@ class HeatingDesignImportPreview(BaseModel):
     # Lets the UI show "Header (Sample1, Sample2, ...)" in the mapping
     # dropdown so users can actually see what each column contains.
     source_columns: dict[str, list[str]] = Field(default_factory=dict)
+    # Per-sheet column index for multi-sheet workbooks. Lets the UI render a
+    # grouped dropdown ("Daten" / "Pumpe" / "Strang 1" / …) so the user can
+    # map onto columns from sheets that did not contribute a circuit row
+    # (e.g. plant-meta sheets, hydraulic strand sheets).
+    # Shape: { sheet_name: { header: [sample, sample, …] } }
+    source_columns_by_sheet: dict[str, dict[str, list[str]]] = Field(default_factory=dict)

@@ -64,6 +64,22 @@ export class HeatingDesignEditorComponent implements OnInit {
   protected readonly saving = signal(false);
   protected readonly systemTypeOptions = SYSTEM_TYPE_OPTIONS;
 
+  /** Felder, die aus dem Import nicht befüllt wurden — Hinweis für den User
+   *  damit er weiß, welche Werte er von Hand ergänzen muss. */
+  protected missingPlantFields(): string[] {
+    const fields: Array<[string, unknown]> = [
+      ['System', this.design.system_type],
+      ['Vorlauf', this.design.supply_temp_c],
+      ['Rücklauf', this.design.return_temp_c],
+      ['Volumenstrom', this.design.total_volume_flow_lph],
+      ['Pumpenförderhöhe', this.design.pump_head_pa],
+      ['Pumpenmodell', this.design.pump_model],
+    ];
+    return fields
+      .filter(([, v]) => v == null || v === '' || (typeof v === 'number' && Number.isNaN(v)))
+      .map(([name]) => name);
+  }
+
   protected design: DesignForm = this.emptyDesign();
   protected circuits: CircuitRow[] = [];
 

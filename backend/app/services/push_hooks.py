@@ -30,6 +30,7 @@ from app.db import database as _database
 from app.db.orm_models import (
     Blocker,
     DailyReport,
+    MaterialIssue,
     Project,
     ProjectMember,
     User,
@@ -156,6 +157,37 @@ def _handle_daily_report_async(report_id: int) -> None:
             )
 
 
+def _handle_material_issue_async(issue_id: int) -> None:
+    """Worker: bei jeder neuen Materialmeldung Push an Lead-Rollen."""
+    with _database.SessionLocal() as db:
+        issue = (
+            db.query(MaterialIssue).filter(MaterialIssue.id == issue_id).one_or_none()
+        )
+        if issue is None:
+            return
+        # Nur push bei wirklich neuer Meldung. Items, die aus dem Daily-Report
+        # Auto-Sync stammen, sind ohnehin neu — kein zusätzlicher Filter nötig.
+        if issue.procurement_status and issue.procurement_status != "offen":
+            return
+        project = (
+            db.query(Project).filter(Project.id == issue.project_id).one_or_none()
+        )
+        if project is None:
+            return
+        user_ids = _collect_lead_user_ids(db, project.id)
+        if not user_ids:
+            return
+        title, body = push_messages.material_issue_message(issue, project)
+        push_service.send_push_notification(
+            db,
+            user_ids,
+            title,
+            body,
+            url=f"/material-issues",
+            tag=f"material-issue-{project.slug}-{issue_id}",
+        )
+
+
 def _spawn(target: Any, *args: Any) -> None:
     thread = threading.Thread(target=target, args=args, daemon=True)
     thread.start()
@@ -179,6 +211,15 @@ def _daily_report_after_insert(mapper: Any, connection: Any, target: DailyReport
     _spawn(_handle_daily_report_async, int(report_id))
 
 
+def _material_issue_after_insert(mapper: Any, connection: Any, target: MaterialIssue) -> None:
+    if _hook_disabled():
+        return
+    issue_id = getattr(target, "id", None)
+    if not issue_id:
+        return
+    _spawn(_handle_material_issue_async, int(issue_id))
+
+
 def register_listeners() -> None:
     """Registriere Push-Hooks. Idempotent — mehrfacher Aufruf ist sicher."""
     global _listener_registered
@@ -191,6 +232,7 @@ def register_listeners() -> None:
 
     event.listen(Blocker, "after_insert", _blocker_after_insert)
     event.listen(DailyReport, "after_insert", _daily_report_after_insert)
+    event.listen(MaterialIssue, "after_insert", _material_issue_after_insert)
     _listener_registered = True
     logger.info(
         "Push-Hook registriert: vapid_configured=%s",
@@ -206,6 +248,7 @@ def unregister_listeners() -> None:
     for model, listener in (
         (Blocker, _blocker_after_insert),
         (DailyReport, _daily_report_after_insert),
+        (MaterialIssue, _material_issue_after_insert),
     ):
         try:
             event.remove(model, "after_insert", listener)

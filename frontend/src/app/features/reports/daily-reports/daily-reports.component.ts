@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
-import { Component, Input, OnChanges, SimpleChanges, computed, inject, signal } from '@angular/core';
+import { Component, Input, OnChanges, OnInit, SimpleChanges, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
 import { DailyReportRead, ProjectPhotoRead, ProjectRead } from '../../../core/models';
 import { NotificationService } from '../../../core/services/notification.service';
@@ -28,12 +28,13 @@ interface LightboxState {
   templateUrl: './daily-reports.component.html',
   styleUrl: './daily-reports.component.scss',
 })
-export class DailyReportsComponent implements OnChanges {
+export class DailyReportsComponent implements OnChanges, OnInit {
   private readonly reports = inject(ReportsService);
   private readonly projects = inject(ProjectService);
   private readonly photos = inject(PhotoService);
   private readonly notifications = inject(NotificationService);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
 
   @Input() slug!: string;
 
@@ -80,8 +81,30 @@ export class DailyReportsComponent implements OnChanges {
   protected readonly formatDateTime = formatDateTime;
   protected readonly reportStatusLabel = reportStatusLabel;
 
+  ngOnInit(): void {
+    // QueryParam-Deep-Link: ?status=red|yellow|green&section=2&from=…&to=…
+    // erlaubt dem Projektüberblick, direkt auf die gefilterte Liste zu
+    // verlinken (Karte „Status rot" → diese Komponente vorgefiltert).
+    this.route.queryParamMap.subscribe((params) => {
+      const status = params.get('status');
+      if (status) this.filterStatus.set(status);
+      const section = params.get('section');
+      if (section) this.filterSection.set(section);
+      const from = params.get('from');
+      if (from) this.filterFrom.set(from);
+      const to = params.get('to');
+      if (to) this.filterTo.set(to);
+    });
+
+    // Stelle sicher dass die Liste auch beim ersten Mount geladen wird,
+    // wenn ngOnChanges für 'slug' nicht feuert (Routing-Edge-Case).
+    if (this.slug) {
+      this.loadAll();
+    }
+  }
+
   ngOnChanges(changes: SimpleChanges): void {
-    if (changes['slug'] && this.slug) {
+    if (changes['slug'] && !changes['slug'].firstChange && this.slug) {
       this.loadAll();
     }
   }

@@ -189,6 +189,148 @@
   font-size: 11px;
 }
 
+/* ---- Beschaffungs-Stepper ---- */
+.procurement-stepper {
+  display: flex;
+  align-items: flex-start;
+  gap: 0;
+  margin-top: 12px;
+  padding: 10px 4px 4px;
+  border-top: 1px dashed var(--line);
+  position: relative;
+}
+
+.procurement-stepper .step {
+  flex: 1 1 0;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 2px 6px;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  min-height: 44px;
+  min-width: 44px;
+  font: inherit;
+  color: inherit;
+  appearance: none;
+}
+
+.procurement-stepper .step:disabled {
+  cursor: progress;
+}
+
+/* Verbindungs-Linie zwischen Stufen: linke Hälfte des Kreises geht
+   bis zum Container-Rand. Die erste Stufe verbirgt ihre Linie. */
+.procurement-stepper .step::before,
+.procurement-stepper .step::after {
+  content: "";
+  position: absolute;
+  top: 22px; /* Kreis-Mitte (Kreis = 28px hoch + 4px Padding = ca. 22px) */
+  height: 2px;
+  background: var(--line);
+  z-index: 0;
+  transition: background .2s ease;
+}
+
+.procurement-stepper .step::before {
+  left: 0;
+  right: 50%;
+}
+
+.procurement-stepper .step::after {
+  left: 50%;
+  right: 0;
+}
+
+.procurement-stepper .step:first-child::before,
+.procurement-stepper .step:last-child::after {
+  display: none;
+}
+
+/* Erreichte Stufe: Linie davor brand-orange */
+.procurement-stepper .step.is-reached::before {
+  background: var(--brand, #e8742c);
+}
+
+/* Wenn die NÄCHSTE Stufe erreicht ist, soll die Linie rechts (after)
+   ebenfalls farbig sein. Da CSS keinen "nächste-Geschwister"-Selektor
+   für Boolean-Reach hat, lösen wir es über das Element selbst:
+   die after-Linie eines erreichten Schritts ist farbig, wenn der Schritt
+   selbst nicht der zuletzt erreichte ist. Pragmatisch: wir färben
+   ::after für is-reached, NICHT aber für die aktive Stufe (is-active). */
+.procurement-stepper .step.is-reached:not(.is-active)::after {
+  background: var(--brand, #e8742c);
+}
+
+.procurement-stepper .step-circle {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+  border: 2px solid var(--line);
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 850;
+  position: relative;
+  z-index: 1;
+  transition: background .2s ease, border-color .2s ease, color .2s ease, transform .2s ease;
+}
+
+.procurement-stepper .step.is-reached .step-circle {
+  background: var(--brand, #e8742c);
+  border-color: var(--brand-strong, #c75f1f);
+  color: #fff;
+}
+
+.procurement-stepper .step.is-active .step-circle {
+  transform: scale(1.08);
+  box-shadow: 0 4px 12px rgba(232, 116, 44, .35);
+}
+
+.procurement-stepper .step-icon {
+  line-height: 1;
+}
+
+.procurement-stepper .step-label {
+  font-size: 11px;
+  font-weight: 850;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: var(--muted);
+  text-align: center;
+}
+
+.procurement-stepper .step.is-reached .step-label {
+  color: var(--brand-strong, #c75f1f);
+}
+
+.procurement-stepper .step-audit {
+  display: block;
+  font-size: 10px;
+  color: var(--muted);
+  font-weight: 600;
+  margin-top: 2px;
+  text-align: center;
+  line-height: 1.2;
+  word-break: break-word;
+}
+
+/* Reduce-Motion respektieren */
+@media (prefers-reduced-motion: reduce) {
+  .procurement-stepper .step-circle {
+    transition: none;
+  }
+  .procurement-stepper .step.is-active .step-circle {
+    transform: none;
+  }
+}
+
 @media (max-width: 540px) {
   .issue-row {
     flex-direction: column;
@@ -196,5 +338,11 @@
   }
   .issue-actions select {
     width: 100%;
+  }
+  .procurement-stepper .step-label {
+    font-size: 10px;
+  }
+  .procurement-stepper .step-audit {
+    display: none; /* Auf sehr schmalen Geräten Mini-Text ausblenden */
   }
 }

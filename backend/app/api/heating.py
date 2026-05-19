@@ -30,6 +30,7 @@ from app.services.heating_importers import (
     detect_importer,
     get_importer,
 )
+from app.services.radiator_matching import apply_radiator_offers
 
 router = APIRouter()
 
@@ -162,6 +163,8 @@ def upsert_heating_design(
         )
 
     db.commit()
+    # Heizkörper-Positionen aus vorhandenen Angeboten auf neue Heizkreise mappen.
+    apply_radiator_offers(db, project.id)
     db.refresh(project)
     return _design_to_read(project, project.heating_design)
 
@@ -302,6 +305,8 @@ def import_heating_design_confirm(
         )
 
     db.commit()
+    # Heizkörper-Positionen aus vorhandenen Angeboten auf neue Heizkreise mappen.
+    apply_radiator_offers(db, project.id)
     db.refresh(project)
     return _design_to_read(project, project.heating_design)
 
@@ -376,6 +381,18 @@ def upsert_mapping(
         "column_map": json.loads(mapping.column_map_json),
         "created_at": mapping.created_at.isoformat(),
     }
+
+
+@router.post("/projects/{slug}/heating-design/sync-radiators-from-offers")
+def sync_radiators_from_offers(
+    slug: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> dict:
+    """Match Heizkörper aus hochgeladenen Angeboten erneut auf die Heizkreise."""
+    project = _project_or_404(db, slug)
+    require_project_role(db, current_user, project, SITE_LEAD_ROLES)
+    return apply_radiator_offers(db, project.id)
 
 
 @router.delete("/external-source-mappings/{name}", status_code=204)

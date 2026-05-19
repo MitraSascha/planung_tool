@@ -85,12 +85,12 @@
               [href]="attachmentUrl(offer)"
               target="_blank"
               rel="noopener"
-              class="btn-icon"
+              class="btn btn--icon"
               title="PDF anzeigen"
             >📥</a>
             <button
               type="button"
-              class="btn-icon btn-danger"
+              class="btn btn--icon btn--danger-ghost"
               (click)="deleteOffer(offer, $event)"
               title="Löschen"
             >🗑</button>
@@ -109,8 +109,8 @@
           <h2>{{ p.source_file }}</h2>
         </div>
         <div class="preview-actions">
-          <button type="button" class="btn-secondary" (click)="cancelPreview()">Abbrechen</button>
-          <button type="button" class="btn-primary" (click)="confirmImport()" [disabled]="busy()">
+          <button type="button" class="btn btn--secondary" (click)="cancelPreview()">Abbrechen</button>
+          <button type="button" class="btn btn--primary" (click)="confirmImport()" [disabled]="busy()">
             ✓ {{ p.items.length }} Positionen übernehmen
           </button>
         </div>
@@ -196,8 +196,8 @@
       <header class="preview-head">
         <h2>PDF-Angebot anhängen</h2>
         <div class="preview-actions">
-          <button type="button" class="btn-secondary" (click)="cancelPdf()">Abbrechen</button>
-          <button type="submit" class="btn-primary" [disabled]="busy()">Hochladen</button>
+          <button type="button" class="btn btn--secondary" (click)="cancelPdf()">Abbrechen</button>
+          <button type="submit" class="btn btn--primary" [disabled]="busy()">Hochladen</button>
         </div>
       </header>
 
@@ -254,9 +254,9 @@
             [href]="offerService.attachmentUrl(slug(), d.id)"
             target="_blank"
             rel="noopener"
-            class="btn-secondary"
+            class="btn btn--secondary"
           >📥 PDF öffnen</a>
-          <button type="button" class="btn-secondary" (click)="closeDetail()">Schließen</button>
+          <button type="button" class="btn btn--secondary" (click)="closeDetail()">Schließen</button>
         </div>
       </header>
 
