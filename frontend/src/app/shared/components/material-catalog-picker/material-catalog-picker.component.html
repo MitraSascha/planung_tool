@@ -1,0 +1,80 @@
+<button
+  type="button"
+  class="catalog-trigger btn btn--secondary"
+  (click)="openSheet()">
+  📦 Artikel aus Liste wählen
+</button>
+
+@if (open()) {
+  <div class="catalog-sheet" role="dialog" aria-modal="true" aria-label="Materialkatalog">
+    <div class="catalog-sheet__backdrop" (click)="closeSheet()"></div>
+    <section class="catalog-sheet__panel" role="document">
+      <header class="catalog-sheet__head">
+        <h2>Material auswählen</h2>
+        <button type="button" class="catalog-sheet__close" (click)="closeSheet()" aria-label="Schließen">✕</button>
+      </header>
+
+      <div class="catalog-sheet__search">
+        <input
+          type="search"
+          [ngModel]="query()"
+          (ngModelChange)="onQueryChange($event)"
+          placeholder='Suchen: z.B. "Bogen 22" oder "Heimeier"'
+          autofocus />
+      </div>
+
+      @if (categories().length > 1) {
+        <div class="catalog-sheet__chips" role="tablist" aria-label="Kategorie">
+          <button
+            type="button"
+            class="catalog-chip"
+            [class.catalog-chip--active]="activeCategory() === null"
+            role="tab"
+            [attr.aria-selected]="activeCategory() === null"
+            (click)="setCategory(null)">
+            Alle
+          </button>
+          @for (cat of categories(); track cat) {
+            <button
+              type="button"
+              class="catalog-chip"
+              [class.catalog-chip--active]="activeCategory() === cat"
+              role="tab"
+              [attr.aria-selected]="activeCategory() === cat"
+              (click)="setCategory(cat)">
+              {{ categoryLabel(cat) }}
+            </button>
+          }
+        </div>
+      }
+
+      @if (busy()) {
+        <p class="catalog-sheet__status">Suche läuft …</p>
+      } @else if (error(); as err) {
+        <p class="catalog-sheet__status catalog-sheet__status--error">{{ err }}</p>
+      } @else if (results().length === 0) {
+        <p class="catalog-sheet__status">Keine Treffer.</p>
+      }
+
+      <ul class="catalog-list">
+        @for (item of results(); track trackById($index, item)) {
+          <li class="catalog-list__item" (click)="pick(item)" tabindex="0"
+              (keydown.enter)="pick(item)" (keydown.space)="pick(item); $event.preventDefault()">
+            <div class="catalog-list__main">
+              <strong class="catalog-list__title">{{ item.beschreibung_1 }}</strong>
+              @if (item.beschreibung_2) {
+                <span class="catalog-list__sub">{{ item.beschreibung_2 }}</span>
+              }
+            </div>
+            <div class="catalog-list__meta">
+              <span class="catalog-list__artno">{{ item.artikelnummer }}</span>
+              @if (item.listenpreis_eur != null) {
+                <span class="catalog-list__price">{{ formatPrice(item.listenpreis_eur) }}</span>
+              }
+            </div>
+          </li>
+        }
+      </ul>
+    </section>
+  </div>
+}

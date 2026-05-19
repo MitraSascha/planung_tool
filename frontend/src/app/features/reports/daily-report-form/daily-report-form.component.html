@@ -156,27 +156,66 @@
           </label>
         </ng-container>
 
-        <label class="wide">
-          <span>Materialerfassung</span>
-          <div class="ptt-field">
-            <textarea
-              name="material_missing"
-              rows="2"
-              [(ngModel)]="form.material_missing"
-              (ngModelChange)="persistDraft()"
-              placeholder="Was hat heute gefehlt? z.B. 3× DN50-Bögen, 2 Rollen Dämmung"></textarea>
-            <app-ptt-button
-              [label]="'Diktieren'"
-              [compact]="true"
-              (transcribed)="appendPttToField('material_missing', $event)"
-            ></app-ptt-button>
+        <div class="wide material-section">
+          <span class="material-section__head-label">Materialerfassung</span>
+
+          <!-- Picklist aus dem kuratierten Katalog -->
+          <div class="material-section__picker">
+            <app-material-catalog-picker (selected)="onCatalogPicked($event)"></app-material-catalog-picker>
           </div>
-          <small class="hint">
-            Wird automatisch im Open-Points-System gelistet und der Bauleitung gemeldet.
-            Bauleitungs-eigene Meldungen weiterhin
-            <a [routerLink]="['/projects', slug, 'open-points', 'material', 'new']">separat anlegen</a>.
-          </small>
-        </label>
+
+          <ul class="material-drafts" *ngIf="draftMaterialIssues().length > 0">
+            <li class="material-drafts__row" *ngFor="let m of draftMaterialIssues()">
+              <div class="material-drafts__name">
+                <strong>{{ m.name }}</strong>
+                <small>{{ m.artikelnummer }}</small>
+              </div>
+              <label class="material-drafts__qty">
+                <span class="vh">Menge</span>
+                <input
+                  type="number"
+                  min="0"
+                  step="1"
+                  [ngModel]="m.qty"
+                  (ngModelChange)="updateMaterialDraftQty(m.id, $event)"
+                  [name]="'mat_qty_' + m.id"
+                  aria-label="Menge" />
+              </label>
+              <input
+                type="text"
+                class="material-drafts__note"
+                [ngModel]="m.note"
+                (ngModelChange)="updateMaterialDraftNote(m.id, $event)"
+                [name]="'mat_note_' + m.id"
+                placeholder="Notiz (optional)" />
+              <button type="button" class="material-drafts__remove"
+                      (click)="removeMaterialDraft(m.id)"
+                      aria-label="Entfernen">✕</button>
+            </li>
+          </ul>
+
+          <label class="wide">
+            <span>Sonstiges (nicht in Liste)</span>
+            <div class="ptt-field">
+              <textarea
+                name="material_missing"
+                rows="2"
+                [(ngModel)]="form.material_missing"
+                (ngModelChange)="persistDraft()"
+                placeholder="Material das nicht im Katalog ist — z.B. Sonderartikel"></textarea>
+              <app-ptt-button
+                [label]="'Diktieren'"
+                [compact]="true"
+                (transcribed)="appendPttToField('material_missing', $event)"
+              ></app-ptt-button>
+            </div>
+            <small class="hint">
+              Wird als Freitext-Materialmeldung an die Bauleitung weitergereicht.
+              Bauleitungs-eigene Meldungen weiterhin
+              <a [routerLink]="['/projects', slug, 'open-points', 'material', 'new']">separat anlegen</a>.
+            </small>
+          </label>
+        </div>
         <label class="wide">
           <span>Blocker / Probleme</span>
           <div class="ptt-field">

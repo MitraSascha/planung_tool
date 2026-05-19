@@ -10,6 +10,7 @@ from app.api.domains import router as domains_router
 from app.api.dsgvo import router as dsgvo_router
 from app.api.form_responses import router as form_responses_router
 from app.api.heating import router as heating_router
+from app.api.material_catalog import router as material_catalog_router
 from app.api.media import router as media_router
 from app.api.nachkalkulation import router as nachkalkulation_router
 from app.api.offers import router as offers_router
@@ -25,12 +26,29 @@ from app.services.audit_log import (
     register_listeners as register_audit_listeners,
 )
 from app.services.auto_sync import register_listeners as register_auto_sync_listeners
+from app.services.material_catalog import import_from_csv as import_material_catalog
 from app.services.push_hooks import register_listeners as register_push_listeners
 from app.services.whisper_pipeline import register_listeners as register_whisper_listeners
+from app.db.database import SessionLocal
+
+
+def _refresh_material_catalog() -> None:
+    """Idempotenter CSV-Import beim Startup. Fehler nur loggen — der Server
+    soll auch bei kaputter/fehlender CSV weiter starten (Katalog-Suche ist
+    dann eben leer, der Freitext-Fallback im Form rettet uns)."""
+    import logging
+    logger = logging.getLogger(__name__)
+    try:
+        with SessionLocal() as db:
+            import_material_catalog(db)
+    except Exception:  # noqa: BLE001 — best effort
+        logger.exception("Materialkatalog-Import scheiterte — Server startet trotzdem")
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     init_db()
+    _refresh_material_catalog()
     register_whisper_listeners()
     register_push_listeners()
     register_audit_listeners()
@@ -66,3 +84,4 @@ app.include_router(templates_router, prefix="/api/templates", tags=["templates"]
 app.include_router(domains_router, prefix="/api/projects", tags=["domains"])
 app.include_router(nachkalkulation_router, prefix="/api/projects", tags=["nachkalkulation"])
 app.include_router(voice_router, prefix="/api/voice", tags=["voice"])
+app.include_router(material_catalog_router, prefix="/api/material-catalog", tags=["material-catalog"])

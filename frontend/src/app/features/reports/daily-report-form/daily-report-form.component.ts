@@ -13,11 +13,13 @@ import { ProjectService } from '../../../core/services/project.service';
 import { ReportsService } from '../../../core/services/reports.service';
 import { formatHttpError } from '../../../core/services/error-format';
 import { MaterialPickerComponent } from '../../../shared/components/material-picker/material-picker.component';
+import { MaterialCatalogPickerComponent } from '../../../shared/components/material-catalog-picker/material-catalog-picker.component';
 import { PhotoAnnotatorComponent } from '../../../shared/components/photo-annotator/photo-annotator.component';
 import {
   PttButtonComponent,
   PttTranscriptionEvent,
 } from '../../../shared/components/ptt-button/ptt-button.component';
+import { MaterialCatalogEntry } from '../../../core/services/material-catalog.service';
 import { todayIso } from '../../../shared/utils/format';
 
 interface DraftUsage {
@@ -29,6 +31,18 @@ interface DraftUsage {
   notes: string;
 }
 let draftUsageCounter = 0;
+
+/** Materialerfassung (Issue #2): pro Auswahl aus dem Katalog + Mengenangabe
+ *  wird beim Submit eine eigene MaterialIssue erzeugt. */
+interface DraftMaterialIssue {
+  id: string;
+  catalog_id: number;
+  artikelnummer: string;
+  name: string;
+  qty: number;
+  note: string;
+}
+let draftMaterialIssueCounter = 0;
 
 interface DraftPhoto {
   id: string;
@@ -53,6 +67,7 @@ const DRAFT_VERSION = 2;
     RouterLink,
     PhotoAnnotatorComponent,
     MaterialPickerComponent,
+    MaterialCatalogPickerComponent,
     PttButtonComponent,
   ],
   templateUrl: './daily-report-form.component.html',
@@ -94,6 +109,11 @@ export class DailyReportFormComponent implements OnInit {
   protected readonly materialItems = signal<MaterialItem[]>([]);
   protected readonly draftUsages = signal<DraftUsage[]>([]);
   protected usageDraft = { material_item_id: null as number | null, qty_used: null as number | null, notes: '' };
+
+  // Materialerfassung (Picklist aus dem Katalog): jeder Draft wird beim Submit
+  // zu einer eigenen MaterialIssue gemacht. Freitext-Feld `material_missing`
+  // bleibt parallel für „nicht in Liste"-Fälle.
+  protected readonly draftMaterialIssues = signal<DraftMaterialIssue[]>([]);
 
   // Material-Auswahl (Filter, Gruppierung, Anzeige) liegt jetzt vollständig
   // im <app-material-picker> — eigene Bottom-Sheet-Komponente mit Suche,
@@ -443,6 +463,7 @@ export class DailyReportFormComponent implements OnInit {
 
     const drafts = this.draftPhotos();
     const usageDrafts = this.draftUsages();
+    const materialDrafts = this.draftMaterialIssues();
 
     // Drei Pfade:
     //  1. Edit-Modus  → PATCH auf den existierenden Bericht.
@@ -461,7 +482,7 @@ export class DailyReportFormComponent implements OnInit {
           // Sobald der Report angelegt ist (oder schon vorher war), merken
           // für Retry-Pfad — bei Anhang-Fehlern reuse statt neu anlegen.
           this.savedReportId = report.id;
-          const tasks: Observable<{ kind: 'photo' | 'usage'; draftId: string; ok: boolean; error?: unknown }>[] = [];
+          const tasks: Observable<{ kind: 'photo' | 'usage' | 'material'; draftId: string; ok: boolean; error?: unknown }>[] = [];
           for (const draft of drafts) {
             const file =
               draft.file instanceof File
@@ -499,8 +520,27 @@ export class DailyReportFormComponent implements OnInit {
                 ),
             );
           }
+          // Materialerfassung-Drafts: pro Auswahl eine MaterialIssue posten.
+          // Format der Beschreibung: "<qty>× <artnr> — <name>" (+ Notiz wenn
+          // gesetzt). Backend triggert Push an Lead-Rollen.
+          for (const m of materialDrafts) {
+            const descParts = [`${m.qty}× ${m.artikelnummer} — ${m.name}`];
+            if (m.note.trim()) descParts.push(m.note.trim());
+            tasks.push(
+              this.reports
+                .createMaterialIssue(this.slug, {
+                  section_number: this.form.section_number,
+                  description: descParts.join(' · '),
+                  priority: 'normal',
+                })
+                .pipe(
+                  switchMap(() => of({ kind: 'material' as const, draftId: m.id, ok: true })),
+                  catchError((err) => of({ kind: 'material' as const, draftId: m.id, ok: false, error: err })),
+                ),
+            );
+          }
           if (tasks.length === 0) {
-            return of({ report, results: [] as Array<{ kind: 'photo' | 'usage'; draftId: string; ok: boolean; error?: unknown }> });
+            return of({ report, results: [] as Array<{ kind: 'photo' | 'usage' | 'material'; draftId: string; ok: boolean; error?: unknown }> });
           }
           return forkJoin(tasks).pipe(switchMap((results) => of({ report, results })));
         }),
@@ -510,6 +550,7 @@ export class DailyReportFormComponent implements OnInit {
           this.submitting.set(false);
           const failedPhotoIds = new Set(results.filter((r) => r.kind === 'photo' && !r.ok).map((r) => r.draftId));
           const failedUsageIds = new Set(results.filter((r) => r.kind === 'usage' && !r.ok).map((r) => r.draftId));
+          const failedMaterialIds = new Set(results.filter((r) => r.kind === 'material' && !r.ok).map((r) => r.draftId));
 
           // Erfolgreiche Photos: URL freigeben + entfernen. Failed behalten.
           for (const draft of drafts) {
@@ -519,14 +560,16 @@ export class DailyReportFormComponent implements OnInit {
           }
           this.draftPhotos.update((current) => current.filter((p) => failedPhotoIds.has(p.id)));
           this.draftUsages.update((current) => current.filter((u) => failedUsageIds.has(u.id)));
+          this.draftMaterialIssues.update((current) => current.filter((m) => failedMaterialIds.has(m.id)));
           this.clearDraft();
 
-          const failedCount = failedPhotoIds.size + failedUsageIds.size;
+          const failedCount = failedPhotoIds.size + failedUsageIds.size + failedMaterialIds.size;
           if (failedCount > 0) {
             // Bericht ist gespeichert, aber Anhänge teilweise nicht — KRITISCH
             // dass der User das sieht, da er sich auf den Material-Verbau verlässt.
             const parts: string[] = [];
             if (failedUsageIds.size > 0) parts.push(`${failedUsageIds.size} Verbrauchsbuchung(en)`);
+            if (failedMaterialIds.size > 0) parts.push(`${failedMaterialIds.size} Materialmeldung(en)`);
             if (failedPhotoIds.size > 0) parts.push(`${failedPhotoIds.size} Foto(s)`);
             this.notifications.showError(
               `Tagesbericht gespeichert, aber ${parts.join(' und ')} konnten nicht hochgeladen werden. ` +
@@ -595,5 +638,38 @@ export class DailyReportFormComponent implements OnInit {
     const incoming = event.text.trim();
     this.form[fieldKey] = existing ? `${existing}\n${incoming}` : incoming;
     this.persistDraft();
+  }
+
+  // ─── Materialerfassung (Picklist aus dem Katalog) ────────────────────────
+
+  /** Vom Picker ausgewählten Artikel als neuen Draft anlegen (Default-Menge 1). */
+  protected onCatalogPicked(entry: MaterialCatalogEntry): void {
+    const draft: DraftMaterialIssue = {
+      id: `mat-${++draftMaterialIssueCounter}`,
+      catalog_id: entry.id,
+      artikelnummer: entry.artikelnummer,
+      name: entry.beschreibung_2
+        ? `${entry.beschreibung_1} — ${entry.beschreibung_2}`
+        : entry.beschreibung_1,
+      qty: 1,
+      note: '',
+    };
+    this.draftMaterialIssues.update((list) => [...list, draft]);
+  }
+
+  protected updateMaterialDraftQty(id: string, qty: number): void {
+    this.draftMaterialIssues.update((list) =>
+      list.map((d) => (d.id === id ? { ...d, qty: Math.max(0, qty) } : d)),
+    );
+  }
+
+  protected updateMaterialDraftNote(id: string, note: string): void {
+    this.draftMaterialIssues.update((list) =>
+      list.map((d) => (d.id === id ? { ...d, note } : d)),
+    );
+  }
+
+  protected removeMaterialDraft(id: string): void {
+    this.draftMaterialIssues.update((list) => list.filter((d) => d.id !== id));
   }
 }

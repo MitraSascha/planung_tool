@@ -135,6 +135,122 @@
   }
 }
 
+.material-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+
+  &__head-label {
+    font-size: var(--fs-sm);
+    font-weight: var(--fw-bold);
+    color: var(--mitra-primary);
+    letter-spacing: 0.3px;
+  }
+
+  &__picker {
+    display: flex;
+  }
+}
+
+.material-drafts {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+
+  &__row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 90px minmax(120px, 1.2fr) auto;
+    gap: 8px;
+    align-items: center;
+    padding: 8px 10px;
+    background: var(--surface-alt, #f9fafb);
+    border: 1px solid var(--card-border, #e5e7eb);
+    border-radius: 8px;
+
+    @media (max-width: 600px) {
+      grid-template-columns: 1fr auto;
+      grid-template-areas:
+        "name remove"
+        "qty  note";
+
+      .material-drafts__name { grid-area: name; }
+      .material-drafts__qty { grid-area: qty; }
+      .material-drafts__note { grid-area: note; min-width: 0; }
+      .material-drafts__remove { grid-area: remove; }
+    }
+  }
+
+  &__name {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+
+    strong {
+      font-size: 13px;
+      line-height: 1.3;
+      word-break: break-word;
+    }
+    small {
+      font-family: ui-monospace, SFMono-Regular, monospace;
+      font-size: 11px;
+      color: var(--text-muted, #6b7280);
+    }
+  }
+
+  &__qty {
+    display: flex;
+    align-items: center;
+
+    input {
+      width: 100%;
+      min-height: 36px;
+      padding: 4px 8px;
+      font-size: 14px;
+      font-variant-numeric: tabular-nums;
+      border: 1px solid var(--card-border, #d1d5db);
+      border-radius: 6px;
+      text-align: right;
+    }
+  }
+
+  &__note {
+    min-height: 36px;
+    padding: 4px 8px;
+    font-size: 13px;
+    border: 1px solid var(--card-border, #d1d5db);
+    border-radius: 6px;
+    background: var(--surface, #fff);
+  }
+
+  &__remove {
+    background: transparent;
+    border: 1px solid var(--card-border, #d1d5db);
+    border-radius: 6px;
+    width: 32px;
+    height: 32px;
+    line-height: 1;
+    cursor: pointer;
+    color: var(--text-muted, #6b7280);
+
+    &:hover {
+      background: var(--surface-hover, #fee2e2);
+      color: #991b1b;
+      border-color: #fca5a5;
+    }
+  }
+}
+
+.vh {
+  position: absolute !important;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px; overflow: hidden;
+  clip: rect(0,0,0,0); white-space: nowrap; border: 0;
+}
+
 .lang-badge {
   display: inline-block;
   margin-left: 8px;

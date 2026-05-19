@@ -1,6 +1,6 @@
 from datetime import date, datetime
 
-from sqlalchemy import Boolean, Date, DateTime, Float, ForeignKey, Integer, String, Text, UniqueConstraint, func
+from sqlalchemy import Boolean, Date, DateTime, Float, ForeignKey, Integer, String, Text, UniqueConstraint, func, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.database import Base
@@ -899,6 +899,41 @@ class DataRetentionRule(Base):
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
 
+
+
+class MaterialCatalogItem(Base):
+    """Kuratierter Artikel-Stamm für die Materialerfassung im Tagesbericht.
+
+    Wird aus ``Materialliste.csv`` importiert (siehe
+    ``services/material_catalog.py``). Re-Import ist idempotent: existierende
+    Artikel werden geupdated, fehlende auf ``active=False`` gesetzt, neue
+    angelegt. So bleibt die History erhalten falls eine Materialmeldung auf
+    einen mittlerweile abgekündigten Artikel verweist.
+    """
+
+    __tablename__ = "material_catalog"
+    __table_args__ = (
+        UniqueConstraint("artikelnummer", name="uq_material_catalog_artikelnummer"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    artikelnummer: Mapped[str] = mapped_column(String(32), nullable=False)
+    beschreibung_1: Mapped[str] = mapped_column(String(255), nullable=False)
+    beschreibung_2: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    listenpreis_eur: Mapped[float | None] = mapped_column(Float, nullable=True)
+    nettowert_eur: Mapped[float | None] = mapped_column(Float, nullable=True)
+    einheit: Mapped[str | None] = mapped_column(String(16), nullable=True)
+    # Kategorie aus dem Dateinamen abgeleitet: standard | brandschutz | isolierung.
+    # NULL nur bei vor-Migrations-Daten — der Import füllt das immer.
+    kategorie: Mapped[str | None] = mapped_column(String(32), nullable=True, index=True)
+    sort_key: Mapped[str] = mapped_column(String(512), default="", server_default="")
+    active: Mapped[bool] = mapped_column(default=True, server_default=text("true"))
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
 
 
 class MaterialUsage(Base):

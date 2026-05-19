@@ -7,6 +7,9 @@ services:
     volumes:
       - ./storage:/storage
       - ./project_docu:/reference_schema:ro
+      - ./Materialliste.csv:/app/Materialliste.csv:ro
+      - ./Material Brandschutz.csv:/app/Material Brandschutz.csv:ro
+      - ./Materialliste Isolierung.csv:/app/Materialliste Isolierung.csv:ro
       - ${HOME}/.codex:/home/appuser/.codex
       - ${HOME}/.claude:/home/appuser/.claude
       - ${HOME}/.claude.json:/home/appuser/.claude.json
