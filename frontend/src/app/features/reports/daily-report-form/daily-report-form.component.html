@@ -121,7 +121,7 @@
               rows="6"
               [(ngModel)]="form.raw_work_log"
               (ngModelChange)="persistDraft()"
-              placeholder="z.B. Heute Strang 3 fertig isoliert. Morgen muss Strang 4 noch dran. 3 DN50-Bögen fehlen noch."
+              placeholder="z.B. Heute Strang 3 fertig isoliert. Morgen muss Strang 4 noch dran."
             ></textarea>
             <app-ptt-button
               [label]="'Diktieren'"
@@ -131,6 +131,8 @@
           <small class="hint">
             Die KI splittet beim Speichern in „Erledigte Arbeiten" und „Offene Aufgaben"
             und übersetzt nach Deutsch, falls du in einer anderen Sprache gesprochen hast.
+            <strong>Material gehört nicht hierher</strong> — dafür gibt es das Feld
+            „Materialerfassung" unten.
           </small>
         </label>
 
@@ -155,14 +157,14 @@
         </ng-container>
 
         <label class="wide">
-          <span>Fehlendes Material</span>
+          <span>Materialerfassung</span>
           <div class="ptt-field">
             <textarea
               name="material_missing"
               rows="2"
               [(ngModel)]="form.material_missing"
               (ngModelChange)="persistDraft()"
-              placeholder="Stichworte — was hat heute gefehlt?"></textarea>
+              placeholder="Was hat heute gefehlt? z.B. 3× DN50-Bögen, 2 Rollen Dämmung"></textarea>
             <app-ptt-button
               [label]="'Diktieren'"
               [compact]="true"

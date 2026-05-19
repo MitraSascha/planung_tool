@@ -54,6 +54,17 @@ Aufgabe:
 3. Formatiere beide Gruppen als saubere deutsche Stichpunkte, jede Zeile beginnt mit "- " und endet ohne Punkt.
 4. Wenn eine Gruppe leer wäre (z.B. der Monteur hat nur Erledigtes oder nur Offenes erwähnt), gib einen leeren String "" zurück — KEIN Platzhalter wie „nichts".
 
+WICHTIG — Material-Fehlmeldungen NICHT mit aufnehmen:
+- Sätze wie „3 Bögen DN50 fehlen", „brauche noch Dämmung", „muss noch Material besorgen"
+  beziehen sich auf fehlendes Material. Diese Informationen erfasst der Monteur in
+  einem **separaten Feld „Materialerfassung"** — sie gehören NICHT in
+  ``completed`` und NICHT in ``pending``.
+- Ausnahme: wenn aus der Information eine echte Arbeits-Aufgabe wird
+  (z.B. „muss morgen die Bögen einbauen sobald da sind"), dann gehört der
+  ARBEITS-Teil („Bögen einbauen") nach ``pending`` — aber nicht der Fehl-Teil.
+- Hinweise auf VERBAUTES Material (z.B. „3 Bögen DN50 eingebaut") bleiben in
+  ``completed`` — das ist eine erledigte Arbeit.
+
 Antworte AUSSCHLIESSLICH mit gültigem JSON in diesem Schema:
 {
   "completed": "- ...\\n- ...",
