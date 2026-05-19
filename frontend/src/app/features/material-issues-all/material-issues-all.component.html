@@ -1,0 +1,100 @@
+<section class="mat-issues">
+  <header class="page-head">
+    <div class="page-head__text">
+      <p class="kicker">Open Points</p>
+      <h1>Materialmeldungen</h1>
+      <p class="hint">
+        Alle aktuell gemeldeten Material-Bedarfe über deine Projekte. Klicke einen Eintrag an,
+        sobald das Material angekommen / verbaut ist — er wird durchgestrichen und ausgeblendet.
+      </p>
+    </div>
+  </header>
+
+  <div class="stats-row" *ngIf="!loading()">
+    <div class="stat-card">
+      <span class="stat-card__label">Gesamt</span>
+      <span class="stat-card__value">{{ stats().total }}</span>
+    </div>
+    <div class="stat-card stat-card--accent">
+      <span class="stat-card__label">Offen</span>
+      <span class="stat-card__value">{{ stats().open }}</span>
+    </div>
+    <div class="stat-card stat-card--urgent" *ngIf="stats().urgent > 0">
+      <span class="stat-card__label">Dringend</span>
+      <span class="stat-card__value">{{ stats().urgent }}</span>
+    </div>
+    <div class="stat-card stat-card--done">
+      <span class="stat-card__label">Erledigt</span>
+      <span class="stat-card__value">{{ stats().done }}</span>
+    </div>
+  </div>
+
+  <div class="filter-bar">
+    <label class="filter-bar__check">
+      <input
+        type="checkbox"
+        [checked]="hideDone()"
+        (change)="toggleHideDone()"
+      />
+      Erledigte ausblenden
+    </label>
+    <label class="filter-bar__field">
+      <span>Priorität</span>
+      <select
+        [value]="filterPriority()"
+        (change)="setPriorityFilter(($any($event.target)).value)">
+        <option value="all">Alle</option>
+        <option value="urgent">Dringend</option>
+        <option value="high">Hoch</option>
+        <option value="normal">Normal</option>
+        <option value="low">Niedrig</option>
+      </select>
+    </label>
+    <button type="button" class="btn btn--ghost btn--sm" (click)="reload()">Aktualisieren</button>
+  </div>
+
+  <div *ngIf="loading()" class="card card--loading">Lade Materialmeldungen …</div>
+
+  <div *ngIf="!loading() && visibleIssues().length === 0" class="empty-card">
+    <p>Keine Materialmeldungen — entweder ist alles erledigt oder noch nichts gemeldet.</p>
+  </div>
+
+  <ul class="issue-list" *ngIf="!loading() && visibleIssues().length > 0">
+    <li
+      class="issue-row"
+      *ngFor="let it of visibleIssues(); trackBy: trackById"
+      [class.issue-row--done]="it.procurement_status === 'angekommen'"
+      [class.issue-row--busy]="busy()[it.id]"
+      [class.issue-row--urgent]="it.priority === 'urgent'"
+      (click)="toggleDone(it)"
+      [attr.aria-pressed]="it.procurement_status === 'angekommen'"
+      role="button"
+      tabindex="0"
+      (keydown.enter)="toggleDone(it)"
+      (keydown.space)="toggleDone(it); $event.preventDefault()">
+      <span class="issue-row__check" aria-hidden="true">
+        {{ it.procurement_status === 'angekommen' ? '☑' : '☐' }}
+      </span>
+      <div class="issue-row__body">
+        <div class="issue-row__title">
+          <span class="issue-row__desc">{{ it.description }}</span>
+          <span class="issue-row__pill issue-row__pill--{{ it.priority }}">
+            {{ priorityLabel(it.priority) }}
+          </span>
+        </div>
+        <div class="issue-row__meta">
+          <a class="issue-row__project" [routerLink]="['/projects', it.project_slug, 'role']" (click)="$event.stopPropagation()">
+            {{ it.project_slug }}
+          </a>
+          <span *ngIf="it.section_number != null">· Abschnitt {{ it.section_number }}</span>
+          <span>· {{ it.display_name }}</span>
+          <span>· {{ formatDate(it.created_at) }}</span>
+          <span class="issue-row__procurement"
+                [class.issue-row__procurement--done]="it.procurement_status === 'angekommen'">
+            · {{ procurementLabel(it.procurement_status) }}
+          </span>
+        </div>
+      </div>
+    </li>
+  </ul>
+</section>

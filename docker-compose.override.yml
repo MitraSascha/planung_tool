@@ -1,0 +1,26 @@
+services:
+  backend:
+    ports: !reset []
+    # Artikelstamm-DB über den Host-published Port (5433), nicht über Docker-DNS:
+    # der artikelstamm_db-Container exportiert intern den Service-Namen
+    # „postgres" und kollidiert sonst mit unserem eigenen Postgres-Hostname.
+    environment:
+      ARTIKELSTAMM_DB_URL: postgresql://artikelstamm:artikelstamm2024@host.docker.internal:5433/artikelstamm
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  frontend:
+    ports: !reset []
+
+  postgres:
+    ports: !reset []
+
+  nginx:
+    ports: !reset []
+    networks:
+      - default
+      - proxy
+
+networks:
+  proxy:
+    external: true

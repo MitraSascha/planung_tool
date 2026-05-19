@@ -1,0 +1,49 @@
+<div class="hp" [class.hp--compact]="compact()" [attr.data-status]="status()">
+  <div class="hp__row">
+    <span class="hp__label" *ngIf="label()">{{ label() }}</span>
+    <span class="hp__values">
+      <strong>{{ fmt(ist()) }} h</strong>
+      <span class="hp__sep" *ngIf="planned() != null">/</span>
+      <span *ngIf="planned() != null">{{ fmt(planned()) }} h Plan</span>
+      <span *ngIf="planned() == null" class="hp__nodata">kein Plan-Soll</span>
+      <span *ngIf="percent() != null" class="hp__percent">({{ fmt(percent()) }}%)</span>
+    </span>
+  </div>
+
+  <div class="hp__bar" role="progressbar"
+       [attr.aria-valuenow]="ist()"
+       [attr.aria-valuemin]="0"
+       [attr.aria-valuemax]="planned() ?? ist()"
+       [attr.aria-label]="(label() || 'Stunden') + ': ' + fmt(ist()) + ' von ' + (planned() != null ? fmt(planned()) + ' h Plan' : 'unbekannt')">
+    <ng-container *ngIf="planned() != null && (planned() ?? 0) > 0; else noPlan">
+      <div class="hp__bar-track">
+        <div class="hp__bar-fill" [style.width.%]="sollFillPercent()"></div>
+      </div>
+      <div class="hp__bar-overshoot" *ngIf="overshootPercent() > 0"
+           [style.width.%]="overshootPercent()"
+           [title]="'Überschritten um ' + fmt(delta()) + ' h'"></div>
+    </ng-container>
+    <ng-template #noPlan>
+      <div class="hp__bar-track hp__bar-track--unknown">
+        <div class="hp__bar-fill hp__bar-fill--unknown" [style.width.%]="ist() > 0 ? 100 : 0"></div>
+      </div>
+    </ng-template>
+  </div>
+
+  <div class="hp__sub" *ngIf="!compact()">
+    <ng-container [ngSwitch]="status()">
+      <span *ngSwitchCase="'under'" class="hp__sub-msg hp__sub-msg--under">
+        Noch <strong>{{ fmt(-1 * (delta() ?? 0)) }} h</strong> verfügbar
+      </span>
+      <span *ngSwitchCase="'on_track'" class="hp__sub-msg hp__sub-msg--ok">
+        Im Plan — noch <strong>{{ fmt(-1 * (delta() ?? 0)) }} h</strong> verfügbar
+      </span>
+      <span *ngSwitchCase="'over'" class="hp__sub-msg hp__sub-msg--over">
+        ⚠ Plan überschritten um <strong>{{ fmt(delta()) }} h</strong>
+      </span>
+      <span *ngSwitchDefault class="hp__sub-msg hp__sub-msg--unknown">
+        Kein Plan-Soll für diesen Bereich hinterlegt
+      </span>
+    </ng-container>
+  </div>
+</div>

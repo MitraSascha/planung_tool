@@ -1,0 +1,39 @@
+<div class="more-drawer" *ngIf="open()" role="dialog" aria-modal="true" aria-label="Menü">
+  <div class="more-drawer__backdrop" (click)="onBackdrop()"></div>
+
+  <div class="more-drawer__panel" role="document">
+    <div class="more-drawer__handle" aria-hidden="true"></div>
+
+    <header class="more-drawer__header">
+      <h2 class="more-drawer__title">Menü</h2>
+      <button
+        type="button"
+        class="more-drawer__close"
+        (click)="onBackdrop()"
+        aria-label="Schließen">
+        <span aria-hidden="true">✕</span>
+      </button>
+    </header>
+
+    <div class="more-drawer__body">
+      <ng-container *ngIf="visibleGroups().length; else emptyMsg">
+        <section class="more-drawer__group" *ngFor="let group of visibleGroups()">
+          <div class="more-drawer__group-label">{{ group.label }}</div>
+          <a
+            *ngFor="let item of group.items"
+            [routerLink]="item.route"
+            class="more-drawer__item"
+            [class.active]="itemActive(item)"
+            (click)="onItemClick(item.route)">
+            <span class="more-drawer__item-icon" aria-hidden="true">{{ item.icon }}</span>
+            <span class="more-drawer__item-label">{{ item.label }}</span>
+            <span class="more-drawer__item-chevron" aria-hidden="true">›</span>
+          </a>
+        </section>
+      </ng-container>
+      <ng-template #emptyMsg>
+        <p class="more-drawer__empty">Keine weiteren Menüpunkte verfügbar.</p>
+      </ng-template>
+    </div>
+  </div>
+</div>

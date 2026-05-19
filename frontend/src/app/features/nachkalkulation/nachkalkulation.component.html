@@ -1,0 +1,147 @@
+<section class="nachkalk">
+  <header class="page-head">
+    <div class="page-head__text">
+      <p class="kicker">Nachkalkulation</p>
+      <h1 *ngIf="result() as r">{{ r.project_name }}</h1>
+      <h1 *ngIf="!result()">Nachkalkulation</h1>
+      <p class="hint">
+        Ad-hoc-Käufe aus dem Großhandel (Artikelstamm), die nicht im ursprünglichen Angebot enthalten waren —
+        Grundlage für Nachträge an den Kunden. Listenpreise zum Zeitpunkt der Anlage; Mengen aus verbuchtem Ist.
+      </p>
+    </div>
+    <div class="page-head__actions" *ngIf="result() && result()!.items_total > 0">
+      <button type="button" class="btn btn--primary" (click)="exportCsv()">
+        📥 CSV exportieren
+      </button>
+    </div>
+  </header>
+
+  <p class="back-link">
+    <a [routerLink]="['/projects', slug(), 'role']">← Zurück zum Projekt</a>
+  </p>
+
+  <ng-container *ngIf="busy() && !result()">
+    <div class="card card--loading">Lade Nachkalkulation…</div>
+  </ng-container>
+
+  <ng-container *ngIf="result() as r">
+    <!-- KPI-Cards -->
+    <div class="stats-row">
+      <div class="stat-card stat-card--primary">
+        <span class="stat-card__label">Nachtragsposten</span>
+        <span class="stat-card__value">{{ r.items_total }}</span>
+        <span class="stat-card__sub" *ngIf="r.items_verbaut > 0">
+          {{ r.items_verbaut }} bereits verbaut
+        </span>
+      </div>
+      <div class="stat-card stat-card--highlight">
+        <span class="stat-card__label">Gesamt netto</span>
+        <span class="stat-card__value">{{ formatEur(r.grand_total) }}</span>
+        <span class="stat-card__sub">Listenpreise · ohne MwSt.</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-card__label">Betroffene Abschnitte</span>
+        <span class="stat-card__value">{{ r.sections_total }}</span>
+      </div>
+    </div>
+
+    <!-- Empty state -->
+    <div class="empty-card" *ngIf="r.items_total === 0">
+      <app-empty-state
+        icon="🎉"
+        title="Keine Nachträge"
+        description="Alles wurde aus dem Angebot abgedeckt — keine ad-hoc-Käufe aus dem Großhandel registriert.">
+      </app-empty-state>
+    </div>
+
+    <!-- Filter + Tabelle -->
+    <ng-container *ngIf="r.items_total > 0">
+      <div class="filter-bar">
+        <label class="filter-bar__field">
+          <span>Abschnitt</span>
+          <select [ngModel]="sectionFilter()" (ngModelChange)="onSectionFilterChange($event)">
+            <option value="all">Alle Abschnitte ({{ r.items_total }})</option>
+            <option *ngFor="let opt of sectionOptions()" [value]="opt.key">
+              {{ opt.label }} ({{ opt.count }})
+            </option>
+          </select>
+        </label>
+      </div>
+
+      <div class="section-block" *ngFor="let sec of filteredSections()">
+        <button type="button"
+                class="section-block__head"
+                (click)="toggleSection(sec)"
+                [attr.aria-expanded]="!isCollapsed(sec)">
+          <span class="section-block__caret" [class.collapsed]="isCollapsed(sec)">▾</span>
+          <span class="section-block__title">{{ sectionLabel(sec) }}</span>
+          <span class="section-block__count">{{ sec.item_count }} {{ sec.item_count === 1 ? 'Posten' : 'Posten' }}</span>
+          <span class="section-block__subtotal">{{ formatEur(sec.subtotal) }}</span>
+        </button>
+
+        <div class="section-block__body" *ngIf="!isCollapsed(sec)">
+          <!-- Desktop-Tabelle -->
+          <div class="data-table-wrap desktop-only">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Art-Nr</th>
+                  <th>Bezeichnung</th>
+                  <th>Einheit</th>
+                  <th class="num">Menge</th>
+                  <th class="num">LP/Stk</th>
+                  <th class="num">Summe</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let it of sec.items">
+                  <td class="art-no">{{ it.artikelnummer || '–' }}</td>
+                  <td>
+                    {{ it.name }}
+                    <small *ngIf="it.note" class="row-note">{{ it.note }}</small>
+                  </td>
+                  <td>{{ it.unit || '–' }}</td>
+                  <td class="num">{{ formatNum(it.ist_qty, 2) }}</td>
+                  <td class="num">{{ formatEur(it.preis_eur) }}</td>
+                  <td class="num"><strong>{{ formatEur(it.position_sum) }}</strong></td>
+                </tr>
+              </tbody>
+              <tfoot>
+                <tr>
+                  <td colspan="5" class="num">Zwischensumme</td>
+                  <td class="num"><strong>{{ formatEur(sec.subtotal) }}</strong></td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+
+          <!-- Mobile-Cards -->
+          <ul class="card-list mobile-only">
+            <li class="card-list__item" *ngFor="let it of sec.items">
+              <div class="card-list__head">
+                <strong>{{ it.name }}</strong>
+                <span class="card-list__sum">{{ formatEur(it.position_sum) }}</span>
+              </div>
+              <dl class="card-list__meta">
+                <div><dt>Art-Nr</dt><dd>{{ it.artikelnummer || '–' }}</dd></div>
+                <div><dt>Menge</dt><dd>{{ formatNum(it.ist_qty, 2) }} {{ it.unit || '' }}</dd></div>
+                <div><dt>LP/Stk</dt><dd>{{ formatEur(it.preis_eur) }}</dd></div>
+              </dl>
+              <p class="card-list__note" *ngIf="it.note">{{ it.note }}</p>
+            </li>
+            <li class="card-list__subtotal">
+              <span>Zwischensumme</span>
+              <strong>{{ formatEur(sec.subtotal) }}</strong>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Footer Gesamtsumme -->
+      <div class="grand-total" *ngIf="sectionFilter() === 'all'">
+        <span class="grand-total__label">Gesamt-Nachtragsvolumen netto</span>
+        <span class="grand-total__value">{{ formatEur(r.grand_total) }}</span>
+      </div>
+    </ng-container>
+  </ng-container>
+</section>

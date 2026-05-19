@@ -1,0 +1,181 @@
+<button
+  type="button"
+  class="mp-trigger"
+  [class.mp-trigger--empty]="!selectedItem()"
+  [class.mp-trigger--disabled]="disabled()"
+  [disabled]="disabled()"
+  (click)="openPicker()"
+  [attr.aria-haspopup]="'listbox'"
+  [attr.aria-expanded]="open()">
+  <ng-container *ngIf="selectedItem() as sm; else emptyState">
+    <div class="mp-trigger__main">
+      <strong class="mp-trigger__name">{{ sm.name }}</strong>
+      <div class="mp-trigger__meta">
+        <span *ngIf="sm.unit">{{ sm.unit }}</span>
+        <span *ngIf="sm.soll_qty != null">Soll {{ sm.soll_qty }}{{ sm.unit ? ' ' + sm.unit : '' }}</span>
+        <span *ngIf="sm.ist_qty != null">Verbaut {{ sm.ist_qty }}{{ sm.unit ? ' ' + sm.unit : '' }}</span>
+        <span *ngIf="sm.location">Lager {{ sm.location }}</span>
+      </div>
+    </div>
+    <button
+      type="button"
+      class="mp-trigger__clear"
+      (click)="clearSelection($event)"
+      aria-label="Auswahl entfernen">×</button>
+    <span class="mp-trigger__edit" aria-hidden="true">✎</span>
+  </ng-container>
+  <ng-template #emptyState>
+    <span class="mp-trigger__placeholder">+ {{ placeholder() }}</span>
+  </ng-template>
+</button>
+
+<div class="mp-sheet" *ngIf="open()" role="dialog" aria-modal="true" aria-label="Material wählen">
+  <div class="mp-sheet__backdrop" (click)="closePicker()"></div>
+  <div class="mp-sheet__panel">
+    <header class="mp-sheet__head">
+      <div class="mp-sheet__title">
+        <strong>Material wählen</strong>
+        <small *ngIf="currentSection() != null && !showAll()">
+          Abschnitt {{ currentSection() }}<span *ngIf="hiddenCount() > 0"> · {{ hiddenCount() }} aus anderen Abschnitten ausgeblendet</span>
+        </small>
+        <small *ngIf="showAll()">Alle Abschnitte ({{ items().length }})</small>
+      </div>
+      <button type="button" class="mp-sheet__close" (click)="closePicker()" aria-label="Schließen">✕</button>
+    </header>
+
+    <nav class="mp-sheet__tabs" *ngIf="artikelstammAvailable() && projectSlug()">
+      <button type="button"
+              class="mp-sheet__tab"
+              [class.mp-sheet__tab--active]="mode() === 'project'"
+              (click)="setMode('project')">
+        📋 Projekt-Material
+      </button>
+      <button type="button"
+              class="mp-sheet__tab"
+              [class.mp-sheet__tab--active]="mode() === 'artikelstamm'"
+              (click)="setMode('artikelstamm')">
+        🛒 Aus Großhandel
+      </button>
+    </nav>
+
+    <div class="mp-sheet__searchbar">
+      <span class="mp-sheet__search-icon" aria-hidden="true">🔍</span>
+      <input
+        type="search"
+        class="mp-sheet__search"
+        [ngModel]="query()"
+        (ngModelChange)="onQueryChange($event)"
+        [placeholder]="mode() === 'artikelstamm'
+          ? 'Großhandel-Artikel suchen — Name, Hersteller, Art-Nr., EAN …'
+          : 'Suchen — Name, Maße, Lagerort …'"
+        autocomplete="off"
+        autofocus>
+      <button
+        type="button"
+        class="mp-sheet__toggle"
+        *ngIf="mode() === 'project' && currentSection() != null"
+        (click)="toggleShowAll()">
+        {{ showAll() ? 'Nur dieser Abschnitt' : 'Alle Abschnitte' }}
+      </button>
+    </div>
+
+    <!-- ───── Projekt-Material Liste (Default) ───── -->
+    <div class="mp-sheet__body" role="listbox" *ngIf="mode() === 'project'">
+      <p class="mp-sheet__empty" *ngIf="totalMatches() === 0 && query()">
+        Keine Treffer für „{{ query() }}"
+        <ng-container *ngIf="artikelstammAvailable() && projectSlug()">
+          —
+          <button type="button" class="mp-sheet__link" (click)="setMode('artikelstamm')">
+            im Großhandel suchen?
+          </button>
+        </ng-container>
+      </p>
+      <p class="mp-sheet__empty" *ngIf="totalMatches() === 0 && !query()">
+        Keine Materialien in dieser Auswahl.
+      </p>
+
+      <section class="mp-group" *ngFor="let group of filteredGroups()">
+        <h4 class="mp-group__label">{{ group.label }}</h4>
+        <button
+          type="button"
+          class="mp-item"
+          *ngFor="let m of group.items"
+          [class.mp-item--selected]="isSelected(m)"
+          role="option"
+          [attr.aria-selected]="isSelected(m)"
+          (click)="pick(m)">
+          <strong class="mp-item__name">{{ m.name }}</strong>
+          <div class="mp-item__meta">
+            <span *ngIf="m.unit" class="mp-item__chip">{{ m.unit }}</span>
+            <span *ngIf="m.soll_qty != null" class="mp-item__chip">
+              <span class="mp-item__chip-label">Soll</span> {{ m.soll_qty }}
+            </span>
+            <span *ngIf="m.ist_qty != null && m.soll_qty != null" class="mp-item__chip"
+                  [class.mp-item__chip--done]="(m.ist_qty ?? 0) >= (m.soll_qty ?? 0)">
+              <span class="mp-item__chip-label">Verbaut</span> {{ m.ist_qty }}
+            </span>
+            <span *ngIf="restPiece(m) as r" class="mp-item__chip mp-item__chip--rest">
+              Rest {{ r }}
+            </span>
+            <span *ngIf="m.location" class="mp-item__chip mp-item__chip--ghost">
+              📦 {{ m.location }}
+            </span>
+            <span *ngIf="m.section_number == null" class="mp-item__chip mp-item__chip--warn">
+              ⚠ Ohne Abschnitt
+            </span>
+            <span *ngIf="m.source === 'artikelstamm'" class="mp-item__chip mp-item__chip--extra"
+                  title="Ad-hoc-Kauf — nicht im Angebot enthalten">
+              💡 Nachtrag
+            </span>
+          </div>
+          <small *ngIf="m.note" class="mp-item__note">{{ m.note }}</small>
+        </button>
+      </section>
+    </div>
+
+    <!-- ───── Artikelstamm-Suche (Großhandels-DB) ───── -->
+    <div class="mp-sheet__body" *ngIf="mode() === 'artikelstamm'">
+      <p class="mp-sheet__hint">
+        Suche im Großhändler-Stamm (DATANORM, &gt; 2 Mio Artikel).
+        Treffer wird als <strong>Nachtragsposten</strong> ins Projekt
+        übernommen — die Bauleitung sieht ihn später separat von den Angebots-Posten.
+      </p>
+      <p class="mp-sheet__empty" *ngIf="!query() || query().length < 2">
+        Tippe mindestens 2 Zeichen — z. B. Artikelnummer, Hersteller, „22x1 Kupfer" …
+      </p>
+      <p class="mp-sheet__empty" *ngIf="artikelstammSearching()">
+        … Großhandel wird durchsucht …
+      </p>
+      <p class="mp-sheet__empty" *ngIf="!artikelstammSearching() && query().length >= 2 && artikelstammResults().length === 0">
+        Keine Großhandel-Treffer für „{{ query() }}"
+      </p>
+
+      <button
+        type="button"
+        class="mp-item mp-item--artikel"
+        *ngFor="let a of artikelstammResults()"
+        [disabled]="addingFromArtikelstamm() === a.artikelnummer"
+        (click)="pickFromArtikelstamm(a)">
+        <strong class="mp-item__name">{{ artikelTitle(a) || a.artikelnummer }}</strong>
+        <div class="mp-item__meta">
+          <span class="mp-item__chip mp-item__chip--artnr">
+            <span class="mp-item__chip-label">Art-Nr</span> {{ a.artikelnummer }}
+          </span>
+          <span *ngIf="a.hersteller" class="mp-item__chip mp-item__chip--ghost">
+            🏭 {{ artikelHersteller(a) }}
+          </span>
+          <span *ngIf="a.mengeneinheit" class="mp-item__chip">{{ a.mengeneinheit }}</span>
+          <span *ngIf="a.preis_eur != null" class="mp-item__chip mp-item__chip--price">
+            {{ a.preis_eur | number:'1.2-2':'de' }} €
+          </span>
+          <span *ngIf="a.ean" class="mp-item__chip mp-item__chip--ghost">
+            EAN {{ a.ean }}
+          </span>
+        </div>
+        <small *ngIf="addingFromArtikelstamm() === a.artikelnummer" class="mp-item__note">
+          ⏳ wird zum Projekt-Stamm hinzugefügt …
+        </small>
+      </button>
+    </div>
+  </div>
+</div>

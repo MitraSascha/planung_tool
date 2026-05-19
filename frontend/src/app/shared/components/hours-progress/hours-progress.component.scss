@@ -1,0 +1,116 @@
+/* Range-Bar Stunden Soll/Ist
+ * Status-driven via [data-status]:
+ *   under   → blau    (noch Puffer)
+ *   on_track→ grün    (im Plan)
+ *   over    → rot     (Plan überschritten, Overshoot-Bar dahinter)
+ *   unknown → grau    (kein Soll)
+ */
+:host { display: block; }
+
+.hp {
+  display: grid;
+  gap: 6px;
+  font-family: inherit;
+
+  &__row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: var(--s-3, 12px);
+    flex-wrap: wrap;
+    font-size: var(--fs-sm, 13px);
+  }
+  &__label {
+    color: var(--text-ink, #1c2532);
+    font-weight: var(--fw-semi, 600);
+  }
+  &__values {
+    color: var(--text-muted, #5b6b7c);
+    font-variant-numeric: tabular-nums;
+
+    strong { color: var(--text-ink, #1c2532); font-weight: var(--fw-bold, 700); }
+  }
+  &__sep { margin: 0 4px; opacity: .5; }
+  &__nodata { font-style: italic; opacity: .7; }
+  &__percent { margin-left: 6px; font-size: var(--fs-xs, 11px); opacity: .8; }
+
+  /* Bar-Container hält Track + Overshoot nebeneinander */
+  &__bar {
+    position: relative;
+    display: flex;
+    align-items: stretch;
+    width: 100%;
+    height: 10px;
+    border-radius: var(--r-pill, 999px);
+    overflow: hidden;
+    background: transparent;
+  }
+  &__bar-track {
+    flex: 1 1 auto;
+    background: var(--bg-soft, #f0f3f6);
+    border-radius: var(--r-pill, 999px);
+    overflow: hidden;
+    box-shadow: inset 0 0 0 1px var(--line-soft, rgba(28,50,68,.08));
+  }
+  &__bar-fill {
+    height: 100%;
+    background: var(--mitra-primary, #1c3244);
+    transition: width 240ms cubic-bezier(.4,0,.2,1);
+  }
+  &__bar-overshoot {
+    height: 100%;
+    background: repeating-linear-gradient(
+      45deg,
+      #b22424,
+      #b22424 6px,
+      #8c1818 6px,
+      #8c1818 12px
+    );
+    margin-left: 2px;
+    border-radius: var(--r-pill, 999px);
+    box-shadow: inset 0 0 0 1px rgba(0,0,0,0.15);
+    flex: 0 0 auto;
+    transition: width 240ms cubic-bezier(.4,0,.2,1);
+  }
+
+  &__sub {
+    font-size: var(--fs-xs, 11px);
+    line-height: 1.4;
+  }
+  &__sub-msg {
+    color: var(--text-muted, #5b6b7c);
+    strong { color: inherit; font-weight: var(--fw-bold, 700); }
+
+    &--under  { color: #5a6b78; }
+    &--ok     { color: #166835; }
+    &--over   { color: #b22424; font-weight: var(--fw-semi, 600); }
+    &--unknown{ color: #94a3b3; font-style: italic; }
+  }
+
+  /* Statusabhängige Fill-Farbe */
+  &[data-status="on_track"] .hp__bar-fill { background: #1f8a4a; }
+  &[data-status="over"]     .hp__bar-fill { background: #b22424; }
+  &[data-status="under"]    .hp__bar-fill { background: var(--mitra-primary, #1c3244); }
+  &[data-status="unknown"]  .hp__bar-fill--unknown {
+    background: repeating-linear-gradient(
+      90deg,
+      #c2cad3,
+      #c2cad3 4px,
+      #d9e0e7 4px,
+      #d9e0e7 8px
+    );
+  }
+
+  /* Compact-Modus: Sub-Zeile weg, dichteres Layout */
+  &--compact {
+    gap: 4px;
+    .hp__sub { display: none; }
+    .hp__bar { height: 8px; }
+    .hp__row { font-size: var(--fs-xs, 11px); }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hp__bar-fill,
+  .hp__bar-overshoot { transition: none; }
+}

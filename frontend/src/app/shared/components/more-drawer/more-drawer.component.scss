@@ -1,0 +1,183 @@
+/* ═══════════════════════════════════════════════════════════════════════
+ * MORE-DRAWER — Bottom-Sheet für Mobile-Navigation
+ * Slide-Up-Drawer mit Backdrop, listet alle Sidebar-Routen scrollbar.
+ * Wird vom 5. Bottom-Tab „⋯ Mehr" getriggert.
+ * ═══════════════════════════════════════════════════════════════════════ */
+
+:host {
+  display: contents;
+}
+
+.more-drawer {
+  position: fixed;
+  inset: 0;
+  z-index: 1000; /* über bottom-nav (z=40) und sticky banners */
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  pointer-events: auto;
+}
+
+.more-drawer__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(20, 31, 43, 0.55);
+  animation: more-drawer-fade-in 180ms ease-out;
+  cursor: pointer;
+}
+
+.more-drawer__panel {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  max-height: 80vh;
+  background: var(--bg-panel, #fff);
+  border-top-left-radius: 18px;
+  border-top-right-radius: 18px;
+  box-shadow: 0 -16px 48px rgba(20, 31, 43, 0.22);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  animation: more-drawer-slide-up 220ms cubic-bezier(0.32, 0.72, 0, 1);
+  overflow: hidden;
+}
+
+.more-drawer__handle {
+  width: 44px;
+  height: 4px;
+  margin: 8px auto 0;
+  border-radius: 2px;
+  background: var(--line-medium, #d6dce4);
+}
+
+.more-drawer__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px 8px;
+  border-bottom: 1px solid var(--line-soft, #ecf0f3);
+}
+
+.more-drawer__title {
+  margin: 0;
+  font-size: var(--fs-md, 16px);
+  font-weight: var(--fw-bold, 700);
+  letter-spacing: 0.2px;
+  color: var(--text-strong, #1e2733);
+}
+
+.more-drawer__close {
+  appearance: none;
+  border: 1px solid var(--line-medium, #d6dce4);
+  background: var(--bg-panel, #fff);
+  border-radius: 999px;
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  color: var(--text-muted, #5b6877);
+  cursor: pointer;
+
+  &:hover {
+    background: var(--bg-app, #f4f6f8);
+    color: var(--text-strong, #1e2733);
+  }
+}
+
+.more-drawer__body {
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 8px 8px 16px;
+  flex: 1 1 auto;
+}
+
+.more-drawer__group {
+  padding: 6px 0 10px;
+
+  & + .more-drawer__group {
+    border-top: 1px solid var(--line-soft, #ecf0f3);
+    margin-top: 6px;
+  }
+}
+
+.more-drawer__group-label {
+  padding: 8px 12px 4px;
+  font-size: var(--fs-xs, 11px);
+  font-weight: var(--fw-bold, 700);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--text-muted, #5b6877);
+}
+
+.more-drawer__item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 48px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  text-decoration: none;
+  color: var(--text-strong, #1e2733);
+  font-size: var(--fs-md, 15px);
+  font-weight: var(--fw-semi, 600);
+  border: 1px solid transparent;
+  cursor: pointer;
+
+  &:active {
+    background: var(--bg-app, #f4f6f8);
+  }
+  &:hover {
+    background: var(--bg-app, #f4f6f8);
+  }
+  &.active {
+    background: rgba(239, 128, 78, 0.16);
+    color: var(--mitra-accent, #ef804e);
+    border-color: rgba(239, 128, 78, 0.35);
+  }
+}
+
+.more-drawer__item-icon {
+  font-size: 22px;
+  line-height: 1;
+  flex: 0 0 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.more-drawer__item-label {
+  flex: 1 1 auto;
+}
+
+.more-drawer__item-chevron {
+  flex: 0 0 auto;
+  color: var(--text-muted, #5b6877);
+  font-size: 18px;
+  font-weight: var(--fw-bold, 700);
+  opacity: 0.6;
+}
+
+.more-drawer__empty {
+  margin: 0;
+  padding: 24px 16px;
+  text-align: center;
+  color: var(--text-muted, #5b6877);
+  font-size: var(--fs-sm, 14px);
+}
+
+@keyframes more-drawer-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes more-drawer-slide-up {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .more-drawer__backdrop,
+  .more-drawer__panel {
+    animation: none;
+  }
+}

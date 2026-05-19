@@ -1,0 +1,37 @@
+<button
+  type="button"
+  class="ptt-btn"
+  [class.ptt-btn--recording]="state() === 'recording'"
+  [class.ptt-btn--transcribing]="state() === 'transcribing'"
+  [class.ptt-btn--error]="state() === 'error'"
+  [class.ptt-btn--compact]="compact()"
+  [attr.aria-label]="label()"
+  [attr.aria-pressed]="state() === 'recording'"
+  [disabled]="state() === 'transcribing'"
+  (click)="onClick()">
+  <span class="ptt-btn__icon" aria-hidden="true">
+    @switch (state()) {
+      @case ('recording') { ⏹ }
+      @case ('transcribing') { ⏳ }
+      @case ('error') { ⚠️ }
+      @default { 🎙 }
+    }
+  </span>
+
+  @if (!compact()) {
+    <span class="ptt-btn__label">
+      @switch (state()) {
+        @case ('recording') { Aufnahme · {{ formatElapsed() }} }
+        @case ('transcribing') { Wird transkribiert … }
+        @case ('error') { Fehler }
+        @default { {{ label() }} }
+      }
+    </span>
+  } @else if (state() === 'recording') {
+    <span class="ptt-btn__elapsed">{{ formatElapsed() }}</span>
+  }
+</button>
+
+@if (errorMessage(); as msg) {
+  <p class="ptt-btn__error" role="alert">{{ msg }}</p>
+}
