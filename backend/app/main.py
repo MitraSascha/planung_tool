@@ -10,6 +10,7 @@ from app.api.domains import router as domains_router
 from app.api.dsgvo import router as dsgvo_router
 from app.api.form_responses import router as form_responses_router
 from app.api.heating import router as heating_router
+from app.api.hero import router as hero_router
 from app.api.material_catalog import router as material_catalog_router
 from app.api.media import router as media_router
 from app.api.nachkalkulation import router as nachkalkulation_router
@@ -85,3 +86,4 @@ app.include_router(domains_router, prefix="/api/projects", tags=["domains"])
 app.include_router(nachkalkulation_router, prefix="/api/projects", tags=["nachkalkulation"])
 app.include_router(voice_router, prefix="/api/voice", tags=["voice"])
 app.include_router(material_catalog_router, prefix="/api/material-catalog", tags=["material-catalog"])
+app.include_router(hero_router, prefix="/api/hero", tags=["hero"])

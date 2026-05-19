@@ -65,6 +65,13 @@ class Settings(BaseSettings):
     # Leer = Suche deaktiviert (Endpoint liefert 503).
     artikelstamm_db_url: str | None = None
 
+    # HERO-Software (externes CRM/ERP) — Sync von Mitarbeitern + Push von
+    # Tracking-Times beim DailyReport-Save. Token im Format "Bearer xxx".
+    # Wenn leer: Integration deaktiviert (Tagesberichte werden lokal gespeichert
+    # aber nicht ans CRM gepusht).
+    hero_api_token: str | None = None
+    hero_graphql_url: str | None = "https://login.hero-software.de/api/external/v7/graphql"
+
     @property
     def workspaces_path(self) -> Path:
         return self.storage_root / "workspaces"

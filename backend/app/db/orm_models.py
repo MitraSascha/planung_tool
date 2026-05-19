@@ -24,6 +24,9 @@ class Project(Base):
     planned_end: Mapped[date | None] = mapped_column(Date, nullable=True)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     status: Mapped[str] = mapped_column(String(32), default="draft")
+    # HERO ProjectMatch-ID für Tracking-Time-Push. Admin setzt manuell
+    # (Suche via globalsearch ist im UI angebunden).
+    hero_project_match_id: Mapped[int | None] = mapped_column(Integer, nullable=True, index=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
@@ -135,6 +138,10 @@ class User(Base):
     password_hash: Mapped[str] = mapped_column(String(255))
     global_role: Mapped[str] = mapped_column(String(32), default="monteur")
     active: Mapped[bool] = mapped_column(default=True)
+    # HERO-Mapping für Tracking-Time-Push. NULL bis der Partner-Sync gelaufen
+    # ist oder der Admin manuell gesetzt hat. Mehrdeutige Namens-Matches
+    # bleiben bewusst leer — Admin entscheidet.
+    hero_partner_id: Mapped[int | None] = mapped_column(Integer, nullable=True, index=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     memberships: Mapped[list["ProjectMember"]] = relationship(
