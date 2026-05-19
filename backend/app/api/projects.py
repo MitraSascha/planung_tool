@@ -439,6 +439,7 @@ def _to_project_read(
         readiness_issues=readiness_issues,
         documentation_checklist=_documentation_checklist(project),
         planned_outputs=_planned_outputs(project),
+        hero_project_match_id=project.hero_project_match_id,
     )
 
 

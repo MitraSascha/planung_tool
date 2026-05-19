@@ -28,6 +28,7 @@ from app.models.reports import (
 )
 from app.services.anomaly_detector import detect_project_anomalies
 from app.services.arbeitstagerfassung import split_arbeitstagerfassung
+from app.services.hero.tracking_push import push_daily_report_async
 from app.services.auth import (
     ADMIN_ROLES,
     PROJECT_READ_ROLES,
@@ -327,6 +328,9 @@ def create_daily_report(
     db.commit()
     db.refresh(report)
     _republish_sheets(db, slug)
+    # HERO-Push (best-effort, async): jeder Attendee mit hero_partner_id
+    # bekommt eine Tracking-Time im CRM. Frage 2, 2026-05-19.
+    push_daily_report_async(report.id)
     return _daily_read(report, editable=_daily_can_edit(report, current_user, "monteur"))
 
 
@@ -438,6 +442,9 @@ def update_daily_report(
     db.commit()
     db.refresh(report)
     _republish_sheets(db, slug)
+    # HERO-Push beim Edit: vorhandene Tracking-Times werden via id geupdatet,
+    # neue Attendees bekommen neue Einträge. Best-effort, async.
+    push_daily_report_async(report.id)
     return _daily_read(report, editable=_daily_can_edit(report, current_user, role))
 
 

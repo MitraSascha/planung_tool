@@ -86,6 +86,8 @@ export interface ProjectRead extends ProjectForm {
   readiness_issues: string[];
   documentation_checklist: string[];
   planned_outputs: string[];
+  /** HERO ProjectMatch-ID. Vom Admin im Project-Detail gesetzt. */
+  hero_project_match_id?: number | null;
 }
 
 export interface ProjectOutputFile {

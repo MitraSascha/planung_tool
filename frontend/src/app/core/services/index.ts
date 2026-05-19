@@ -16,4 +16,5 @@ export * from './photo.service';
 export * from './voice-note.service';
 export * from './voice-transcribe.service';
 export * from './material-catalog.service';
+export * from './hero.service';
 export * from './dsgvo.service';

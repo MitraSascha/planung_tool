@@ -212,6 +212,37 @@ class DailyReport(Base):
     )
 
 
+class DailyReportHeroPush(Base):
+    """Audit-Eintrag pro DailyReport × Attendee für HERO-Tracking-Time-Push.
+
+    Idempotenz: bei Edit nicht erneut create, sondern update via HERO-ID.
+    Speichert auch fehlgeschlagene Versuche für Diagnose.
+    """
+
+    __tablename__ = "daily_report_hero_pushes"
+    __table_args__ = (
+        UniqueConstraint("daily_report_id", "user_id", name="uq_drhp_report_user"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    daily_report_id: Mapped[int] = mapped_column(
+        ForeignKey("daily_reports.id", ondelete="CASCADE"), index=True
+    )
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
+    hero_tracking_time_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    hero_tracking_time_uuid: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    pushed_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    last_attempt_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    last_error: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+
+
 class DailyReportAttendee(Base):
     """Strukturierte Anwesenheits-Liste pro Tagesbericht.
 

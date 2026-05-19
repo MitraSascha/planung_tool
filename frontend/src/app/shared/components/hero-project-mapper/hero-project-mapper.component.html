@@ -1,0 +1,61 @@
+<section class="hero-mapper">
+  <header class="hero-mapper__head">
+    <div>
+      <h3>HERO-Projekt-Verknüpfung</h3>
+      <p class="hint">
+        Mit einem HERO-Projekt verknüpfen, damit Tagesbericht-Stunden im CRM
+        beim richtigen Projekt landen.
+      </p>
+    </div>
+  </header>
+
+  @if (currentMappingId(); as mappingId) {
+    <div class="hero-mapper__current">
+      <span class="hero-mapper__badge">✓ Verknüpft</span>
+      <span>HERO ProjectMatch-ID: <strong>{{ mappingId }}</strong></span>
+      <button
+        type="button"
+        class="btn btn--ghost btn--sm"
+        [disabled]="saving()"
+        (click)="unlink()">
+        Verknüpfung lösen
+      </button>
+    </div>
+  } @else {
+    <div class="hero-mapper__search">
+      <input
+        type="search"
+        [ngModel]="searchQuery()"
+        (ngModelChange)="onQueryChange($event)"
+        placeholder='Projekt-Name oder Nummer suchen (z.B. "Schudoma")' />
+      @if (busy()) {
+        <p class="hero-mapper__status">Suche läuft …</p>
+      } @else if (searchQuery().trim().length >= 2 && hits().length === 0) {
+        <p class="hero-mapper__status">Keine Treffer.</p>
+      }
+      @if (hits().length > 0) {
+        <ul class="hero-mapper__hits">
+          @for (h of hits(); track h.id) {
+            <li
+              class="hero-mapper__hit"
+              tabindex="0"
+              [class.hero-mapper__hit--busy]="saving()"
+              (click)="pick(h)"
+              (keydown.enter)="pick(h)"
+              (keydown.space)="pick(h); $event.preventDefault()">
+              <strong>{{ h.name }}</strong>
+              <small>
+                @if (h.project_nr) { #{{ h.project_nr }} · }
+                @if (h.customer?.full_name; as cname) { {{ cname }} · }
+                ID {{ h.id }}
+                @if (h.current_project_match_status?.name; as stname) {
+                   · {{ stname }}
+                }
+              </small>
+            </li>
+          }
+        </ul>
+      }
+    </div>
+  }
+</section>

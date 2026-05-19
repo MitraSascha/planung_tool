@@ -20,7 +20,7 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app.db.database import get_db
-from app.db.orm_models import User
+from app.db.orm_models import Project, User
 from app.services.auth import ADMIN_ROLES, get_current_user, require_global_role
 from app.services.hero.client import HeroError, is_configured
 from app.services.hero.service import (
@@ -29,6 +29,7 @@ from app.services.hero.service import (
     search_project_matches,
     sync_partners_to_users,
 )
+from app.services.hero.tracking_push import dry_run_daily_report
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -120,3 +121,42 @@ def tracking_categories(
         return get_tracking_time_categories()
     except HeroError as exc:
         raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+
+class ProjectMappingUpdate(BaseModel):
+    hero_project_match_id: int | None
+
+
+@router.patch("/projects/{slug}/mapping", response_model=dict)
+def update_project_mapping(
+    slug: str,
+    payload: ProjectMappingUpdate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> dict:
+    """Admin: setzt ``hero_project_match_id`` für ein Projekt.
+
+    NULL setzt das Mapping zurück (Push erfolgt dann ohne Projekt-Bezug)."""
+    require_global_role(current_user, ADMIN_ROLES)
+    project = db.query(Project).filter(Project.slug == slug).one_or_none()
+    if project is None:
+        raise HTTPException(status_code=404, detail="Projekt nicht gefunden")
+    project.hero_project_match_id = payload.hero_project_match_id
+    db.commit()
+    return {
+        "slug": project.slug,
+        "hero_project_match_id": project.hero_project_match_id,
+    }
+
+
+@router.get("/dry-run/daily-reports/{report_id}")
+def dry_run_push(
+    report_id: int,
+    current_user: User = Depends(get_current_user),
+) -> list[dict[str, Any]]:
+    """Zeigt was beim HERO-Push für diesen Tagesbericht gesendet würde —
+    ohne den Call tatsächlich auszuführen. Admin-Diagnose."""
+    require_global_role(current_user, ADMIN_ROLES)
+    if not is_configured():
+        raise HTTPException(status_code=503, detail="HERO_API_TOKEN nicht konfiguriert")
+    return dry_run_daily_report(report_id)

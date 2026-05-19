@@ -134,6 +134,9 @@ class ProjectRead(ProjectCreate):
     readiness_issues: list[str] = Field(default_factory=list)
     documentation_checklist: list[str] = Field(default_factory=list)
     planned_outputs: list[str] = Field(default_factory=list)
+    # HERO ProjectMatch-ID (gesetzt vom Admin über /api/hero/projects/{slug}/mapping).
+    # Wenn None: Tracking-Time-Pushes erfolgen ohne Projekt-Zuordnung.
+    hero_project_match_id: int | None = None
 
 
 class PublishResponse(BaseModel):

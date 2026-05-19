@@ -89,6 +89,14 @@
       </a>
     </section>
 
+    <section class="info-block" *ngIf="canManageHero()">
+      <app-hero-project-mapper
+        [slug]="p.slug"
+        [currentMappingId]="p.hero_project_match_id ?? null"
+        (mapped)="onHeroMapped($event)">
+      </app-hero-project-mapper>
+    </section>
+
     <section class="info-block">
       <h3>Unterlagen ({{ p.upload_count }})</h3>
       <app-empty-state
